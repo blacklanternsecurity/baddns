@@ -3,7 +3,7 @@
 import os
 
 # Define the directory you want to read files from
-directory = './dnsReaper/signatures'
+directory = 'punk-security/dnsReaper/signatures'
 
 # Get a list of all files in the directory
 files = os.listdir(directory)
