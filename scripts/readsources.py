@@ -2,11 +2,9 @@
 
 import os
 
-#directory = './punk-security/dnsReaper/signatures'
-directory = "."
+directory = './dnsReaper/signatures'
 
 files = os.listdir(directory)
-
 for filename in files:
 	print(filename)
        
