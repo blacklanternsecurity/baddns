@@ -17,7 +17,7 @@ jobs:
     - name: Checkout remote repository
       uses: actions/checkout@v3
       with:
-        repository: ./punk-security/dnsReaper.git 
+        repository: punk-security/dnsReaper.git 
         path: ./dnsReaper 
 
 
