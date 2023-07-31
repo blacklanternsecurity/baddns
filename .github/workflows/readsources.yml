@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         repository: punk-security/dnsReaper
-        path: ./dnsReaper 
+        path: dnsReaper 
 
 
     
