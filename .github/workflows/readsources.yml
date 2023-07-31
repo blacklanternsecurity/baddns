@@ -16,5 +16,5 @@ jobs:
     
     - name: Test
       run: |
-        run: python3 scripts/readsources.py
+        python3 scripts/readsources.py
 
