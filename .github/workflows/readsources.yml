@@ -13,6 +13,11 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Install dependencies
+      run: |
+        pip install poetry
+        poetry install
+
     - name: Checkout (self)
       uses: actions/checkout@v3
 
@@ -27,6 +32,9 @@ jobs:
       with:
         repository: projectdiscovery/nuclei-templates
         path: nuclei-templates/http/takeovers
+
+
+
 
     - name: Read Sources
       run: |
