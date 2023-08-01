@@ -229,6 +229,7 @@ for filename in files_dns:
     files.append(os.path.join(directory_dns, filename))
 
 for filepath in files:
+    print(filepath)
     if "takeover" in filepath and filepath.endswith(".yaml"):
         with open(filepath, 'r') as file:
             data = yaml.safe_load(file)
