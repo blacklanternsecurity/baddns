@@ -33,12 +33,9 @@ jobs:
         repository: projectdiscovery/nuclei-templates
         path: nuclei-templates/http/takeovers
 
-
-
-
     - name: Read Sources
       run: |
-        python3 BadDNS/scripts/readsources.py
+        poetry run python3 BadDNS/scripts/readsources.py
 
     - name: Get file content
       id: getfile
