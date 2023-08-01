@@ -28,9 +28,9 @@ jobs:
         repository: projectdiscovery/nuclei-templates
         path: nuclei-templates/http/takeovers
 
-    - name: Test
+    - name: Read Sources
       run: |
-        python3 scripts/readsources.py
+        python3 BadDNS/scripts/readsources.py
 
     - name: Get file content
       id: getfile
