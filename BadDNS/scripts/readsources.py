@@ -215,7 +215,6 @@ for filename in files:
 
 # nuclei-templates ingest
 
-directory = './nuclei-templates/http/takeovers'
 directory_http = "./nuclei-templates/http/takeovers"
 directory_dns = "./nuclei-templates/dns"
 
@@ -230,7 +229,7 @@ for filename in files_dns:
 
 for filepath in files:
     print(filepath)
-    if "takeover" in filepath and filepath.endswith(".yaml"):
+    if "-takeover" in filepath and filepath.endswith(".yaml"):
         with open(filepath, 'r') as file:
             data = yaml.safe_load(file)
         nucleitemplates_transformer = NucleiTemplatesTransformer()
