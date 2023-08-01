@@ -201,8 +201,8 @@ class DnsReaperSignatureTransformer(Transformer):
 
 # dnsReaper ingest
 
-# directory = './dnsReaper/signatures'
-directory = "/home/liquid/dnsReaper/signatures"
+directory = './dnsReaper/signatures'
+#directory = "/home/liquid/dnsReaper/signatures"
 
 files = os.listdir(directory)
 for filename in files:
@@ -214,29 +214,29 @@ for filename in files:
             dnsReaper_transformer.writeSignature("dnsreaper", filename.split(".")[0])
 
 
-# nuclei-templates ingest
+nuclei-templates ingest
 
-# directory = './nuclei-templates/http/takeovers'
-# directory_http = "/home/liquid/nuclei-templates/http/takeovers"
-# directory_dns = "/home/liquid/nuclei-templates/dns"
+directory = './nuclei-templates/http/takeovers'
+directory_http = "./nuclei-templates/http/takeovers"
+directory_dns = "./nuclei-templates/dns"
 
-# files_http = os.listdir(directory_http)
-# files_dns = os.listdir(directory_dns)
+files_http = os.listdir(directory_http)
+files_dns = os.listdir(directory_dns)
 
-# files = []
-# for filename in files_http:
-#     files.append(os.path.join(directory_http, filename))
-# for filename in files_dns:
-#     files.append(os.path.join(directory_dns, filename))
+files = []
+for filename in files_http:
+    files.append(os.path.join(directory_http, filename))
+for filename in files_dns:
+    files.append(os.path.join(directory_dns, filename))
 
-# for filepath in files:
-#     if "takeover" in filepath and filepath.endswith(".yaml"):
-#         with open(filepath, 'r') as file:
-#             data = yaml.safe_load(file)
-#         print(data)
+for filepath in files:
+    if "takeover" in filepath and filepath.endswith(".yaml"):
+        with open(filepath, 'r') as file:
+            data = yaml.safe_load(file)
+        print(data)
 
-#         nucleitemplates_transformer = NucleiTemplatesTransformer()
-#         nucleitemplates_transformer.writeSignature("nucleitemplates",filename.split(".")[0])
-#      with open(f"{directory}/{filename}") as f:
-#             dnsReaper_transformer.transform(f.read())
-#             dnsReaper_transformer.writeSignature("dnsreaper",filename.split(".")[0])
+        nucleitemplates_transformer = NucleiTemplatesTransformer()
+        nucleitemplates_transformer.writeSignature("nucleitemplates",filename.split(".")[0])
+     with open(f"{directory}/{filename}") as f:
+            dnsReaper_transformer.transform(f.read())
+            dnsReaper_transformer.writeSignature("dnsreaper",filename.split(".")[0])
