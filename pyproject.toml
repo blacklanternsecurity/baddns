@@ -9,6 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.31.0"
+pyyaml = "^6.0.1"
 
 [tool.poetry.dev-dependencies]
 requests-mock = "^1.11.0"
