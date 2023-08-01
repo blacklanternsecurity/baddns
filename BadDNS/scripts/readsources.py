@@ -207,7 +207,6 @@ directory = './dnsReaper/signatures'
 files = os.listdir(directory)
 for filename in files:
     if not filename.startswith("_") and filename.endswith(".py"):
-        print(f"!{filename}")
         dnsReaper_transformer = DnsReaperSignatureTransformer()
         with open(f"{directory}/{filename}") as f:
             dnsReaper_transformer.transform(f.read())
@@ -233,10 +232,6 @@ for filepath in files:
     if "takeover" in filepath and filepath.endswith(".yaml"):
         with open(filepath, 'r') as file:
             data = yaml.safe_load(file)
-        print(data)
-
         nucleitemplates_transformer = NucleiTemplatesTransformer()
         nucleitemplates_transformer.writeSignature("nucleitemplates",filename.split(".")[0])
-     with open(f"{directory}/{filename}") as f:
-            dnsReaper_transformer.transform(f.read())
-            dnsReaper_transformer.writeSignature("dnsreaper",filename.split(".")[0])
+
