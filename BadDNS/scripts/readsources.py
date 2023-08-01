@@ -214,7 +214,7 @@ for filename in files:
             dnsReaper_transformer.writeSignature("dnsreaper", filename.split(".")[0])
 
 
-nuclei-templates ingest
+# nuclei-templates ingest
 
 directory = './nuclei-templates/http/takeovers'
 directory_http = "./nuclei-templates/http/takeovers"
