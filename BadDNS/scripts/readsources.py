@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import re
 import os
 import ast
 import sys
@@ -22,11 +22,9 @@ class Transformer(ABC):
         output_directory = "signatures_to_test"
         os.makedirs(output_directory, exist_ok=True)  # Creates the directory if it does not exist
         output_file_path = os.path.join(output_directory, f"{shortname}_{signatureName}.yml")
-        print(output_file_path)
         with open(output_file_path, "w") as f:
             signature_candidate = BadDNSSignature()
             signature_data = self.map_values()
-            print(signature_data)
             signature_candidate.initialize(**signature_data)
             yaml.dump(signature_candidate.output(), f)
 
@@ -62,6 +60,8 @@ class NucleiTemplatesTransformer(Transformer):
         }
 
         if "http" in data.keys():
+            values["mode"] = "http"
+
             http_data = data["http"][0]
             if "matchers" in http_data.keys():
                 matcher_rule = {
@@ -79,6 +79,22 @@ class NucleiTemplatesTransformer(Transformer):
 
                     matcher_rule["matchers"].append(matcher)
                 values["matcher_rule"] = matcher_rule
+        elif "dns" in data.keys():
+            values["mode"] = "dns_nxdomain"
+            dns_data = data["dns"][0]
+            if "matchers" in dns_data.keys():
+                for matcher in dns_data["matchers"]:
+                    if matcher["type"] == "word":
+                        for word in matcher.get("words", []):
+                            if word != "NXDOMAIN":
+                                if self._is_ip_address(word):
+                                    values["identifiers"]["ips"].append(word)
+                                else:
+                                    values["identifiers"]["cnames"].append(word)
+                    elif matcher["type"] == "regex":
+                        for regex_str in matcher.get("regex", []):
+                            regex = re.compile(regex_str)
+                            values["identifiers"]["cnames"].append(regex)
         return values
 
 
@@ -100,6 +116,8 @@ class DnsReaperSignatureTransformer(Transformer):
 
     def map_values(self):
         values = {}
+        identifiers = {"cnames": [], "ips": [], "nameservers": []}
+
         for key, value in self.data.items():
             if key == "http_strings" and value:
                 if isinstance(value, list):
@@ -115,10 +133,15 @@ class DnsReaperSignatureTransformer(Transformer):
                 values.setdefault("matcher_rule", {"matchers-condition": "and", "matchers": []})["matchers"].append(
                     {"type": "status", "status": int(value)}
                 )
+
+            elif key in ["ips", "cnames", "nameservers"]:
+                identifiers[key] = value if isinstance(value, list) else [value]
+
             elif key == "use_case":
                 values["mode"] = self.use_case_to_mode_mapping.get(value, value)
             else:
                 values[key] = value
+        values["identifiers"] = identifiers
         return values
 
     def _visit(self, node):
@@ -201,8 +224,8 @@ class DnsReaperSignatureTransformer(Transformer):
 
 # dnsReaper ingest
 
-directory = './dnsReaper/signatures'
-#directory = "/home/liquid/dnsReaper/signatures"
+# directory = './dnsReaper/signatures'
+directory = "/home/liquid/dnsReaper/signatures"
 
 files = os.listdir(directory)
 for filename in files:
@@ -215,8 +238,11 @@ for filename in files:
 
 # nuclei-templates ingest
 
-directory_http = "./nuclei-templates/http/takeovers"
-directory_dns = "./nuclei-templates/dns"
+# directory_http = "./nuclei-templates/http/takeovers"
+# directory_dns = "./nuclei-templates/dns"
+
+directory_http = "/home/liquid/nuclei-templates/http/takeovers"
+directory_dns = "/home/liquid/nuclei-templates/dns"
 
 files_http = os.listdir(directory_http)
 files_dns = os.listdir(directory_dns)
@@ -228,10 +254,9 @@ for filename in files_dns:
     files.append(os.path.join(directory_dns, filename))
 
 for filepath in files:
-    print(filepath)
     if "-takeover" in filepath and filepath.endswith(".yaml"):
-        with open(filepath, 'r') as file:
+        print(filepath)
+        with open(filepath, "r") as file:
             data = yaml.safe_load(file)
         nucleitemplates_transformer = NucleiTemplatesTransformer()
-        nucleitemplates_transformer.writeSignature("nucleitemplates",filename.split(".")[0])
-
+        nucleitemplates_transformer.writeSignature("nucleitemplates", filename.split(".")[0])
