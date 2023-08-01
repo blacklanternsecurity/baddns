@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "baddns"
+version = "0.0.0"
+description = "Check subdomains for for subdomain takeovers and other DNS tomfoolery"
+authors = ["liquidsec <paul.mueller08@gmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "^2.31.0"
+
+[tool.poetry.dev-dependencies]
+requests-mock = "^1.11.0"
+
+[tool.poetry.group.dev.dependencies]
+requests-mock = "^1.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 119

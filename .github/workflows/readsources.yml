@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 jobs:
   readsources:
-
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -14,15 +13,46 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Checkout remote repository
+    - name: Checkout remote repository (dnsReaper)
       uses: actions/checkout@v3
       with:
         repository: punk-security/dnsReaper
         path: dnsReaper 
 
+    - name: Checkout remote repository (nuclei-templates)
+      uses: actions/checkout@v3
+      with:
+        repository: projectdiscovery/nuclei-templates.git
+        path: nuclei-templates/http/takeovers
 
-    
     - name: Test
       run: |
         python3 scripts/readsources.py
 
+    - name: Get file content
+      id: getfile
+      run: |
+        # Only process the first file
+        filename=$(ls signatures_to_test | head -n 1)
+        content=$(cat signatures_to_test/$filename)
+        content="${content//'%'/'%25'}"
+        content="${content//$'\n'/'%0A'}"
+        content="${content//$'\r'/'%0D'}"
+        echo "::set-output name=filename::$filename"
+        echo "::set-output name=content::$content"
+    
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: Add new signature ${{ steps.getfile.outputs.filename }}
+        title: Add new signature ${{ steps.getfile.outputs.filename }}
+        body: |
+          This PR adds a new signature:
+          ```
+          ${{ steps.getfile.outputs.content }}
+          ```
+        branch: new-signature-${{ steps.getfile.outputs.filename }}
+
+    - name: Delete processed file
+      run: rm signatures_to_test/${{ steps.getfile.outputs.filename }}
