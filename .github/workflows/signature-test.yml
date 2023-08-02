@@ -30,7 +30,6 @@ jobs:
           echo "Running analysis..."
           echo "::set-output name=result::placeholder analysis"
           # You can run your test script here
-      fi
 
     - name: Add PR comment
       uses: actions/github-script@v3
