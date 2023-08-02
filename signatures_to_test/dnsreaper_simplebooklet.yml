@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - cname.simplebooklet.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - you're looking for isn't here.
+  matchers-condition: and
+mode: http
+service_name: simplebooklet.com
+source: dnsreaper

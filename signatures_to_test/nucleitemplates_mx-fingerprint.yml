@@ -1,0 +1,27 @@
+identifiers:
+  cnames:
+  - azure-api.net
+  - azure-mobile.net
+  - azurecontainer.io
+  - azurecr.io
+  - azuredatalakestore.net
+  - azureedge.net
+  - azurefd.net
+  - azurehdinsight.net
+  - azurewebsites.net
+  - azurewebsites.windows.net
+  - blob.core.windows.net
+  - cloudapp.azure.com
+  - cloudapp.net
+  - database.windows.net
+  - redis.cache.windows.net
+  - search.windows.net
+  - servicebus.windows.net
+  - trafficmanager.net
+  - visualstudio.com
+  ips: []
+  nameservers: []
+matcher_rule: null
+mode: dns_nxdomain
+service_name: Microsoft Azure Takeover Detection
+source: nucleitemplates
