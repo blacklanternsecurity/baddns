@@ -1,0 +1,11 @@
+identifiers:
+  cnames:
+  - !!python/object/apply:re._compile
+    - CNAME\t[a-z0-9_-]*\.(us|af|ap|ca|eu|me|sa)\-(east|west|south|northeast|southeast|central)\-[1-9]+\.elasticbeanstalk\.com
+    - 32
+  ips: []
+  nameservers: []
+matcher_rule: null
+mode: dns_nxdomain
+service_name: ElasticBeanstalk Subdomain Takeover Detection
+source: nucleitemplates
