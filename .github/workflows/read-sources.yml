@@ -38,6 +38,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        echo "starting Read Sources run" >> readsources_action.log 
         echo $GH_TOKEN | gh auth login --with-token
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
@@ -46,8 +47,11 @@ jobs:
         files=$(git diff --name-only origin/main | grep signatures_to_test | head -n 1)
 
         for filename in $files; do
+          echo "parsing signature file: $filename" >> readsources_action.log
+          echo "checking out new branch new-signature-$filename" >> readsources_action.log
           git checkout -b new-signature-$filename
           git add $filename
+          echo "adding commit and pushing branch..." >> readsources_action.log
           git commit -m "Add new signature $filename" && {
             git push origin new-signature-$filename
             echo "Add new signature $filename" > pr_message
@@ -55,9 +59,11 @@ jobs:
             echo "\`\`\`" >> pr_message
             cat $filename >> pr_message
             echo "\`\`\`" >> pr_message
+            echo "creating PR: 'Add new signature $filename'" >> readsources_action.log
             gh pr create --title "Add new signature $filename" --body-file pr_message --head new-signature-$filename --repo ${{ github.repository }}
           }
         done
+        echo "completed read sources" >> readsources_action.log
 
     - name: Upload readsources.py log
       uses: actions/upload-artifact@v2
