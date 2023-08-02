@@ -24,8 +24,8 @@ jobs:
 
     - name: Analyze pull request
       id: analyze
+      if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
       run: |
-        if [[ "${{ steps.check_conditions.outputs.is_new_signature_pr }}" == "true" ]]; then
           # This is a placeholder for your analysis script
           echo "Running analysis..."
           echo "::set-output name=result::placeholder analysis"
