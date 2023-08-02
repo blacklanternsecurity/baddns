@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - .campaignmonitor.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - WHOOPS! The page you're looking for does not exist.
+  matchers-condition: and
+mode: http
+service_name: campaignmonitor.com
+source: dnsreaper

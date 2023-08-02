@@ -1,0 +1,10 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.domaindiscover.com
+  - ns2.domaindiscover.com
+matcher_rule: null
+mode: dns_nosoa
+service_name: tierra.net
+source: dnsreaper

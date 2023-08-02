@@ -1,0 +1,19 @@
+identifiers:
+  cnames:
+  - cname.us.ngrok.io
+  - cname.eu.ngrok.io
+  - cname.uk.ngrok.io
+  - cname.ngrok.io
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - ERR_NGROK_3200
+  matchers-condition: and
+mode: http
+service_name: ngrok.io
+source: dnsreaper

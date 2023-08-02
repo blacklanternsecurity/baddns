@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - cname.myjetbrains.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - YouTrack Starting Page
+  matchers-condition: and
+mode: http
+service_name: myjetbrains.com
+source: dnsreaper
