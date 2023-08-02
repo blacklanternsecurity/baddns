@@ -5,54 +5,53 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  analyze:
+  signature-test:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Check for specific string in PR title and creator
-      id: check_conditions
-      run: |
-        pr_title="${{ github.event.pull_request.title }}"
-        pr_creator="${{ github.event.pull_request.user.login }}"
-        echo "Pull Request title: $pr_title" > signaturetest.log
-        echo "Pull Request creator: $pr_creator" >> signaturetest.log
-        if [[ "$pr_title" == *"new-signature"* && "$pr_creator" == "github-actions" ]]; then
-          echo "::set-output name=is_new_signature_pr::true"
-          echo "PR $pr_title Qualified" >> signaturetest.log
-        else
-          echo "::set-output name=is_new_signature_pr::false"
-          echo "PR $pr_title NOT Qualified" >> signaturetest.log
-        fi
+      - name: Check for specific string in PR title and creator
+        id: check_conditions
+        run: |
+          pr_title="${{ github.event.pull_request.title }}"
+          pr_creator="${{ github.event.pull_request.user.login }}"
+          echo "Pull Request title: $pr_title" > signaturetest.log
+          echo "Pull Request creator: $pr_creator" >> signaturetest.log
+          if [[ "$pr_title" == *"new-signature"* && "$pr_creator" == "github-actions" ]]; then
+            echo "::set-output name=is_new_signature_pr::true"
+            echo "PR $pr_title Qualified" >> signaturetest.log
+          else
+            echo "::set-output name=is_new_signature_pr::false"
+            echo "PR $pr_title NOT Qualified" >> signaturetest.log
+          fi
 
-    - name: Analyze pull request
-      id: analyze
-      if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
-      run: |
-          # This is a placeholder for your analysis script
-          echo "Running test against signature..." >> signaturetest.log
-          echo "::set-output name=result::placeholder result" >> signaturetest.log
-          # You can run your test script here
+      - name: Analyze pull request
+        id: analyze
+        if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
+        run: |
+            # This is a placeholder for your analysis script
+            echo "Running test against signature..." >> signaturetest.log
+            echo "::set-output name=result::placeholder result" >> signaturetest.log
+            # You can run your test script here
 
-    - name: Add PR comment
-      uses: actions/github-script@v3
-      if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const { pull_request: { number: issue_number } } = context;
-          const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
-          echo "Attempting to add comment for $issue_number" >> signaturetest.log
-          github.issues.createComment({
-            issue_number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: message
-          });
+      - name: Add PR comment
+        uses: actions/github-script@v3
+        if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { pull_request: { number: issue_number } } = context;
+            const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
+            echo "Attempting to add comment for $issue_number" >> signaturetest.log
+            github.issues.createComment({
+              issue_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
 
-    - name: Upload Signature Test Log
-      uses: actions/upload-artifact@v2
-      with:
-        name: signature-test-log
-        path: signaturetest.log
+      - name: Upload Signature Test Log
+        uses: actions/upload-artifact@v2
+        with:
+          name: signature-test-log
+          path: signaturetest.log
