@@ -1,8 +1,13 @@
 import re
+import os
+import sys
 import requests
 import yaml
 
-from BadDNS.lib.errors import BadDNSMatcherException
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from lib.errors import BadDNSMatcherException
 
 
 class Matcher:

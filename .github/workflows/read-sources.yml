@@ -34,38 +34,30 @@ jobs:
       run: |
         poetry run python3 BadDNS/scripts/readsources.py
 
-    - name: Get file content
-      id: getfile
-      run: |
-        # Only process the first file
-        filename=$(ls signatures_to_test | head -n 1)
-        content=$(cat signatures_to_test/$filename)
-        content="${content//'%'/'%25'}"
-        content="${content//$'\n'/'%0A'}"
-        content="${content//$'\r'/'%0D'}"
-        echo "::set-output name=filename::$filename"
-        echo "::set-output name=content::$content" 2>&1 | tee -a readsources_action.log
-    
-    - name: Stage and commit file
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git checkout -b new-signature-${{ steps.getfile.outputs.filename }} 2>&1 | tee -a readsources_action.log
-        git add signatures_to_test/${{ steps.getfile.outputs.filename }} 2>&1 | tee -a readsources_action.log
-        git commit -m "Add new signature ${{ steps.getfile.outputs.filename }}" 2>&1 | tee -a readsources_action.log
-        git push origin new-signature-${{ steps.getfile.outputs.filename }} 2>&1 | tee -a readsources_action.log
-    
-    - name: Create Pull Request
+    - name: Stage, commit and create PR for changed files
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo $GH_TOKEN | gh auth login --with-token 2>&1 | tee -a readsources_action.log
-        echo "Add new signature ${{ steps.getfile.outputs.filename }}" > pr_message
-        echo "This PR adds a new signature:" >> pr_message
-        echo "\`\`\`" >> pr_message
-        cat signatures_to_test/${{ steps.getfile.outputs.filename }} >> pr_message
-        echo "\`\`\`" >> pr_message
-        gh pr create --title "Add new signature ${{ steps.getfile.outputs.filename }}" --body-file pr_message --head new-signature-${{ steps.getfile.outputs.filename }} --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
+        echo $GH_TOKEN | gh auth login --with-token
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Only process the first file
+        files=$(git diff --name-only origin/main | grep signatures_to_test | head -n 1)
+
+        for filename in $files; do
+          git checkout -b new-signature-$filename
+          git add $filename
+          git commit -m "Add new signature $filename" && {
+            git push origin new-signature-$filename
+            echo "Add new signature $filename" > pr_message
+            echo "This PR adds a new signature:" >> pr_message
+            echo "\`\`\`" >> pr_message
+            cat $filename >> pr_message
+            echo "\`\`\`" >> pr_message
+            gh pr create --title "Add new signature $filename" --body-file pr_message --head new-signature-$filename --repo ${{ github.repository }}
+          }
+        done
 
     - name: Upload readsources.py log
       uses: actions/upload-artifact@v2

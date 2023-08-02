@@ -3,7 +3,7 @@ from lib.errors import BadDNSSignatureException
 
 class BadDNSSignature:
     validModes = ["http", "dns_nxdomain", "dns_nosoa"]
-    validSources = ["dnsreaper", "canitakeoverxyz", "nucleitemplates", "self"]
+    validSources = ["dnsreaper", "nucleitemplates", "self"]
 
     def __init__(self):
         self.signature = {
@@ -47,14 +47,12 @@ class BadDNSSignature:
         if self.signature["mode"].startswith("dns"):
             if self.signature["matcher_rule"]:
                 raise BadDNSSignatureException(f"In dns modes, matcher_rule should not be set")
-            if (
-                len(self.signature["identifiers"]["cnames"]) == 0
-                and len(self.signature["identifiers"]["ips"]) == 0
-                and len(self.signature["identifiers"]["nameservers"]) == 0
-            ):
-                raise BadDNSSignatureException(
-                    f"All DNS signatures require an identifier (cnames, ips, or nameservers)"
-                )
+        if (
+            len(self.signature["identifiers"]["cnames"]) == 0
+            and len(self.signature["identifiers"]["ips"]) == 0
+            and len(self.signature["identifiers"]["nameservers"]) == 0
+        ):
+            raise BadDNSSignatureException(f"All signatures require an identifier (cnames, ips, or nameservers)")
 
         if self.signature["mode"] == "dns_nosoa":
             if len(self.signature["identifiers"]["nameservers"]) == 0:

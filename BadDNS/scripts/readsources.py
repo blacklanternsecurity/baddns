@@ -40,7 +40,9 @@ class Transformer(ABC):
             except BadDNSSignatureException as e:
                 logger.info(f"Error encountered validating signature data: [{e}]")
 
-            logger.info(f"Signature data validated. Final signature: [{yaml.dump(signature_candidate.output())}]")
+            logger.info(
+                f"Signature data validated. Final signature: \n****************************{yaml.dump(signature_candidate.output())}\n****************************"
+            )
             logger.info(f"writing to: [{output_file_path}]")
             yaml.dump(signature_candidate.output(), f)
 
@@ -151,7 +153,9 @@ class DnsReaperSignatureTransformer(Transformer):
                 )
 
             elif key in ["ips", "cnames", "nameservers"]:
-                identifiers[key] = value if isinstance(value, list) else [value]
+                identifiers[key] = [
+                    v.lstrip("cname").lstrip(".") for v in (value if isinstance(value, list) else [value])
+                ]
 
             elif key == "use_case":
                 values["mode"] = self.use_case_to_mode_mapping.get(value, value)
@@ -238,7 +242,8 @@ class DnsReaperSignatureTransformer(Transformer):
                 self._visit_List(arg)
 
 
-directory = "./dnsReaper/signatures"
+# directory = "./dnsReaper/signatures"
+directory = "/home/liquid/dnsReaper/signatures"
 logger.info("readsources init")
 logger.info(f"Starting dnsReaper ingest, reading from: {os.path.join(os.getcwd(), directory)}")
 
@@ -252,8 +257,11 @@ for filename in files:
             dnsReaper_transformer.writeSignature("dnsreaper", filename.split(".")[0])
 
 
-directory_http = "./nuclei-templates/http/takeovers"
-directory_dns = "./nuclei-templates/dns"
+# directory_http = "./nuclei-templates/http/takeovers"
+# directory_dns = "./nuclei-templates/dns"
+
+directory_http = "/home/liquid/nuclei-templates/http/takeovers"
+directory_dns = "/home/liquid/nuclei-templates/dns"
 
 logger.info(
     f"Starting nuclei-templates ingest, reading from: [{os.path.join(os.getcwd(), directory_http)}] and [{os.path.join(os.getcwd(), directory_dns)}]"

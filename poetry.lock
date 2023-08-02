@@ -96,6 +96,25 @@ files = [
 ]
 
 [[package]]
+name = "dnspython"
+version = "2.4.1"
+description = "DNS toolkit"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "dnspython-2.4.1-py3-none-any.whl", hash = "sha256:5b7488477388b8c0b70a8ce93b227c5603bc7b77f1565afe8e729c36c51447d7"},
+    {file = "dnspython-2.4.1.tar.gz", hash = "sha256:c33971c79af5be968bb897e95c2448e11a645ee84d93b265ce0b7aabe5dfdca8"},
+]
+
+[package.extras]
+dnssec = ["cryptography (>=2.6,<42.0)"]
+doh = ["h2 (>=4.1.0)", "httpcore (>=0.17.3)", "httpx (>=0.24.1)"]
+doq = ["aioquic (>=0.9.20)"]
+idna = ["idna (>=2.1,<4.0)"]
+trio = ["trio (>=0.14,<0.23)"]
+wmi = ["wmi (>=1.5.1,<2.0.0)"]
+
+[[package]]
 name = "idna"
 version = "3.4"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -226,4 +245,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "f9ac77f2e6bd527c739b68bc1ace69a73b5421e687e89c5a07da9c91095579b5"
+content-hash = "ab62a422f829fa81b511f52c901b74db44d2537cd5affedfb05907c7a832dd1e"
