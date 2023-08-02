@@ -40,7 +40,6 @@ jobs:
       run: |
         set -x
         echo "starting Read Sources run" >> readsources_action.log 
-        echo $GH_TOKEN | gh auth login --with-token
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
