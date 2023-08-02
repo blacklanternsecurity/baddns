@@ -1,4 +1,4 @@
-name: Pull Request Analysis
+name: Signature Test
 
 on:
   pull_request_target:

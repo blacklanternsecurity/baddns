@@ -237,6 +237,7 @@ class DnsReaperSignatureTransformer(Transformer):
             if isinstance(arg, ast.List):
                 self._visit_List(arg)
 
+
 directory = "./dnsReaper/signatures"
 logger.info("readsources init")
 logger.info(f"Starting dnsReaper ingest, reading from: {os.path.join(os.getcwd(), directory)}")
