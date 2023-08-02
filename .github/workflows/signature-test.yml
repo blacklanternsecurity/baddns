@@ -42,7 +42,6 @@ jobs:
           script: |
             const { pull_request: { number: issue_number } } = context;
             const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
-            echo "Attempting to add comment for $issue_number" >> signaturetest.log
             github.issues.createComment({
               issue_number,
               owner: context.repo.owner,
