@@ -1,3 +1,5 @@
+from BadDNS.lib.errors import BadDNSSignatureException
+
 #!/usr/bin/env python3
 import re
 import os
@@ -5,12 +7,20 @@ import ast
 import sys
 import ipaddress
 import yaml
+import logging
 from abc import ABC, abstractmethod
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from lib.signature import BadDNSSignature
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler("readsources.log")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 class Transformer(ABC):
@@ -25,7 +35,14 @@ class Transformer(ABC):
         with open(output_file_path, "w") as f:
             signature_candidate = BadDNSSignature()
             signature_data = self.map_values()
-            signature_candidate.initialize(**signature_data)
+            logger.info(f"Got signature data: [{signature_data}]")
+            try:
+                signature_candidate.initialize(**signature_data)
+            except BadDNSSignatureException as e:
+                logger.info(f"Error encountered validating signature data: [{e}]")
+
+            logger.info(f"Signature data validated. Final signature: [{signature_candidate.output()}]")
+            logger.ingo(f"writing to: [{output_file_path}]")
             yaml.dump(signature_candidate.output(), f)
 
     def _is_ip_address(self, value):
@@ -222,12 +239,12 @@ class DnsReaperSignatureTransformer(Transformer):
                 self._visit_List(arg)
 
 
-# dnsReaper ingest
-
-directory = "./dnsReaper/signatures"
+logger.info("readsources init")
+logger.info(f"Starting dnsReaper ingest, reading from: {os.path.join(os.getcwd(), directory)}")
 
 files = os.listdir(directory)
 for filename in files:
+    logger.info(f"loading dnsReaper signature [{filename}]")
     if not filename.startswith("_") and filename.endswith(".py"):
         dnsReaper_transformer = DnsReaperSignatureTransformer()
         with open(f"{directory}/{filename}") as f:
@@ -235,10 +252,12 @@ for filename in files:
             dnsReaper_transformer.writeSignature("dnsreaper", filename.split(".")[0])
 
 
-# nuclei-templates ingest
-
 directory_http = "./nuclei-templates/http/takeovers"
 directory_dns = "./nuclei-templates/dns"
+
+logger.info(
+    f"Starting nuclei-templates ingest, reading from: [{os.path.join(os.getcwd(), directory_http)}] and [{os.path.join(os.getcwd(), directory_dns)}]"
+)
 
 files_http = os.listdir(directory_http)
 files_dns = os.listdir(directory_dns)
@@ -251,8 +270,10 @@ for filename in files_dns:
 
 for filepath in files:
     if "-takeover" in filepath and filepath.endswith(".yaml"):
-        print(filepath)
+        logger.info(f"loading nuclei-template [{filename}]")
         with open(filepath, "r") as file:
             data = yaml.safe_load(file)
         nucleitemplates_transformer = NucleiTemplatesTransformer()
         nucleitemplates_transformer.writeSignature("nucleitemplates", filename.split(".")[0])
+
+logger.info("readsources complete")

@@ -65,3 +65,10 @@ jobs:
           ${{ steps.getfile.outputs.content }}
           ```
         branch: new-signature-${{ steps.getfile.outputs.filename }}
+
+
+    - name: Upload read-sources log
+    uses: actions/upload-artifact@v2
+    with:
+      name: read-sources-log
+      path: readsources.log
