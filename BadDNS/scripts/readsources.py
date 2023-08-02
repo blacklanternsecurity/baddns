@@ -242,13 +242,14 @@ class DnsReaperSignatureTransformer(Transformer):
                 self._visit_List(arg)
 
 
-# directory = "./dnsReaper/signatures"
-directory = "/home/liquid/dnsReaper/signatures"
+directory = os.path.expanduser("~/dnsReaper/signatures")
 logger.info("readsources init")
 logger.info(f"Starting dnsReaper ingest, reading from: {os.path.join(os.getcwd(), directory)}")
 
 files = os.listdir(directory)
+
 for filename in files:
+    print(filename)
     logger.info(f"loading dnsReaper signature [{filename}]")
     if not filename.startswith("_") and filename.endswith(".py"):
         dnsReaper_transformer = DnsReaperSignatureTransformer()
@@ -257,18 +258,15 @@ for filename in files:
             dnsReaper_transformer.writeSignature("dnsreaper", filename.split(".")[0])
 
 
-# directory_http = "./nuclei-templates/http/takeovers"
-# directory_dns = "./nuclei-templates/dns"
-
-directory_http = "/home/liquid/nuclei-templates/http/takeovers"
-directory_dns = "/home/liquid/nuclei-templates/dns"
+directory_http = os.path.expanduser("~/nuclei-templates/http/takeovers")
+directory_dns = os.path.expanduser("~/nuclei-templates/dns")
 
 logger.info(
     f"Starting nuclei-templates ingest, reading from: [{os.path.join(os.getcwd(), directory_http)}] and [{os.path.join(os.getcwd(), directory_dns)}]"
 )
 
-files_http = os.listdir(directory_http)
-files_dns = os.listdir(directory_dns)
+files_http = os.listdir(os.path.expanduser(directory_http))
+files_dns = os.listdir(os.path.expanduser(directory_dns))
 
 files = []
 for filename in files_http:
