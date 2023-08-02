@@ -45,17 +45,17 @@ jobs:
             content="${content//'%'/'%25'}"
             content="${content//$'\n'/'%0A'}"
             content="${content//$'\r'/'%0D'}"
-
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add $filename
-            git commit -m "Add new signature $(basename $filename)"
-
-            echo "::set-output name=filename::$(basename $filename)"
-            echo "::set-output name=content::$content"
             
-            # Create PR using GitHub Action
-            gh pr create --base main --head new-signature-$(basename $filename) --title "Add new signature $(basename $filename)" --body "This PR adds a new signature:\n\n\`\`\`\n$content\n\`\`\`"
+            pr_exists=$(gh pr list | grep -F "new-signature-$(basename $filename)")
+            if [ -z "$pr_exists" ]; then
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git add $filename
+              git commit -m "Add new signature $(basename $filename)"
+
+              # Create PR using GitHub Action
+              gh pr create --base main --head new-signature-$(basename $filename) --title "Add new signature $(basename $filename)" --body "This PR adds a new signature:\n\n\`\`\`\n$content\n\`\`\`"
+            fi
 
             # Delete processed file
             rm $filename
