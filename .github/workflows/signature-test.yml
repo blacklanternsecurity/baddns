@@ -40,7 +40,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const issue_number = github.context.issue.number;
+            const fs = require('fs');
+            const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+            const issue_number = event.pull_request.number;
             const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
             console.log(`Attempting to add comment for ${issue_number}`);
             github.issues.createComment({
@@ -49,6 +51,7 @@ jobs:
               issue_number: issue_number,
               body: message
             });
+
 
 
 
