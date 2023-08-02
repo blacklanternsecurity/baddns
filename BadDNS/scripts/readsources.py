@@ -224,7 +224,7 @@ class DnsReaperSignatureTransformer(Transformer):
 
 # dnsReaper ingest
 
-directory = './dnsReaper/signatures'
+directory = "./dnsReaper/signatures"
 
 files = os.listdir(directory)
 for filename in files:

@@ -39,6 +39,7 @@ jobs:
 
     - name: Iterate over files and create PRs
       run: |
+        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
         shopt -s nullglob
         for filename in signatures_to_test/*; do
           if [ -f "$filename" ]; then
@@ -52,20 +53,17 @@ jobs:
               if [ -z "$pr_exists" ]; then
                 git config --local user.email "action@github.com"
                 git config --local user.name "GitHub Action"
+                git checkout -b new-signature-$(basename $filename)
                 git add $filename
                 git commit -m "Add new signature $(basename $filename)"
+                git push origin new-signature-$(basename $filename)
 
                 # Create PR using GitHub Action
                 gh pr create --base main --head new-signature-$(basename $filename) --title "Add new signature $(basename $filename)" --body "This PR adds a new signature:\n\n\`\`\`\n$content\n\`\`\`"
               fi
-
-              # Delete processed file
-              rm $filename
 
               # Break the loop after processing one file
               break
             fi
           fi
         done
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
