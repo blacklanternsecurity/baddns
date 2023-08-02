@@ -1,0 +1,12 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - s1.000domains.com
+  - s2.000domains.com
+  - fwns1.000domains.com
+  - fwns2.000domains.com
+matcher_rule: null
+mode: dns_nosoa
+service_name: 000domains.com
+source: dnsreaper
