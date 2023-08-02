@@ -1,0 +1,41 @@
+name: Pull Request Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check for specific string in PR title
+      id: check_string
+      run: |
+        pr_title="${{ github.event.pull_request.title }}"
+        if [[ "$pr_title" == *"new-signature"* ]]; then
+          echo "::set-output name=is_new_signature_pr::true"
+        else
+          echo "::set-output name=is_new_signature_pr::false"
+        fi
+
+    - name: Analyze pull request
+      id: analyze
+      run: |
+        if [[ "${{ steps.check_string.outputs.is_new_signature_pr }}" == "true" ]]; then
+          # This is a placeholder for your analysis script
+          echo "Running analysis..."
+          echo "::set-output name=result::placeholder analysis"
+          # You can run your test script here
+        fi
+
+    - name: Add PR comment
+      uses: actions/github-script@v5
+      if: steps.check_string.outputs.is_new_signature_pr == 'true'
+      with:
+        script: |
+          const { issue: { number: issue_number }, repo: { owner, repo } } = context;
+          const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
+          github.rest.issues.createComment({ issue_number, body: message, owner, repo });
