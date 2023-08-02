@@ -38,6 +38,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        set -x
         echo "starting Read Sources run" >> readsources_action.log 
         echo $GH_TOKEN | gh auth login --with-token
         git config --local user.email "action@github.com"
