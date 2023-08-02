@@ -1,5 +1,3 @@
-from BadDNS.lib.errors import BadDNSSignatureException
-
 #!/usr/bin/env python3
 import re
 import os
@@ -14,6 +12,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from lib.signature import BadDNSSignature
+from lib.errors import BadDNSSignatureException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
