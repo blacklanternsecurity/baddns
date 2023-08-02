@@ -1,0 +1,10 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.hostinger.com
+  - ns2.hostinger.com
+matcher_rule: null
+mode: dns_nosoa
+service_name: hostinger.com
+source: dnsreaper

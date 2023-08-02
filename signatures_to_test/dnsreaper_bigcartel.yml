@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - .bigcartel.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - DNS resolution error
+  matchers-condition: and
+mode: http
+service_name: bigcartel.com
+source: dnsreaper
