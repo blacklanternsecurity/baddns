@@ -16,10 +16,14 @@ jobs:
       run: |
         pr_title="${{ github.event.pull_request.title }}"
         pr_creator="${{ github.event.pull_request.user.login }}"
+        echo "Pull Request title: $pr_title" > signaturetest.log
+        echo "Pull Request creator: $pr_creator" >> signaturetest.log
         if [[ "$pr_title" == *"new-signature"* && "$pr_creator" == "github-actions" ]]; then
           echo "::set-output name=is_new_signature_pr::true"
+          echo "PR $pr_title Qualified" >> signaturetest.log
         else
           echo "::set-output name=is_new_signature_pr::false"
+          echo "PR $pr_title NOT Qualified" >> signaturetest.log
         fi
 
     - name: Analyze pull request
@@ -27,8 +31,8 @@ jobs:
       if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
       run: |
           # This is a placeholder for your analysis script
-          echo "Running analysis..."
-          echo "::set-output name=result::placeholder analysis"
+          echo "Running test against signature..." >> signaturetest.log
+          echo "::set-output name=result::placeholder result" >> signaturetest.log
           # You can run your test script here
 
     - name: Add PR comment
@@ -39,9 +43,16 @@ jobs:
         script: |
           const { pull_request: { number: issue_number } } = context;
           const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
+          echo "Attempting to add comment for $issue_number" >> signaturetest.log
           github.issues.createComment({
             issue_number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: message
           });
+
+    - name: Upload Signature Test Log
+      uses: actions/upload-artifact@v2
+      with:
+        name: signature-test-log
+        path: signaturetest.log
