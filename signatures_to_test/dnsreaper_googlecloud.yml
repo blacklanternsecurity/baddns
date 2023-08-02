@@ -1,0 +1,9 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - googledomains
+matcher_rule: null
+mode: dns_nosoa
+service_name: cloud.google.com
+source: dnsreaper
