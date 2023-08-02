@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - .teamwork.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - <title>Teamwork Projects</title>
+  matchers-condition: and
+mode: http
+service_name: teamwork
+source: dnsreaper

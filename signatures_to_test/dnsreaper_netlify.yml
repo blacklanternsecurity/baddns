@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - .netlify.app
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - 'Not Found - Request ID:'
+  matchers-condition: and
+mode: http
+service_name: Netlify
+source: dnsreaper

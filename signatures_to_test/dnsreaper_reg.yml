@@ -1,0 +1,10 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.reg.ru
+  - ns2.reg.ru
+matcher_rule: null
+mode: dns_nosoa
+service_name: reg.ru
+source: dnsreaper

@@ -1,0 +1,17 @@
+identifiers:
+  cnames:
+  - cname.proxy.webflow.com
+  - cname.proxy-ssl.webflow.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - 404 - Page not found
+  matchers-condition: and
+mode: http
+service_name: webflow.com
+source: dnsreaper

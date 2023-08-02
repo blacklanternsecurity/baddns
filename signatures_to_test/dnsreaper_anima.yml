@@ -1,0 +1,17 @@
+identifiers:
+  cnames:
+  - ns1.animaapp.com
+  ips:
+  - 35.164.217.247
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - "<h1>404 Not Found</h1></center>\r\n<hr><center>nginx</center>"
+  matchers-condition: and
+mode: http
+service_name: anima app
+source: dnsreaper
