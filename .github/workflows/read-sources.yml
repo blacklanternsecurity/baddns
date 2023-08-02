@@ -60,15 +60,15 @@ jobs:
             
             echo "adding commit and pushing branch..." >> readsources_action.log
             # If the commit operation is successful, then push the changes and create a PR
-            git commit -m "Add or update signature $file" && {
+            git commit -m "[SignatureBot] Add or update signature $file" && {
               git push origin new-signature-$file
               echo "Add or update signature $file" > pr_message
               echo "This PR adds or updates a signature:" >> pr_message
               echo "\`\`\`" >> pr_message
               cat "signatures/$file" >> pr_message
               echo "\`\`\`" >> pr_message
-              echo "creating PR: 'Add or update signature $file'" >> readsources_action.log
-              gh pr create --title "Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
+              echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
+              gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
             }
           fi
         done
