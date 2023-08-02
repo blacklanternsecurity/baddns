@@ -242,7 +242,7 @@ class DnsReaperSignatureTransformer(Transformer):
                 self._visit_List(arg)
 
 
-directory = os.path.expanduser("~/work/dnsReaper/signatures")
+directory = os.path.expanduser("./dnsReaper/signatures")
 logger.info("readsources init")
 logger.info(f"Starting dnsReaper ingest, reading from: {os.path.join(os.getcwd(), directory)}")
 
@@ -258,8 +258,8 @@ for filename in files:
             dnsReaper_transformer.writeSignature("dnsreaper", filename.split(".")[0])
 
 
-directory_http = os.path.expanduser("~/work/nuclei-templates/http/takeovers")
-directory_dns = os.path.expanduser("~/work/nuclei-templates/dns")
+directory_http = os.path.expanduser("./nuclei-templates/http/takeovers")
+directory_dns = os.path.expanduser("./nuclei-templates/dns")
 
 logger.info(
     f"Starting nuclei-templates ingest, reading from: [{os.path.join(os.getcwd(), directory_http)}] and [{os.path.join(os.getcwd(), directory_dns)}]"
