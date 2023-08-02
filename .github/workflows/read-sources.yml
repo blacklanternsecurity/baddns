@@ -69,5 +69,3 @@ jobs:
           ```
         branch: new-signature-${{ steps.getfile.outputs.filename }}
 
-    - name: Delete processed file
-      run: rm signatures_to_test/${{ steps.getfile.outputs.filename }}

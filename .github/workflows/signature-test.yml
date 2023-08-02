@@ -36,7 +36,13 @@ jobs:
       uses: actions/github-script@v5
       if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const { issue: { number: issue_number }, repo: { owner, repo } } = context;
+          const { pull_request: { number: issue_number } } = context;
           const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
-          github.rest.issues.createComment({ issue_number, body: message, owner, repo });
+          github.issues.createComment({
+            issue_number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: message
+          });
