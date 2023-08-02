@@ -40,7 +40,7 @@ class Transformer(ABC):
             except BadDNSSignatureException as e:
                 logger.info(f"Error encountered validating signature data: [{e}]")
 
-            logger.info(f"Signature data validated. Final signature: [{signature_candidate.output()}]")
+            logger.info(f"Signature data validated. Final signature: [{yaml.dump(signature_candidate.output())}]")
             logger.info(f"writing to: [{output_file_path}]")
             yaml.dump(signature_candidate.output(), f)
 
