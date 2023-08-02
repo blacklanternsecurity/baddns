@@ -40,12 +40,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { pull_request: { number: issue_number } } = context;
+            const issue_number = github.context.payload.pull_request.number;
             const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
+            console.log(`Attempting to add comment for ${issue_number}`);
             github.issues.createComment({
               issue_number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo,
               body: message
             });
 
