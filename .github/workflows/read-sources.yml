@@ -44,31 +44,44 @@ jobs:
         content="${content//$'\n'/'%0A'}"
         content="${content//$'\r'/'%0D'}"
         echo "::set-output name=filename::$filename"
-        echo "::set-output name=content::$content"
+        echo "::set-output name=content::$content" 2>&1 | tee -a readsources_action.log
     
     - name: Stage and commit file
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add signatures_to_test/${{ steps.getfile.outputs.filename }}
-        git commit -m "Add new signature ${{ steps.getfile.outputs.filename }}"
+        git checkout -b new-signature-${{ steps.getfile.outputs.filename }} 2>&1 | tee -a readsources_action.log
+        git add signatures_to_test/${{ steps.getfile.outputs.filename }} 2>&1 | tee -a readsources_action.log
+        git commit -m "Add new signature ${{ steps.getfile.outputs.filename }}" 2>&1 | tee -a readsources_action.log
+        git push origin new-signature-${{ steps.getfile.outputs.filename }} 2>&1 | tee -a readsources_action.log
     
+    - name: Install GitHub CLI
+      run: |
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+        sudo apt-add-repository https://cli.github.com/packages
+        sudo apt update
+        sudo apt install gh
+
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: Add new signature ${{ steps.getfile.outputs.filename }}
-        title: Add new signature ${{ steps.getfile.outputs.filename }}
-        body: |
-          This PR adds a new signature:
-          ```
-          ${{ steps.getfile.outputs.content }}
-          ```
-        branch: new-signature-${{ steps.getfile.outputs.filename }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo $GH_TOKEN | gh auth login --with-token 2>&1 | tee -a readsources_action.log
+        echo "Add new signature ${{ steps.getfile.outputs.filename }}" > pr_message
+        echo "This PR adds a new signature:" >> pr_message
+        echo "\`\`\`" >> pr_message
+        cat signatures_to_test/${{ steps.getfile.outputs.filename }} >> pr_message
+        echo "\`\`\`" >> pr_message
+        gh pr create --title "Add new signature ${{ steps.getfile.outputs.filename }}" --body-file pr_message --head new-signature-${{ steps.getfile.outputs.filename }} --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
 
-
-    - name: Upload read-sources log
+    - name: Upload readsources.py log
       uses: actions/upload-artifact@v2
       with:
-        name: read-sources-log
+        name: readsources.py-log
         path: readsources.log
+
+    - name: Upload read-sources action log
+      uses: actions/upload-artifact@v2
+      with:
+        name: read-sources-action-log
+        path: readsources_action.log
