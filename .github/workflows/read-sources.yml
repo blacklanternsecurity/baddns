@@ -52,19 +52,24 @@ jobs:
               
               pr_exists=$(gh pr list | grep -F "new-signature-$(basename $filename)")
               if [ -z "$pr_exists" ]; then
+                echo "Configuring git user"
                 git config --local user.email "action@github.com"
                 git config --local user.name "GitHub Action"
-                git checkout -b new-signature-$(basename $filename)
+                
+                echo "Adding file to git: $filename"
                 git add $filename
+                
+                echo "Committing file"
                 git commit -m "Add new signature $(basename $filename)"
-                git push origin new-signature-$(basename $filename)
-
-                # Create PR using GitHub Action
+  
+                echo "Creating PR"
                 gh pr create --base main --head new-signature-$(basename $filename) --title "Add new signature $(basename $filename)" --body "This PR adds a new signature:\n\n\`\`\`\n$content\n\`\`\`"
               fi
-
+  
               # Break the loop after processing one file
               break
             fi
           fi
         done
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
