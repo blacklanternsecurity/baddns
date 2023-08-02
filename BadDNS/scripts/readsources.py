@@ -224,8 +224,7 @@ class DnsReaperSignatureTransformer(Transformer):
 
 # dnsReaper ingest
 
-# directory = './dnsReaper/signatures'
-directory = "/home/liquid/dnsReaper/signatures"
+directory = './dnsReaper/signatures'
 
 files = os.listdir(directory)
 for filename in files:
@@ -238,11 +237,8 @@ for filename in files:
 
 # nuclei-templates ingest
 
-# directory_http = "./nuclei-templates/http/takeovers"
-# directory_dns = "./nuclei-templates/dns"
-
-directory_http = "/home/liquid/nuclei-templates/http/takeovers"
-directory_dns = "/home/liquid/nuclei-templates/dns"
+directory_http = "./nuclei-templates/http/takeovers"
+directory_dns = "./nuclei-templates/dns"
 
 files_http = os.listdir(directory_http)
 files_dns = os.listdir(directory_dns)
