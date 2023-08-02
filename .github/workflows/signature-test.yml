@@ -33,7 +33,7 @@ jobs:
         fi
 
     - name: Add PR comment
-      uses: actions/github-script@v5
+      uses: actions/github-script@v3
       if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}

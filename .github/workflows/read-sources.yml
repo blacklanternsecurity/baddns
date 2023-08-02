@@ -68,4 +68,3 @@ jobs:
           ${{ steps.getfile.outputs.content }}
           ```
         branch: new-signature-${{ steps.getfile.outputs.filename }}
-
