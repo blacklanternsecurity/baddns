@@ -39,36 +39,29 @@ jobs:
 
     - name: Iterate over files and create PRs
       run: |
-        set -x
-        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        shopt -s nullglob
         for filename in signatures_to_test/*; do
-          if [ -f "$filename" ]; then
-            if [ ! -f "signatures/$(basename $filename)" ] || [ "$(cat "signatures/$(basename $filename)")" != "$(cat $filename)" ]; then
-              content=$(cat $filename)
-              content="${content//'%'/'%25'}"
-              content="${content//$'\n'/'%0A'}"
-              content="${content//$'\r'/'%0D'}"
-              
-              pr_exists=$(gh pr list | grep -F "new-signature-$(basename $filename)")
-              if [ -z "$pr_exists" ]; then
-                echo "Configuring git user"
-                git config --local user.email "action@github.com"
-                git config --local user.name "GitHub Action"
-                
-                echo "Adding file to git: $filename"
-                git add $filename
-                
-                echo "Committing file"
-                git commit -m "Add new signature $(basename $filename)"
-  
-                echo "Creating PR"
-                gh pr create --base main --head new-signature-$(basename $filename) --title "Add new signature $(basename $filename)" --body "This PR adds a new signature:\n\n\`\`\`\n$content\n\`\`\`"
-              fi
-  
-              # Break the loop after processing one file
-              break
+          if [ ! -f "signatures/$(basename $filename)" ] || [ "$(cat "signatures/$(basename $filename)")" != "$(cat $filename)" ]; then
+            content=$(cat $filename)
+            content="${content//'%'/'%25'}"
+            content="${content//$'\n'/'%0A'}"
+            content="${content//$'\r'/'%0D'}"
+            
+            pr_exists=$(gh pr list | grep -F "new-signature-$(basename $filename)")
+            if [ -z "$pr_exists" ]; then
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git add $filename
+              git commit -m "Add new signature $(basename $filename)"
+
+              # Create PR using GitHub Action
+              gh pr create --base main --head new-signature-$(basename $filename) --title "Add new signature $(basename $filename)" --body "This PR adds a new signature:\n\n\`\`\`\n$content\n\`\`\`"
             fi
+
+            # Delete processed file
+            rm $filename
+
+            # Break the loop after processing one file
+            break
           fi
         done
       env:
