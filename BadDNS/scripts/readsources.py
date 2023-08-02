@@ -41,7 +41,7 @@ class Transformer(ABC):
                 logger.info(f"Error encountered validating signature data: [{e}]")
 
             logger.info(f"Signature data validated. Final signature: [{signature_candidate.output()}]")
-            logger.ingo(f"writing to: [{output_file_path}]")
+            logger.info(f"writing to: [{output_file_path}]")
             yaml.dump(signature_candidate.output(), f)
 
     def _is_ip_address(self, value):
