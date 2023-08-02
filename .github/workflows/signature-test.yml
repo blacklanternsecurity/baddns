@@ -11,11 +11,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Check for specific string in PR title
-      id: check_string
+    - name: Check for specific string in PR title and creator
+      id: check_conditions
       run: |
         pr_title="${{ github.event.pull_request.title }}"
-        if [[ "$pr_title" == *"new-signature"* ]]; then
+        pr_creator="${{ github.event.pull_request.user.login }}"
+        if [[ "$pr_title" == *"new-signature"* && "$pr_creator" == "github-actions" ]]; then
           echo "::set-output name=is_new_signature_pr::true"
         else
           echo "::set-output name=is_new_signature_pr::false"
@@ -24,7 +25,7 @@ jobs:
     - name: Analyze pull request
       id: analyze
       run: |
-        if [[ "${{ steps.check_string.outputs.is_new_signature_pr }}" == "true" ]]; then
+        if [[ "${{ steps.check_conditions.outputs.is_new_signature_pr }}" == "true" ]]; then
           # This is a placeholder for your analysis script
           echo "Running analysis..."
           echo "::set-output name=result::placeholder analysis"
@@ -33,7 +34,7 @@ jobs:
 
     - name: Add PR comment
       uses: actions/github-script@v5
-      if: steps.check_string.outputs.is_new_signature_pr == 'true'
+      if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
       with:
         script: |
           const { issue: { number: issue_number }, repo: { owner, repo } } = context;
