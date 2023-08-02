@@ -18,9 +18,6 @@ jobs:
         pip install poetry
         poetry install
 
-    - name: Checkout (self)
-      uses: actions/checkout@v3
-
     - name: Checkout remote repository (dnsReaper)
       uses: actions/checkout@v3
       with:
