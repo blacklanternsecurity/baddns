@@ -39,6 +39,7 @@ jobs:
 
     - name: Iterate over files and create PRs
       run: |
+        set -x
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
         shopt -s nullglob
         for filename in signatures_to_test/*; do
