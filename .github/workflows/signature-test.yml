@@ -35,7 +35,7 @@ jobs:
             # You can run your test script here
 
       - name: Add PR comment
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,14 +45,12 @@ jobs:
             const issue_number = event.pull_request.number;
             const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
             console.log(`Attempting to add comment for ${issue_number}`);
-            github.issues.createComment({
+            github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue_number,
               body: message
             });
-
-
 
 
       - name: Upload Signature Test Log
