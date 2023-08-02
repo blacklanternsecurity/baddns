@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - .aha.io
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Unable to load ideas portal
+  matchers-condition: and
+mode: http
+service_name: aha.io
+source: dnsreaper

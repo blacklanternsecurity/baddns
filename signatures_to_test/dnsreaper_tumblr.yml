@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - .tumblr.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - There's nothing here.
+  matchers-condition: and
+mode: http
+service_name: tumblr.com
+source: dnsreaper

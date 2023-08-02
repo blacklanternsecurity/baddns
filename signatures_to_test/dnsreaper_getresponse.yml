@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - .gr8.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - is no longer available
+  matchers-condition: and
+mode: http
+service_name: getresponse
+source: dnsreaper
