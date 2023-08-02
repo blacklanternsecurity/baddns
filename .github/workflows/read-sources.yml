@@ -68,7 +68,7 @@ jobs:
 
 
     - name: Upload read-sources log
-    uses: actions/upload-artifact@v2
-    with:
-      name: read-sources-log
-      path: readsources.log
+      uses: actions/upload-artifact@v2
+      with:
+        name: read-sources-log
+        path: readsources.log
