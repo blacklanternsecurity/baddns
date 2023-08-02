@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - cname.frontify.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - 404 - Not Found - Frontify
+  matchers-condition: and
+mode: http
+service_name: frontify.com
+source: dnsreaper

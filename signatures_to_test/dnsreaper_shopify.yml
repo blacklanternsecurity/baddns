@@ -1,0 +1,17 @@
+identifiers:
+  cnames:
+  - shops.myshopify.com
+  ips:
+  - 23.227.38.65
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Only one step left!
+  matchers-condition: and
+mode: http
+service_name: Shopify
+source: dnsreaper
