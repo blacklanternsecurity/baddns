@@ -40,15 +40,16 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const issue_number = github.context.payload.pull_request.number;
+            const issue_number = github.event.number;
             const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
             console.log(`Attempting to add comment for ${issue_number}`);
             github.issues.createComment({
-              issue_number,
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
               body: message
             });
+
 
       - name: Upload Signature Test Log
         uses: actions/upload-artifact@v2
