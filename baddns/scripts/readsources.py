@@ -106,13 +106,15 @@ class NucleiTemplatesTransformer(Transformer):
                         for word in matcher.get("words", []):
                             if word != "NXDOMAIN":
                                 if self._is_ip_address(word):
-                                    values["identifiers"]["ips"].append(word)
+                                    values["identifiers"]["ips"].append({"type": "word", "value": word})
                                 else:
-                                    values["identifiers"]["cnames"].append(word)
+                                    values["identifiers"]["cnames"].append({"type": "word", "value": word})
                     elif matcher["type"] == "regex":
                         for regex_str in matcher.get("regex", []):
-                            regex = re.compile(regex_str)
-                            values["identifiers"]["cnames"].append(regex)
+                            regex = regex_str
+                            values["identifiers"]["cnames"].append(
+                                {"type": "regex", "value": regex_str.replace("CNAME\t", "")}
+                            )
         return values
 
 
@@ -151,11 +153,20 @@ class DnsReaperSignatureTransformer(Transformer):
                 values.setdefault("matcher_rule", {"matchers-condition": "and", "matchers": []})["matchers"].append(
                     {"type": "status", "status": int(value)}
                 )
-
-            elif key in ["ips", "cnames", "nameservers"]:
-                identifiers[key] = [
-                    v.lstrip("cname").lstrip(".") for v in (value if isinstance(value, list) else [value])
-                ]
+            elif key == "cnames":
+                if isinstance(value, list):
+                    identifiers[key] = [
+                        v["value"].lstrip("cname").lstrip(".") if isinstance(v, dict) and v["type"] == "word" else v
+                        for v in value
+                    ]
+                else:  # when it's not a list but a single dict
+                    identifiers[key] = [
+                        value["value"].lstrip("cname").lstrip(".")
+                        if isinstance(value, dict) and value["type"] == "word"
+                        else value
+                    ]
+            elif key in ["ips", "nameservers"]:
+                identifiers[key] = value
 
             elif key == "use_case":
                 values["mode"] = self.use_case_to_mode_mapping.get(value, value)
@@ -213,11 +224,13 @@ class DnsReaperSignatureTransformer(Transformer):
         for kw in call.keywords:
             if kw.arg == "cname":
                 if isinstance(kw.value, ast.Str):
-                    self.data["cnames"] = [kw.value.s]
+                    self.data["cnames"] = [{"type": "word", "value": kw.value.s}]
                 elif isinstance(kw.value, ast.List):
-                    self.data["cnames"] = [elt.s for elt in kw.value.elts]
+                    self.data["cnames"] = [{"type": "word", "value": elt.s} for elt in kw.value.elts]
                 elif isinstance(kw.value, ast.Name):
-                    self.data["cnames"] = self.variables.get(kw.value.id, [])
+                    self.data["cnames"] = [
+                        {"type": "word", "value": val} for val in self.variables.get(kw.value.id, [])
+                    ]
 
         if call.args:  # Check for positional arguments
             for arg in call.args:
@@ -242,14 +255,13 @@ class DnsReaperSignatureTransformer(Transformer):
                 self._visit_List(arg)
 
 
-directory = os.path.expanduser("./dnsReaper/signatures")
+directory = "./dnsReaper/signatures"
 logger.info("readsources init")
 logger.info(f"Starting dnsReaper ingest, reading from: {os.path.join(os.getcwd(), directory)}")
 
 files = os.listdir(directory)
 
 for filename in files:
-    print(filename)
     logger.info(f"loading dnsReaper signature [{filename}]")
     if not filename.startswith("_") and filename.endswith(".py"):
         dnsReaper_transformer = DnsReaperSignatureTransformer()
@@ -258,8 +270,8 @@ for filename in files:
             dnsReaper_transformer.writeSignature("dnsreaper", filename.split(".")[0])
 
 
-directory_http = os.path.expanduser("./nuclei-templates/http/takeovers")
-directory_dns = os.path.expanduser("./nuclei-templates/dns")
+directory_http = "./nuclei-templates/http/takeovers"
+directory_dns = "./nuclei-templates/dns"
 
 logger.info(
     f"Starting nuclei-templates ingest, reading from: [{os.path.join(os.getcwd(), directory_http)}] and [{os.path.join(os.getcwd(), directory_dns)}]"
@@ -280,6 +292,6 @@ for filepath in files:
         with open(filepath, "r") as file:
             data = yaml.safe_load(file)
         nucleitemplates_transformer = NucleiTemplatesTransformer()
-        nucleitemplates_transformer.writeSignature("nucleitemplates", filename.split(".")[0])
+        nucleitemplates_transformer.writeSignature("nucleitemplates", filepath.split("/")[-1].split(".")[0])
 
 logger.info("readsources complete")
