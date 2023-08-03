@@ -69,6 +69,7 @@ jobs:
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
               gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
             }
+            git checkout main
           fi
         done
         echo "completed read sources" >> readsources_action.log
