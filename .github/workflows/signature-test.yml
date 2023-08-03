@@ -92,7 +92,7 @@ jobs:
           fi
 
           if [[ "$signature_pass" == "false" ]]; then
-              comment+="\n\nError: $error"
+              comment=$comment"\n\nError: **$error**"
           fi
           echo "Attempting to add comment to PR..." >> signaturetest.log
           gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
