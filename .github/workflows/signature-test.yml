@@ -73,7 +73,7 @@ jobs:
 
           comment="**Test results**:
 
-          Signature Pass: $signature_pass $emoji"
+          Signature Pass: **$signature_pass** $emoji"
 
           if [[ "$match_table" != "{}" ]]; then
               comment+="\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |"
