@@ -1,0 +1,25 @@
+name: Check for 'tests-failed' label
+
+on:
+  pull_request_target:
+    types:
+      - labeled
+      - unlabeled
+      - review_requested
+
+jobs:
+  check-label:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Fail if 'tests-failed' label is present
+      id: check_label
+      run: |
+        PR_NUMBER=${{ github.event.pull_request.number }}
+        LABELS=$(gh pr view $PR_NUMBER --json labels --jq '[.labels[].name] | join(",")')
+        if [[ $LABELS == *"tests-failed"* ]]; then
+          echo "Cannot merge PR with 'tests-failed' label."
+          exit 1
+        fi
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
