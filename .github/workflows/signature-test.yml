@@ -34,7 +34,7 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           FILE=$(gh pr diff $PR_NUMBER --name-only)
           echo "Running signature test against: $FILE" >> signaturetest.log
-          OUTPUT=$(python ./scripts/signaturetest.py $FILE)
+          OUTPUT=$(poetry run python3 BadDNS/scripts/signaturetest.py $FILE)
           echo "$OUTPUT" > output.json
           echo "::set-output name=result::$OUTPUT"
           SIGNATURE_PASS=$(echo "$OUTPUT" | jq -r '.signature_pass')
