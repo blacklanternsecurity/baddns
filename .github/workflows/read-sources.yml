@@ -38,14 +38,13 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        set -x
         echo "starting Read Sources run" >> readsources_action.log 
         echo $GH_TOKEN | gh auth login --with-token 2>&1 | tee -a readsources_action.log
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
         # Get only the first file in the signatures_to_test directory
-        files=$(ls signatures_to_test | head -n 1)
+        files=$(ls signatures_to_test | head -n 3)
 
         for file in $files; do
           echo "parsing signature file: $file" >> readsources_action.log
