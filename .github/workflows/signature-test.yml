@@ -65,14 +65,21 @@ jobs:
           match_table=$(echo $output | jq -r '.match_table')
           error=$(echo $output | jq -r '.error')
 
-          comment="Signature test results: 
+          comment="Signature test results:
 
-          Signature Pass: $signature_pass
-          Match Table: $(echo "$match_table" | jq -r 'to_entries|map("\(.key):\(.value|tostring)")|.[]')
-          "
+          Signature Pass: $signature_pass"
+
+          if [[ "$match_table" != "{}" ]]; then
+              comment+="\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |"
+              for row in $(echo "$match_table" | jq -r 'to_entries|map("\(.key) \(.value|tostring)")|.[]'); do
+                  domain=$(echo $row | cut -d' ' -f1)
+                  match=$(echo $row | cut -d' ' -f2)
+                  comment+="\n| $domain | $match |"
+              done
+          fi
 
           if [[ "$signature_pass" == "false" ]]; then
-              comment+="Error: $error"
+              comment+="\n\nError: $error"
           fi
           echo "Attempting to add comment to PR..." >> signaturetest.log
           gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
