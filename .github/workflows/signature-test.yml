@@ -65,9 +65,15 @@ jobs:
           match_table=$(echo $output | jq -r '.match_table')
           error=$(echo $output | jq -r '.error')
 
-          comment="Signature test results:
+          if [[ "$signature_pass" == "true" ]]; then
+            emoji=":heavy_check_mark:"
+          else
+            emoji=":x:"
+          fi
 
-          Signature Pass: $signature_pass"
+          comment="**Test results**:
+
+          Signature Pass: $signature_pass $emoji"
 
           if [[ "$match_table" != "{}" ]]; then
               comment+="\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |"
