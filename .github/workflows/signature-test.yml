@@ -25,32 +25,41 @@ jobs:
             echo "PR $pr_title NOT Qualified" >> signaturetest.log
           fi
 
-      - name: Analyze Signature
-        id: analyze
+      - name: Run signature test
         if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
+        id: signature_test
         run: |
-            # This is a placeholder for your analysis script
-            echo "Running test against signature..." >> signaturetest.log
-            echo "::set-output name=result::placeholder result" >> signaturetest.log
-            # You can run your test script here
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          FILE=$(gh pr diff $PR_NUMBER --name-only)
+          echo "Running signature test against: $FILE" >> signaturetest.log
+          OUTPUT=$(python ./scripts/signaturetest.py $FILE)
+          echo "$OUTPUT" > output.json
+          echo "::set-output name=result::$OUTPUT"
+          SIGNATURE_PASS=$(echo "$OUTPUT" | jq -r '.signature_pass')
+          if [ "$SIGNATURE_PASS" != "true" ]
+          then
+            echo "Signature test failed for file $FILE"
+            exit 1
+          fi
+        shell: bash
 
-      - name: Add PR comment
-        uses: actions/github-script@v6
-        if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-            const issue_number = event.pull_request.number;
-            const message = `The analysis completed with the following results: \n\n${{ steps.analyze.outputs.result }}`;
-            console.log(`Attempting to add comment for ${issue_number}`);
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number,
-              body: message
-            });
+      - name: Post result comment
+        if: always() && steps.check_conditions.outputs.is_new_signature_pr == 'true'
+        run: |
+
+          output=$(cat output.json)
+          signature_pass=$(echo $output | jq -r '.signature_pass')
+          match_table=$(echo $output | jq -r '.match_table')
+          error=$(echo $output | jq -r '.error')
+
+          comment="Signature test results: \n\`\`\`\n Signature Pass: $signature_pass\n Match Table: $match_table\n\`\`\`"
+          if [ $signature_pass == "false" ]; then
+            comment+="\n Error: $error"
+          fi
+          echo "Attempting to add comment to PR..." >> signaturetest.log
+          gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
       - name: Upload Signature Test Log
