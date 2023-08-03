@@ -24,6 +24,8 @@ jobs:
             echo "::set-output name=is_new_signature_pr::false"
             echo "PR $pr_title NOT Qualified" >> signaturetest.log
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run signature test
         if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
@@ -41,7 +43,8 @@ jobs:
             echo "Signature test failed for file $FILE"
             exit 1
           fi
-        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post result comment
         if: always() && steps.check_conditions.outputs.is_new_signature_pr == 'true'
