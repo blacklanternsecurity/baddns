@@ -46,6 +46,7 @@ jobs:
           echo "Running signature test against: $FILE" >> signaturetest.log
           OUTPUT=$(poetry run python3 BadDNS/scripts/signaturetest.py $FILE)
           echo "$OUTPUT" > output.json
+          echo "Run finished with this output: $OUTPUT" >> signaturetest.log
           echo "::set-output name=result::$OUTPUT"
           SIGNATURE_PASS=$(echo "$OUTPUT" | jq -r '.signature_pass')
           if [ "$SIGNATURE_PASS" != "true" ]
@@ -65,9 +66,14 @@ jobs:
           match_table=$(echo $output | jq -r '.match_table')
           error=$(echo $output | jq -r '.error')
 
-          comment="Signature test results: \n\`\`\`\n Signature Pass: $signature_pass\n Match Table: $match_table\n\`\`\`"
-          if [ $signature_pass == "false" ]; then
-            comment+="\n Error: $error"
+          comment="Signature test results: 
+
+          Signature Pass: $signatureTestPassed
+          Match Table: $(echo "$matchTable" | jq -r 'to_entries|map("\(.key):\(.value|tostring)")|.[]')
+          "
+
+          if [[ "$signatureTestPassed" == "false" ]]; then
+              comment+="Error: $error"
           fi
           echo "Attempting to add comment to PR..." >> signaturetest.log
           gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
