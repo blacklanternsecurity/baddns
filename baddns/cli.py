@@ -3,6 +3,7 @@
 # Black Lantern Security - https://www.blacklanternsecurity.com
 # @paulmmueller
 
+import re
 import os
 import asyncio
 import argparse
@@ -38,6 +39,14 @@ def print_status(msg, passthru=False, color=Fore.WHITE):
             print(msg)
 
 
+def validate_target(
+    arg_value, pattern=re.compile(r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$")
+):
+    if not pattern.match(arg_value):
+        raise argparse.ArgumentTypeError(print_status("Target subdomain is not correctly formatted", color=Fore.RED))
+    return arg_value
+
+
 async def _main():
     global colorenabled
     colorenabled = False
@@ -64,13 +73,22 @@ async def _main():
         print(ascii_art_banner)
     print_version()
 
-    parser.add_argument("target", nargs="*", type=str, help="subdomain to analyze")
+    parser.add_argument("target", type=validate_target, help="subdomain to analyze")
 
     args = parser.parse_args(unknown_args)
-    print("let there be baddns")
+
+    if not args.target:
+        parser.error(
+            print_status(
+                "A valid target (subdomain) is required",
+                color=Fore.RED,
+            )
+        )
+        return
 
     baddns = BadDNS(args.target)
-    baddns.check()
+    await baddns.dispatchConnections()
+    baddns.analyze()
 
 
 def main():

@@ -1,8 +1,49 @@
 import os
 import yaml
+import httpx
+import dns.asyncresolver
 
 from .signature import BadDNSSignature
 from .errors import BadDNSSignatureException
+
+
+class DNSManager:
+    dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]
+
+    def __init__(self, target):
+        self.target = target
+        self.answers = {key: None for key in self.dns_record_types}
+
+    async def dispatchDNS(self):
+        resolver = dns.asyncresolver.Resolver()
+        for rdatatype in self.dns_record_types:
+            try:
+                self.answers[rdatatype] = await resolver.resolve(self.target, rdatatype)
+            except dns.resolver.NoAnswer:
+                pass
+        print(self.answers)
+
+
+class HttpManager:
+    def __init__(self, target):
+        self.target = target
+        self.http_allowredirects_results = None
+        self.http_denyredirects_results = None
+        self.https_allowredirects_results = None
+        self.https_denyredirects_results = None
+        self.http_allowredirects = httpx.AsyncClient(follow_redirects=True, timeout=5)
+        self.http_denyredirects = httpx.AsyncClient(follow_redirects=False, timeout=5)
+        self.https_allowredirects = httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False)
+        self.https_denyredirects = httpx.AsyncClient(follow_redirects=False, timeout=5, verify=False)
+
+    async def dispatchHttp(self):
+        try:
+            self.http_allowredirects_results = await self.http_allowredirects.get(f"http://{self.target}/")
+            self.http_denyredirects_results = await self.http_allowredirects.get(f"http://{self.target}/")
+            self.https_allowredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
+            self.https_denyredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
+        except httpx.RequestError as exc:
+            print(f"An error occurred while requesting {exc.request.url!r}: {exc}")
 
 
 class BadDNS:
@@ -10,9 +51,10 @@ class BadDNS:
         self.target = target
         self.signatures = []
         self.load_signatures()
+        self.httpmanager = HttpManager(self.target)
+        self.dnsmanager = DNSManager(self.target)
 
     def load_signatures(self):
-        print("in load signatures")
         dir_path = os.path.dirname(os.path.realpath(__file__))
         signatures_dir = os.path.join(dir_path, "../../signatures")
 
@@ -29,12 +71,16 @@ class BadDNS:
                 except BadDNSSignatureException as e:
                     print(f"Error loading signature from {filename}: {e}")
 
-    def build_http_request(self):
-        pass
+    async def dispatchConnections(self):
+        await self.httpmanager.dispatchHttp()
+        await self.dnsmanager.dispatchDNS()
 
-    def build_dns_request(self):
-        pass
+    def analyze(self):
+        print(self.httpmanager.http_allowredirects_results)
+        print(self.httpmanager.http_denyredirects_results)
+        print(self.httpmanager.https_allowredirects_results)
+        print(self.httpmanager.https_denyredirects_results)
 
-    def check(self):
-        for sig in self.signatures:
-            print(sig)
+
+#       for sig in self.signatures:
+#          print(sig)
