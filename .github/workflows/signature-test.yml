@@ -60,7 +60,6 @@ jobs:
       - name: Post result comment
         if: always() && steps.check_conditions.outputs.is_new_signature_pr == 'true'
         run: |
-
           output=$(cat output.json)
           signature_pass=$(echo $output | jq -r '.signature_pass')
           match_table=$(echo $output | jq -r '.match_table')
@@ -68,11 +67,11 @@ jobs:
 
           comment="Signature test results: 
 
-          Signature Pass: $signatureTestPassed
-          Match Table: $(echo "$matchTable" | jq -r 'to_entries|map("\(.key):\(.value|tostring)")|.[]')
+          Signature Pass: $signature_pass
+          Match Table: $(echo "$match_table" | jq -r 'to_entries|map("\(.key):\(.value|tostring)")|.[]')
           "
 
-          if [[ "$signatureTestPassed" == "false" ]]; then
+          if [[ "$signature_pass" == "false" ]]; then
               comment+="Error: $error"
           fi
           echo "Attempting to add comment to PR..." >> signaturetest.log
