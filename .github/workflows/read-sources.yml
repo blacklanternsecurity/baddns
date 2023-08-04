@@ -42,16 +42,33 @@ jobs:
         echo $GH_TOKEN | gh auth login --with-token 2>&1 | tee -a readsources_action.log
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+
+        # Check for existence of previous hashes file and read its content
+        if [[ -f "signatures/signature_history.txt" ]]; then
+          prev_hashes=$(cat signatures/signature_history.txt)
+        fi
         
         # Get only the first file in the signatures_to_test directory
         files=$(ls signatures_to_test | head -n 3)
 
         for file in $files; do
+
+          prev_hashes+="$new_hash\n"
           echo "parsing signature file: $file" >> readsources_action.log
           
           # Check if the file exists in the signatures directory and if it has been changed
           if [[ ! -f "signatures/$file" ]] || ! cmp -s "signatures/$file" "signatures_to_test/$file"; then
+
+            # Calculate hash of the new file and check if we've seen it before
+            new_hash=$(sha256sum "signatures_to_test/$file" | cut -d ' ' -f 1)
+            if [[ $prev_hashes == *"$new_hash"* ]]; then
+              echo "File $file has been seen before, skipping" >> readsources_action.log
+              continue
+            fi
+
+            # Copy the file to the signatures directory and calculate the new hash
             cp "signatures_to_test/$file" "signatures/$file"
+
             
             echo "checking out new branch new-signature-$file" >> readsources_action.log
             git checkout -b new-signature-$file
@@ -75,6 +92,18 @@ jobs:
         echo "completed read sources" >> readsources_action.log
 
 
+    - name: Commit and push hash file
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo $GH_TOKEN | gh auth login --with-token
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add signatures/signature_history.txt
+        git commit -m "Update signature history"
+        git push origin main
+
+
     - name: Upload readsources.py log
       uses: actions/upload-artifact@v2
       if: always()
@@ -88,3 +117,4 @@ jobs:
       with:
         name: read-sources-action-log
         path: readsources_action.log
+
