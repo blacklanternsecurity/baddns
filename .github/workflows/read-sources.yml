@@ -93,6 +93,8 @@ jobs:
               gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
             }
             git checkout main
+          else
+            echo "Skipping signature file: $file - no changes detected" >> readsources_action.log
           fi
         done
         echo "completed read sources" >> readsources_action.log
