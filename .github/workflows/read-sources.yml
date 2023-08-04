@@ -93,7 +93,7 @@ jobs:
             git checkout main
           fi
         done
-        echo -e "$prev_hashes" > "signatures/signature_history.txt"
+        echo -e "$prev_hashes # $file" > "signatures/signature_history.txt"
         echo "completed read sources" >> readsources_action.log
 
     - name: Upload readsources.py log
