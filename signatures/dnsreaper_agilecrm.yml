@@ -1,0 +1,16 @@
+identifiers:
+  cnames:
+  - agilecrm.com
+  ips: []
+  nameservers: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - No landing page found.
+  matchers-condition: and
+mode: http
+service_name: agilecrm.com
+source: dnsreaper
