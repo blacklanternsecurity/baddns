@@ -42,7 +42,7 @@ jobs:
         id: signature_test
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          FILE=$(gh pr diff $PR_NUMBER --name-only)
+          FILE=$(gh pr diff $PR_NUMBER --name-only | grep -v "signature_history.txt")
           echo "Running signature test against: $FILE" >> signaturetest.log
           OUTPUT=$(poetry run python3 baddns/scripts/signaturetest.py $FILE)
           echo "$OUTPUT" > output.json
