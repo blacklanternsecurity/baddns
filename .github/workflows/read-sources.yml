@@ -65,6 +65,7 @@ jobs:
 
 
             # Add the new hash to the history file
+            echo "adding hash $new_hash to signature file" >> readsources_action.log
             echo -e $new_hash #$file > "signatures/signature_history.txt"
 
             # Copy the file to the signatures directory
@@ -76,6 +77,8 @@ jobs:
             git add "signatures/$file"
             git add "signatures/signature_history.txt"
 
+            echo "about to commit with the following files changed:" >> readsources_action.log
+            git status -s >> readsources_action.log
         
             echo "adding commit and pushing branch..." >> readsources_action.log
             # If the commit operation is successful, then push the changes and create a PR
