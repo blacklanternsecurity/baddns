@@ -32,7 +32,7 @@ jobs:
 
     - name: Read Sources
       run: |
-        poetry run python3 BadDNS/scripts/readsources.py
+        poetry run python3 baddns/scripts/readsources.py
 
     - name: Stage, commit, and create PR for changed files
       env:
