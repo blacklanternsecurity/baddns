@@ -10,3 +10,4 @@ matcher_rule: null
 mode: dns_nosoa
 service_name: 000domains.com
 source: dnsreaper
+hi: test
