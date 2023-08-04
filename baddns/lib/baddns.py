@@ -1,8 +1,10 @@
 import os
+import ssl
 import yaml
 import httpx
 import dns.asyncresolver
 
+from .matcher import Matcher
 from .signature import BadDNSSignature
 from .errors import BadDNSSignatureException
 
@@ -13,6 +15,7 @@ class DNSManager:
     def __init__(self, target):
         self.target = target
         self.answers = {key: None for key in self.dns_record_types}
+        self.answers.update({"NoAnswer": False, "NXDOMAIN": False})
 
     async def dispatchDNS(self):
         resolver = dns.asyncresolver.Resolver()
@@ -20,8 +23,9 @@ class DNSManager:
             try:
                 self.answers[rdatatype] = await resolver.resolve(self.target, rdatatype)
             except dns.resolver.NoAnswer:
-                pass
-        print(self.answers)
+                self.answers["NoAnswer"] = True
+            except dns.resolver.NXDOMAIN:
+                self.answers["NXDOMAIN"] = True
 
 
 class HttpManager:
@@ -42,17 +46,19 @@ class HttpManager:
             self.http_denyredirects_results = await self.http_allowredirects.get(f"http://{self.target}/")
             self.https_allowredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
             self.https_denyredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
-        except httpx.RequestError as exc:
-            print(f"An error occurred while requesting {exc.request.url!r}: {exc}")
+        except httpx.RequestError as e:
+            print(f"An error occurred while requesting {exc.request.url!r}: {e}")
+        except httpx.ConnectError as e:
+            print(f"Http Connect Error {exc.request.url!r}: {e}")
+        except ssl.SSLError as e:
+            print(f"SSL Error: {e}")
 
 
-class BadDNS:
+class BadDNS_base:
     def __init__(self, target):
         self.target = target
         self.signatures = []
         self.load_signatures()
-        self.httpmanager = HttpManager(self.target)
-        self.dnsmanager = DNSManager(self.target)
 
     def load_signatures(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -71,16 +77,53 @@ class BadDNS:
                 except BadDNSSignatureException as e:
                     print(f"Error loading signature from {filename}: {e}")
 
-    async def dispatchConnections(self):
-        await self.httpmanager.dispatchHttp()
-        await self.dnsmanager.dispatchDNS()
+
+class BadDNS_cname(BadDNS_base):
+    def __init__(self, target):
+        super().__init__(target)
+        self.found_cname = None
+        self.target_dnsmanager = DNSManager(target)
+
+    async def dispatch(self):
+        await self.target_dnsmanager.dispatchDNS()
+
+        if self.target_dnsmanager.answers["CNAME"]:
+            self.found_cname = self.target_dnsmanager.answers["CNAME"][0].to_text().rstrip(".")
+            print(f"found_cname: {self.found_cname}")
+        else:
+            print("didnt find cname, exiting")
+            return False
+
+        self.cname_dnsmanager = DNSManager(self.found_cname)
+        self.cname_httpmanager = HttpManager(self.found_cname)
+
+        await self.cname_dnsmanager.dispatchDNS()
+        await self.cname_httpmanager.dispatchHttp()
+        return True
 
     def analyze(self):
-        print(self.httpmanager.http_allowredirects_results)
-        print(self.httpmanager.http_denyredirects_results)
-        print(self.httpmanager.https_allowredirects_results)
-        print(self.httpmanager.https_denyredirects_results)
+        http_results = [
+            self.cname_httpmanager.http_allowredirects_results,
+            self.cname_httpmanager.http_denyredirects_results,
+            self.cname_httpmanager.https_allowredirects_results,
+            self.cname_httpmanager.https_denyredirects_results,
+        ]
 
+        for sig in self.signatures:
+            #      print(sig.signature["service_name"])
+            if sig.signature["mode"] == "http":
+                if len(sig.signature["identifiers"]["cnames"]) > 0:
+                    # The signature specifies cnames, therefore, we need to match the base domain before proceeding
+                    if not any(
+                        cname_dict["value"] in self.found_cname
+                        for cname_dict in sig.signature["identifiers"]["cnames"]
+                    ):
+                        #  print(f"no match for {sig.signature['identifiers']['cnames']} for in {self.found_cname}")
+                        continue
 
-#       for sig in self.signatures:
-#          print(sig)
+                m = Matcher(sig.signature["matcher_rule"])
+                if any(m.is_match(hr) for hr in http_results if hr is not None):
+                    print("VULNERABLE!!!!!!!!!!!!!")
+                    print(sig.signature["service_name"])
+                    print(sig.signature["mode"])
+                    print(sig.signature["matcher_rule"])

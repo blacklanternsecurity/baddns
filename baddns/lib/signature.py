@@ -9,7 +9,7 @@ class BadDNSSignature:
         self.signature = {
             "service_name": None,
             "source": None,
-            "identifiers": {"cnames": [], "ips": [], "nameservers": []},
+            "identifiers": {"cnames": [], "not_cnames": [], "ips": [], "nameservers": []},
             "mode": None,
             "matcher_rule": {},
         }
@@ -21,6 +21,7 @@ class BadDNSSignature:
         identifiers = kwargs.get("identifiers", {})
         self.signature["identifiers"] = {}
         self.signature["identifiers"]["cnames"] = identifiers.get("cnames", [])
+        self.signature["identifiers"]["not_cnames"] = identifiers.get("not_cnames", [])
         self.signature["identifiers"]["ips"] = identifiers.get("ips", [])
         self.signature["identifiers"]["nameservers"] = identifiers.get("nameservers", [])
         self.signature["matcher_rule"] = kwargs.get("matcher_rule", None)

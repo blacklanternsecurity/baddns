@@ -68,11 +68,19 @@ class NucleiTemplatesTransformer(Transformer):
         self.data = {"source": self.shortname}
         self.nucleiconvert()
 
+    def parse_dsl(self, dsl_rule):
+        # contains host regex
+        host_regex = re.compile(r'\!contains\(host,"(?P<domain>.+?)\"\)')
+        host_regex_match = host_regex.match(dsl_rule)
+        if host_regex_match:
+            return host_regex_match.group("domain"), "to_cname"
+        return None, None
+
     def map_values(self):
         values = {
             "service_name": data["info"]["name"],
             "source": "nucleitemplates",
-            "identifiers": {"cnames": [], "ips": [], "nameservers": []},
+            "identifiers": {"cnames": [], "not_cnames": [], "ips": [], "nameservers": []},
             "mode": None,
             "matcher_rule": None,
         }
@@ -88,12 +96,29 @@ class NucleiTemplatesTransformer(Transformer):
                 }
                 for matcher in http_data["matchers"]:
                     # Ignore unknown types
-                    if matcher["type"] not in ["status", "word", "regex"]:
+                    if matcher["type"] not in ["status", "word", "regex", "dsl"]:
                         continue
 
                     if matcher["type"] == "word":
                         matcher["part"] = matcher.get("part", "body")
+
+                        if matcher["part"] == "host":
+                            negative = matcher.get("negative", False)
+
+                            for w in matcher["words"]:
+                                if negative:
+                                    values["identifiers"]["not_cnames"].append({"type": "word", "value": w})
+                                else:
+                                    values["identifiers"]["cnames"].append({"type": "word", "value": w})
+                            continue
+
                         matcher["condition"] = matcher.get("condition", "and")
+                    if matcher["type"] == "dsl":
+                        for dsl_rule in matcher["dsl"]:
+                            parsed_dsl, dsl_type = self.parse_dsl(dsl_rule)
+
+                            if dsl_type == "to_cname":
+                                values["identifiers"]["cnames"].append({"type": "word", "value": parsed_dsl})
 
                     matcher_rule["matchers"].append(matcher)
                 values["matcher_rule"] = matcher_rule
@@ -136,7 +161,7 @@ class DnsReaperSignatureTransformer(Transformer):
 
     def map_values(self):
         values = {}
-        identifiers = {"cnames": [], "ips": [], "nameservers": []}
+        identifiers = {"cnames": [], "not_cnames": [], "ips": [], "nameservers": []}
 
         for key, value in self.data.items():
             if key == "http_strings" and value:
@@ -153,25 +178,15 @@ class DnsReaperSignatureTransformer(Transformer):
                 values.setdefault("matcher_rule", {"matchers-condition": "and", "matchers": []})["matchers"].append(
                     {"type": "status", "status": int(value)}
                 )
-            elif key == "cnames":
-                if isinstance(value, list):
-                    identifiers[key] = [
-                        v["value"].lstrip("cname").lstrip(".") if isinstance(v, dict) and v["type"] == "word" else v
-                        for v in value
-                    ]
-                else:  # when it's not a list but a single dict
-                    identifiers[key] = [
-                        value["value"].lstrip("cname").lstrip(".")
-                        if isinstance(value, dict) and value["type"] == "word"
-                        else value
-                    ]
-            elif key in ["ips", "nameservers"]:
+
+            elif key in ["ips", "nameservers", "cnames"]:
                 identifiers[key] = value
 
             elif key == "use_case":
                 values["mode"] = self.use_case_to_mode_mapping.get(value, value)
             else:
                 values[key] = value
+
         values["identifiers"] = identifiers
         return values
 
@@ -192,7 +207,7 @@ class DnsReaperSignatureTransformer(Transformer):
             if isinstance(node.value, ast.List) and all(isinstance(elt, ast.Constant) for elt in node.value.elts):
                 self.variables[target_var_name] = [elt.value for elt in node.value.elts]
             elif isinstance(node.value, ast.Constant):
-                self.variables[target_var_name] = node.value.value
+                self.variables[target_var_name] = [node.value.value]
 
     def _visit_List(self, node):
         ips = [elt.s for elt in node.elts if isinstance(elt, ast.Str) and self._is_ip_address(elt.s)]
@@ -224,12 +239,15 @@ class DnsReaperSignatureTransformer(Transformer):
         for kw in call.keywords:
             if kw.arg == "cname":
                 if isinstance(kw.value, ast.Str):
-                    self.data["cnames"] = [{"type": "word", "value": kw.value.s}]
+                    self.data["cnames"] = [{"type": "word", "value": kw.value.s.lstrip("cname.").lstrip(".")}]
                 elif isinstance(kw.value, ast.List):
-                    self.data["cnames"] = [{"type": "word", "value": elt.s} for elt in kw.value.elts]
+                    self.data["cnames"] = [
+                        {"type": "word", "value": elt.s.lstrip("cname.").lstrip(".")} for elt in kw.value.elts
+                    ]
                 elif isinstance(kw.value, ast.Name):
                     self.data["cnames"] = [
-                        {"type": "word", "value": val} for val in self.variables.get(kw.value.id, [])
+                        {"type": "word", "value": val.lstrip("cname.").lstrip(".")}
+                        for val in self.variables.get(kw.value.id, [])
                     ]
 
         if call.args:  # Check for positional arguments

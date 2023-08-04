@@ -11,7 +11,7 @@ import pkg_resources
 
 from colorama import Fore, Style, init
 
-from .lib.baddns import BadDNS
+from .lib.baddns import BadDNS_cname
 
 init(autoreset=True)  # Automatically reset the color to default after each print statement
 
@@ -86,9 +86,11 @@ async def _main():
         )
         return
 
-    baddns = BadDNS(args.target)
-    await baddns.dispatchConnections()
-    baddns.analyze()
+    baddns_cname = BadDNS_cname(args.target)
+    if await baddns_cname.dispatch():
+        baddns_cname.analyze()
+    else:
+        print("No CNAME found, skipping rest of process")
 
 
 def main():
