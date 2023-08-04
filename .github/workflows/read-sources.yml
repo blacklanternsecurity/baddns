@@ -68,6 +68,10 @@ jobs:
             echo "adding hash $new_hash to signature file" >> readsources_action.log
             echo -e $new_hash #$file >> "signatures/signature_history.txt"
 
+
+            # temp debug!
+            cat signatures/signature_history.txt >> readsources_action.log
+
             # Copy the file to the signatures directory
             cp "signatures_to_test/$file" "signatures/$file"
 
