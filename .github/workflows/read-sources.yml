@@ -67,6 +67,9 @@ jobs:
             # Add new_hash to the prev_hashes
             prev_hashes+="$new_hash\n"
 
+            # Write the updated hash history to the file
+            echo -e $prev_hashes > "signatures/signature_history.txt"
+
             # Copy the file to the signatures directory and calculate the new hash
             cp "signatures_to_test/$file" "signatures/$file"
 
@@ -74,10 +77,11 @@ jobs:
             echo "checking out new branch new-signature-$file" >> readsources_action.log
             git checkout -b new-signature-$file
             git add "signatures/$file"
+            git add "signatures/signature_history.txt"
             
             echo "adding commit and pushing branch..." >> readsources_action.log
             # If the commit operation is successful, then push the changes and create a PR
-            git commit -m "[SignatureBot] Add or update signature $file" && {
+            git commit -m "[SignatureBot] Add or update signature $file and update signature history"" && {
               git push origin new-signature-$file
               echo "Add or update signature $file" > pr_message
               echo "This PR adds or updates a signature:" >> pr_message
@@ -92,18 +96,6 @@ jobs:
         done
         echo -e "$prev_hashes" > "signatures/signature_history.txt"
         echo "completed read sources" >> readsources_action.log
-
-
-    - name: Commit and push hash file
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add signatures/signature_history.txt
-        git commit -m "Update signature history"
-        git push origin main
-
 
     - name: Upload readsources.py log
       uses: actions/upload-artifact@v2
