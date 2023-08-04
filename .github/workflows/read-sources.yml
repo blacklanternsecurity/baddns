@@ -52,8 +52,6 @@ jobs:
         files=$(ls signatures_to_test | head -n 3)
 
         for file in $files; do
-
-          prev_hashes+="$new_hash\n"
           echo "parsing signature file: $file" >> readsources_action.log
           
           # Check if the file exists in the signatures directory and if it has been changed
@@ -65,6 +63,9 @@ jobs:
               echo "File $file has been seen before, skipping" >> readsources_action.log
               continue
             fi
+
+            # Add new_hash to the prev_hashes
+            prev_hashes+="$new_hash\n"
 
             # Copy the file to the signatures directory and calculate the new hash
             cp "signatures_to_test/$file" "signatures/$file"
@@ -89,6 +90,7 @@ jobs:
             git checkout main
           fi
         done
+        echo -e "$prev_hashes" > "signatures/signature_history.txt"
         echo "completed read sources" >> readsources_action.log
 
 
