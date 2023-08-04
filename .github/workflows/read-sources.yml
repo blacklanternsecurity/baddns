@@ -63,21 +63,20 @@ jobs:
               continue
             fi
 
-            # Add new_hash to the prev_hashes
-            prev_hashes+="$new_hash\n"
 
-            # Write the updated hash history to the file
-            echo -e $prev_hashes > "signatures/signature_history.txt"
+            # Add the new hash to the history file
+            echo -e $new_hash #$file > "signatures/signature_history.txt"
 
-            # Copy the file to the signatures directory and calculate the new hash
+            # Copy the file to the signatures directory
             cp "signatures_to_test/$file" "signatures/$file"
 
-            
+        
             echo "checking out new branch new-signature-$file" >> readsources_action.log
             git checkout -b new-signature-$file
             git add "signatures/$file"
             git add "signatures/signature_history.txt"
-            
+
+        
             echo "adding commit and pushing branch..." >> readsources_action.log
             # If the commit operation is successful, then push the changes and create a PR
             git commit -m "[SignatureBot] Add or update signature $file and update signature history" && {
@@ -93,7 +92,6 @@ jobs:
             git checkout main
           fi
         done
-        echo -e "$prev_hashes # $file" > "signatures/signature_history.txt"
         echo "completed read sources" >> readsources_action.log
 
     - name: Upload readsources.py log
