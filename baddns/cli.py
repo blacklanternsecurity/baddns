@@ -4,7 +4,7 @@
 # @paulmmueller
 
 import re
-import os
+import sys
 import asyncio
 import argparse
 import pkg_resources

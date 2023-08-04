@@ -15,7 +15,6 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from lib.signature import BadDNSSignature
 from lib.matcher import Matcher
 from lib.errors import BadDNSSignatureException
-import dns.resolver
 
 
 def dns_request(domain):

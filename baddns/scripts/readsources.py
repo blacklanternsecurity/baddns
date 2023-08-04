@@ -136,7 +136,6 @@ class NucleiTemplatesTransformer(Transformer):
                                     values["identifiers"]["cnames"].append({"type": "word", "value": word})
                     elif matcher["type"] == "regex":
                         for regex_str in matcher.get("regex", []):
-                            regex = regex_str
                             values["identifiers"]["cnames"].append(
                                 {"type": "regex", "value": regex_str.replace("CNAME\t", "")}
                             )
