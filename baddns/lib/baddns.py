@@ -2,7 +2,9 @@ import os
 import ssl
 import yaml
 import httpx
+import whois
 import logging
+import tldextract
 import dns.asyncresolver
 
 from .matcher import Matcher
@@ -19,16 +21,56 @@ class DNSManager:
         self.target = target
         self.answers = {key: None for key in self.dns_record_types}
         self.answers.update({"NoAnswer": False, "NXDOMAIN": False})
+        self.ips = []
+
+    @staticmethod
+    def get_ipv4(a_records):
+        ipv4 = []
+        for answer in a_records:
+            log.debug(f"Found IPV4 address: {answer}")
+            ipv4.append(str(answer))
+        return ipv4
+
+    @staticmethod
+    def get_ipv6(aaaa_records):
+        ipv6 = []
+        for answer in aaaa_records:
+            log.debug(f"Found IPV6 address: {answer}")
+            ipv6.append(str(answer))
+        return ipv6
 
     async def dispatchDNS(self):
         resolver = dns.asyncresolver.Resolver()
+        log.debug(f"attempting to resolve {self.target}")
         for rdatatype in self.dns_record_types:
             try:
                 self.answers[rdatatype] = await resolver.resolve(self.target, rdatatype)
+                if rdatatype == "A":
+                    self.ips.extend(self.get_ipv4(self.answers[rdatatype]))
+                if rdatatype == "AAAA":
+                    self.ips.extend(self.get_ipv6(self.answers[rdatatype]))
             except dns.resolver.NoAnswer:
                 self.answers["NoAnswer"] = True
             except dns.resolver.NXDOMAIN:
                 self.answers["NXDOMAIN"] = True
+
+
+class WhoisManager:
+    def __init__(self, target):
+        self.target = target
+        self.whois_result = None
+
+    async def dispatchWHOIS(self):
+        ext = tldextract.extract(self.target)
+        log.debug(f"Extracted base domain [{ext.registered_domain}] from [{self.target}]")
+        log.debug(f"Submitting WHOIS query for {ext.registered_domain}")
+        try:
+            w = whois.whois(ext.registered_domain)
+            log.debug(f"Got response to whois request for {ext.registered_domain}")
+            self.whois_result = {"type": "response", "data": w}
+        except whois.parser.PywhoisError as e:
+            log.debug(f"Got PywhoisError for whois request for {ext.registered_domain}")
+            self.whois_result = {"type": "error", "data": str(e)}
 
 
 class HttpManager:
@@ -89,6 +131,7 @@ class BadDNS_cname(BadDNS_base):
         self.target_dnsmanager = DNSManager(target)
         self.cname_dnsmanager = None
         self.cname_httpmanager = None
+        self.cname_whoismanager = None
 
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
@@ -101,14 +144,20 @@ class BadDNS_cname(BadDNS_base):
             return False
 
         self.cname_dnsmanager = DNSManager(self.found_cname)
-        self.cname_httpmanager = HttpManager(self.found_cname)
-
         await self.cname_dnsmanager.dispatchDNS()
 
+        # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
             log.debug("CNAME resolved correctly, proceeding with HTTP dispatch")
+            self.cname_httpmanager = HttpManager(self.found_cname)
             await self.cname_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
+        # if the cname doesn't resolve, we still need to see if the base domain is unregistered
+        else:
+            log.debug("CNAME didn't resolve, checking for unregistered base domain")
+            self.cname_whoismanager = WhoisManager(self.found_cname)
+            await self.cname_whoismanager.dispatchWHOIS()
+            log.debug("WHOIS dispatch complete")
         return True
 
     def analyze(self):
@@ -129,6 +178,22 @@ class BadDNS_cname(BadDNS_base):
                                 "matching_domain": sig_cname,
                                 "Technique": "CNAME NXDOMAIN",
                             }
+
+            log.debug("analyzing whois results")
+            if self.cname_whoismanager.whois_result:
+                if self.cname_whoismanager.whois_result["type"] == "error":
+                    if "No match for" in self.cname_whoismanager.whois_result["data"]:
+                        return {
+                            "target": self.target_dnsmanager.target,
+                            "cname": self.cname_dnsmanager.target,
+                            "signature_name": None,
+                            "matching_domain": None,
+                            "Technique": "CNAME unregistered",
+                        }
+                else:
+                    log.warning("Place holder for unregistered domain signature")
+            else:
+                log.debug("whois_result was NoneType")
         else:
             log.debug("Starting HTTP analysis")
 
@@ -143,7 +208,9 @@ class BadDNS_cname(BadDNS_base):
                 if sig.signature["mode"] == "http":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
                     if len(sig.signature["identifiers"]["cnames"]) > 0:
-                        log.debug("Signature contains cnames, checking them first")
+                        log.debug(
+                            f"Signature contains cnames [{sig.signature['identifiers']['cnames']}], checking them"
+                        )
                         if not any(
                             cname_dict["value"] in self.found_cname
                             for cname_dict in sig.signature["identifiers"]["cnames"]
@@ -153,6 +220,19 @@ class BadDNS_cname(BadDNS_base):
                             )
                             continue
                         log.debug("passed CNAME check")
+
+                    if len(sig.signature["identifiers"]["ips"]) > 0:
+                        log.debug(f"Signature contains ips [{sig.signature['identifiers']['ips']}], checking them")
+                        if not any(
+                            ip_signature in self.cname_dnsmanager.ips
+                            for ip_signature in sig.signature["identifiers"]["ips"]
+                        ):
+                            log.debug(
+                                f"no match for {sig.signature['identifiers']['ips']} for in {self.cname_dnsmanager.ips}"
+                            )
+                            continue
+                        log.debug("passed IPS")
+
                     m = Matcher(sig.signature["matcher_rule"])
                     log.debug("Checking for HTTP matches")
                     if any(m.is_match(hr) for hr in http_results if hr is not None):
