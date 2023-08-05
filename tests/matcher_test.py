@@ -7,7 +7,9 @@ from baddns.lib.matcher import Matcher
 
 def test_matcher_1(httpx_mock):
     httpx_mock.add_response(
-        url="https://baddns.com/test1", status_code=404, text="<html><p>Domain isn't configured</p><p>flexbe</p></html>"
+        url="https://baddns.com/test1",
+        status_code=404,
+        text="<html><p>Domain isn't configured</p><p>flexbe</p></html>",
     )
     rules = """
 identifiers:
@@ -36,7 +38,6 @@ source: nucleitemplates
     m = Matcher(rules)
     r = httpx.get("https://baddns.com/test1")
     assert m.is_match(r)
-
 
 
 def test_matcher_2(httpx_mock):
