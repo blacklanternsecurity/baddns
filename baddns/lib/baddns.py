@@ -83,6 +83,9 @@ class BadDNS_cname(BadDNS_base):
         super().__init__(target)
         self.found_cname = None
         self.target_dnsmanager = DNSManager(target)
+        self.cname_dnsmanager = None
+        self.cname_httpmanager = None
+
 
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
@@ -98,32 +101,48 @@ class BadDNS_cname(BadDNS_base):
         self.cname_httpmanager = HttpManager(self.found_cname)
 
         await self.cname_dnsmanager.dispatchDNS()
-        await self.cname_httpmanager.dispatchHttp()
+
+        if not self.cname_dnsmanager.answers["NXDOMAIN"]:
+            await self.cname_httpmanager.dispatchHttp()
         return True
 
     def analyze(self):
-        http_results = [
-            self.cname_httpmanager.http_allowredirects_results,
-            self.cname_httpmanager.http_denyredirects_results,
-            self.cname_httpmanager.https_allowredirects_results,
-            self.cname_httpmanager.https_denyredirects_results,
-        ]
 
-        for sig in self.signatures:
-            #      print(sig.signature["service_name"])
-            if sig.signature["mode"] == "http":
-                if len(sig.signature["identifiers"]["cnames"]) > 0:
-                    # The signature specifies cnames, therefore, we need to match the base domain before proceeding
-                    if not any(
-                        cname_dict["value"] in self.found_cname
-                        for cname_dict in sig.signature["identifiers"]["cnames"]
-                    ):
-                        #  print(f"no match for {sig.signature['identifiers']['cnames']} for in {self.found_cname}")
-                        continue
+        if self.cname_dnsmanager.answers["NXDOMAIN"]:
+            print(self.cname_dnsmanager.target)
+            for sig in self.signatures:
 
-                m = Matcher(sig.signature["matcher_rule"])
-                if any(m.is_match(hr) for hr in http_results if hr is not None):
-                    print("VULNERABLE!!!!!!!!!!!!!")
-                    print(sig.signature["service_name"])
-                    print(sig.signature["mode"])
-                    print(sig.signature["matcher_rule"])
+                if sig.signature["mode"] == "dns_nxdomain":
+                    sig_cnames = [c['value'] for c in sig.signature["identifiers"]["cnames"]]
+                    for sig_cname in sig_cnames:
+                        if self.cname_dnsmanager.target.endswith(sig_cname):
+                            print(f"VULNERABLE! ({sig_cname})")
+                            print(sig.signature["service_name"])
+        else:
+
+            http_results = [
+                self.cname_httpmanager.http_allowredirects_results,
+                self.cname_httpmanager.http_denyredirects_results,
+                self.cname_httpmanager.https_allowredirects_results,
+                self.cname_httpmanager.https_denyredirects_results,
+            ]
+
+
+
+            for sig in self.signatures:
+                if sig.signature["mode"] == "http":
+                    if len(sig.signature["identifiers"]["cnames"]) > 0:
+                        # The signature specifies cnames, therefore, we need to match the base domain before proceeding
+                        if not any(
+                            cname_dict["value"] in self.found_cname
+                            for cname_dict in sig.signature["identifiers"]["cnames"]
+                        ):
+                            #  print(f"no match for {sig.signature['identifiers']['cnames']} for in {self.found_cname}")
+                            continue
+
+                    m = Matcher(sig.signature["matcher_rule"])
+                    if any(m.is_match(hr) for hr in http_results if hr is not None):
+                        print("VULNERABLE!!!!!!!!!!!!!")
+                        print(sig.signature["service_name"])
+                        print(sig.signature["mode"])
+                        print(sig.signature["matcher_rule"])
