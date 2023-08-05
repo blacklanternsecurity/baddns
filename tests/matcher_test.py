@@ -1,6 +1,4 @@
 import httpx
-from pytest_httpx import HTTPXMock
-
 
 from baddns.lib.matcher import Matcher
 
