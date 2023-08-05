@@ -1,4 +1,8 @@
+import logging
+
 from .errors import BadDNSSignatureException
+
+log = logging.getLogger("baddns.signature")
 
 
 class BadDNSSignature:

@@ -241,21 +241,19 @@ class DnsReaperSignatureTransformer(Transformer):
         for kw in call.keywords:
             if kw.arg == "cname":
                 if isinstance(kw.value, ast.Str):
-                    self.data["cnames"] = [{"type": "word", "value": kw.value.s.replace("cname.","").lstrip(".")}]
-
+                    self.data["cnames"] = [{"type": "word", "value": kw.value.s.replace("cname.", "").lstrip(".")}]
 
                 elif isinstance(kw.value, ast.List):
                     self.data["cnames"] = [
-                        {"type": "word", "value": elt.s.replace("cname.","").lstrip(".")} for elt in kw.value.elts
+                        {"type": "word", "value": elt.s.replace("cname.", "").lstrip(".")} for elt in kw.value.elts
                     ]
 
                 elif isinstance(kw.value, ast.Name):
                     self.data["cnames"] = [
-                        {"type": "word", "value": val.replace("cname.","").lstrip(".")}
+                        {"type": "word", "value": val.replace("cname.", "").lstrip(".")}
                         for val in self.variables.get(kw.value.id, [])
                     ]
 
-      
         if call.args:  # Check for positional arguments
             for arg in call.args:
                 if isinstance(arg, ast.List):

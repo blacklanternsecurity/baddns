@@ -7,107 +7,106 @@ import re
 import sys
 import asyncio
 import argparse
+import logging
 import pkg_resources
-
-from colorama import Fore, Style, init
 
 from .lib.baddns import BadDNS_cname
 
+from colorama import Fore, Style, init
+
 init(autoreset=True)  # Automatically reset the color to default after each print statement
+
+log = None
+
+
+class CustomLogFormatter(logging.Formatter):
+    FORMATS = {
+        logging.DEBUG: Fore.MAGENTA + "[%(levelname)s] %(message)s" + Style.RESET_ALL,
+        logging.INFO: Fore.CYAN + "%(message)s" + Style.RESET_ALL,
+        logging.WARNING: Fore.YELLOW + "[%(levelname)s] %(message)s" + Style.RESET_ALL,
+        logging.ERROR: Fore.RED + "[%(levelname)s] %(message)s" + Style.RESET_ALL,
+        logging.CRITICAL: Fore.RED + Style.BRIGHT + "[%(levelname)s] - %(message)s" + Style.RESET_ALL,
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
+def setup_logging():
+    global log
+    log = logging.getLogger()
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    log.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setFormatter(CustomLogFormatter())
+    log.addHandler(ch)
+
+
+def debug_logging(debug=False):
+    log = logging.getLogger()
+    if debug:
+        log.setLevel(logging.DEBUG)
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         self.print_usage()
+        log.error(message)
         self.exit(1)
 
 
 def print_version():
     version = pkg_resources.get_distribution("baddns").version
     if version == "0.0.0":
-        version = "Version Unknown (Running w/poetry?)"
-    print(f"v{version}\n")
-
-
-def print_status(msg, passthru=False, color=Fore.WHITE):
-    if msg:
-        if colorenabled:
-            msg = f"{color}{msg}{Style.RESET_ALL}"
-        if passthru:
-            return msg
-        else:
-            print(msg)
+        version = "Unknown (Running w/poetry?)"
+    print(f"Version - {version}\n")
 
 
 def validate_target(
     arg_value, pattern=re.compile(r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$")
 ):
     if not pattern.match(arg_value):
-        raise argparse.ArgumentTypeError(print_status("Target subdomain is not correctly formatted", color=Fore.RED))
+        raise argparse.ArgumentTypeError("Target subdomain is not correctly formatted")
     return arg_value
 
 
 async def _main():
-    global colorenabled
-    colorenabled = False
-    color_parser = argparse.ArgumentParser(add_help=False)
-
-    color_parser.add_argument(
-        "-nc",
-        "--no-color",
-        action="store_true",
-        help="Disable color message in the console",
-    )
-
-    args, unknown_args = color_parser.parse_known_args()
-    colorenabled = not args.no_color
-
-    parser = CustomArgumentParser(
-        description="Check subdomains for subdomain takeovers and other DNS tomfoolery", parents=[color_parser]
-    )
-
-    if colorenabled:
-        print_status(ascii_art_banner, color=Fore.GREEN)
-
-    else:
-        print(ascii_art_banner)
+    setup_logging()
+    parser = CustomArgumentParser(description="Check subdomains for subdomain takeovers and other DNS tomfoolery")
+    print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
     print_version()
 
     parser.add_argument("target", type=validate_target, help="subdomain to analyze")
-
-    args = parser.parse_args(unknown_args)
-
-    if not args.target:
-        parser.error(
-            print_status(
-                "A valid target (subdomain) is required",
-                color=Fore.RED,
-            )
-        )
-        return
+    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
+    args = parser.parse_args()
+    debug_logging(args.debug)
 
     baddns_cname = BadDNS_cname(args.target)
     if await baddns_cname.dispatch():
-        baddns_cname.analyze()
-    else:
-        print("No CNAME found, skipping rest of process")
+        finding = baddns_cname.analyze()
+        if finding:
+            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
+            print(finding)
 
 
 def main():
     try:
         asyncio.run(_main())
     except asyncio.CancelledError:
-        print_status("Got asyncio.CancelledError", "red")
+        log.error("Got asyncio.CancelledError")
 
     except KeyboardInterrupt:
         sys.exit(1)
 
 
 ascii_art_banner = """
-  |                 |      |              
+  __ )              |      |              
   __ \    _` |   _` |   _` |  __ \    __| 
   |   |  (   |  (   |  (   |  |   | \__ \ 
- _.__/  \__,_| \__,_| \__,_| _|  _| ____/ 
+ ____/  \__,_| \__,_| \__,_| _|  _| ____/ 
+                                          
 """
 
 

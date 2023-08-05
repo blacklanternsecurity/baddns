@@ -2,11 +2,14 @@ import os
 import ssl
 import yaml
 import httpx
+import logging
 import dns.asyncresolver
 
 from .matcher import Matcher
 from .signature import BadDNSSignature
 from .errors import BadDNSSignatureException
+
+log = logging.getLogger(__name__)
 
 
 class DNSManager:
@@ -75,26 +78,26 @@ class BadDNS_base:
                         signature.initialize(**signature_data)
                         self.signatures.append(signature)
                 except BadDNSSignatureException as e:
-                    print(f"Error loading signature from {filename}: {e}")
+                    log.error(f"Error loading signature from {filename}: {e}")
 
 
 class BadDNS_cname(BadDNS_base):
     def __init__(self, target):
         super().__init__(target)
+        log.info(f"Starting CNAME Module with target [{target}]")
         self.found_cname = None
         self.target_dnsmanager = DNSManager(target)
         self.cname_dnsmanager = None
         self.cname_httpmanager = None
-
 
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
 
         if self.target_dnsmanager.answers["CNAME"]:
             self.found_cname = self.target_dnsmanager.answers["CNAME"][0].to_text().rstrip(".")
-            print(f"found_cname: {self.found_cname}")
+            log.info(f"Found CNAME [{self.found_cname}]")
         else:
-            print("didnt find cname, exiting")
+            log.info("No CNAME Found :/")
             return False
 
         self.cname_dnsmanager = DNSManager(self.found_cname)
@@ -103,22 +106,31 @@ class BadDNS_cname(BadDNS_base):
         await self.cname_dnsmanager.dispatchDNS()
 
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
+            log.debug("CNAME resolved correctly, proceeding with HTTP dispatch")
             await self.cname_httpmanager.dispatchHttp()
+            log.debug("HTTP dispatch complete")
         return True
 
     def analyze(self):
-
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
-            print(self.cname_dnsmanager.target)
+            log.info(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
             for sig in self.signatures:
-
                 if sig.signature["mode"] == "dns_nxdomain":
-                    sig_cnames = [c['value'] for c in sig.signature["identifiers"]["cnames"]]
+                    log.debug(f"Trying signature {sig.signature['service_name']}")
+                    sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
                     for sig_cname in sig_cnames:
+                        log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
                         if self.cname_dnsmanager.target.endswith(sig_cname):
-                            print(f"VULNERABLE! ({sig_cname})")
-                            print(sig.signature["service_name"])
+                            log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable ({sig_cname})")
+                            return {
+                                "target": self.target_dnsmanager.target,
+                                "cname": self.cname_dnsmanager.target,
+                                "signature_name": sig.signature["service_name"],
+                                "matching_domain": sig_cname,
+                                "Technique": "CNAME NXDOMAIN",
+                            }
         else:
+            log.debug("Starting HTTP analysis")
 
             http_results = [
                 self.cname_httpmanager.http_allowredirects_results,
@@ -127,22 +139,28 @@ class BadDNS_cname(BadDNS_base):
                 self.cname_httpmanager.https_denyredirects_results,
             ]
 
-
-
             for sig in self.signatures:
                 if sig.signature["mode"] == "http":
+                    log.debug(f"Trying signature {sig.signature['service_name']}")
                     if len(sig.signature["identifiers"]["cnames"]) > 0:
-                        # The signature specifies cnames, therefore, we need to match the base domain before proceeding
+                        log.debug("Signature contains cnames, checking them first")
                         if not any(
                             cname_dict["value"] in self.found_cname
                             for cname_dict in sig.signature["identifiers"]["cnames"]
                         ):
-                            #  print(f"no match for {sig.signature['identifiers']['cnames']} for in {self.found_cname}")
+                            log.debug(
+                                f"no match for {sig.signature['identifiers']['cnames']} for in {self.found_cname}"
+                            )
                             continue
-
+                        log.debug("passed CNAME check")
                     m = Matcher(sig.signature["matcher_rule"])
+                    log.debug("Checking for HTTP matches")
                     if any(m.is_match(hr) for hr in http_results if hr is not None):
-                        print("VULNERABLE!!!!!!!!!!!!!")
-                        print(sig.signature["service_name"])
-                        print(sig.signature["mode"])
-                        print(sig.signature["matcher_rule"])
+                        log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
+                        log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
+                        return {
+                            "target": self.target_dnsmanager.target,
+                            "cname": self.cname_dnsmanager.target,
+                            "signature_name": sig.signature["service_name"],
+                            "Technique": "HTTP String Match",
+                        }
