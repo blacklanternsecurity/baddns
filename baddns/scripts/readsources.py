@@ -120,6 +120,9 @@ class NucleiTemplatesTransformer(Transformer):
                             if dsl_type == "to_cname":
                                 values["identifiers"]["cnames"].append({"type": "word", "value": parsed_dsl})
 
+                    if matcher["type"] == "status":
+                        matcher["status"] = matcher["status"][0]
+
                     matcher_rule["matchers"].append(matcher)
                 values["matcher_rule"] = matcher_rule
         elif "dns" in data.keys():
