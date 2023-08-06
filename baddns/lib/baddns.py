@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 class DNSManager:
     dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]
 
-    def __init__(self, target,dns_client=None):
+    def __init__(self, target, dns_client=None):
         if not dns_client:
             self.dns_client = dns.asyncresolver.Resolver()
         self.target = target
@@ -76,7 +76,7 @@ class WhoisManager:
 
 
 class HttpManager:
-    def __init__(self, target,http_client=None):
+    def __init__(self, target, http_client=None):
         if not http_client:
             http_client = httpx.AsyncClient
         self.target = target
@@ -104,19 +104,20 @@ class HttpManager:
 
 
 class BadDNS_base:
-    def __init__(self, target,http_client=None,dns_client=None):
-        self.http_client = None
-        self.dns_client = None
+    def __init__(self, target, http_client=None, dns_client=None):
+        self.http_client = http_client
+        self.dns_client = dns_client
         self.target = target
         self.signatures = []
         self.load_signatures()
 
     def load_signatures(self):
-        signatures_dir = pkg_resources.resource_filename('baddns', 'signatures')
-
+        signatures_dir = pkg_resources.resource_filename("baddns", "signatures")
+        log.debug(f"attempting to load signatures from: {signatures_dir}")
         for filename in os.listdir(signatures_dir):
             if filename.endswith(".yml"):
                 file_path = os.path.join(signatures_dir, filename)
+
                 # Open each file and load the YAML contents
                 try:
                     with open(file_path, "r") as file:
@@ -129,11 +130,11 @@ class BadDNS_base:
 
 
 class BadDNS_cname(BadDNS_base):
-    def __init__(self, target):
-        super().__init__(target)
+    def __init__(self, target, **kwargs):
+        super().__init__(target, **kwargs)
         log.info(f"Starting CNAME Module with target [{target}]")
         self.found_cname = None
-        self.target_dnsmanager = DNSManager(target,dns_client=self.dns_client)
+        self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
         self.target_httpmanager = None
         self.cname_dnsmanager = None
         self.cname_whoismanager = None
@@ -148,13 +149,13 @@ class BadDNS_cname(BadDNS_base):
             log.info("No CNAME Found :/")
             return False
 
-        self.cname_dnsmanager = DNSManager(self.found_cname,dns_client=self.dns_client)
+        self.cname_dnsmanager = DNSManager(self.found_cname, dns_client=self.dns_client)
         await self.cname_dnsmanager.dispatchDNS()
 
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
             log.debug("CNAME resolved correctly, proceeding with HTTP dispatch")
-            self.target_httpmanager = HttpManager(self.target,http_client=self.http_client)
+            self.target_httpmanager = HttpManager(self.target, http_client=self.http_client)
             await self.target_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered

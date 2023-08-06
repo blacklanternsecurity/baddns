@@ -5,6 +5,7 @@ description = "Check subdomains for for subdomain takeovers and other DNS tomfoo
 authors = ["liquidsec <paul.mueller08@gmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
+include = ["signatures/**/*"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
