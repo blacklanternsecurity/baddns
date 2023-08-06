@@ -18,7 +18,9 @@ log = logging.getLogger(__name__)
 class DNSManager:
     dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]
 
-    def __init__(self, target):
+    def __init__(self, target,dns_client=None):
+        if not dns_client:
+            self.dns_client = dns.asyncresolver.Resolver()
         self.target = target
         self.answers = {key: None for key in self.dns_record_types}
         self.answers.update({"NoAnswer": False, "NXDOMAIN": False})
@@ -41,11 +43,10 @@ class DNSManager:
         return ipv6
 
     async def dispatchDNS(self):
-        resolver = dns.asyncresolver.Resolver()
         log.debug(f"attempting to resolve {self.target}")
         for rdatatype in self.dns_record_types:
             try:
-                self.answers[rdatatype] = await resolver.resolve(self.target, rdatatype)
+                self.answers[rdatatype] = await self.dns_client.resolve(self.target, rdatatype)
                 if rdatatype == "A":
                     self.ips.extend(self.get_ipv4(self.answers[rdatatype]))
                 if rdatatype == "AAAA":
@@ -75,16 +76,18 @@ class WhoisManager:
 
 
 class HttpManager:
-    def __init__(self, target):
+    def __init__(self, target,http_client=None):
+        if not http_client:
+            http_client = httpx.AsyncClient
         self.target = target
         self.http_allowredirects_results = None
         self.http_denyredirects_results = None
         self.https_allowredirects_results = None
         self.https_denyredirects_results = None
-        self.http_allowredirects = httpx.AsyncClient(follow_redirects=True, timeout=5)
-        self.http_denyredirects = httpx.AsyncClient(follow_redirects=False, timeout=5)
-        self.https_allowredirects = httpx.AsyncClient(follow_redirects=True, timeout=5, verify=False)
-        self.https_denyredirects = httpx.AsyncClient(follow_redirects=False, timeout=5, verify=False)
+        self.http_allowredirects = http_client(follow_redirects=True, timeout=5, verify=False)
+        self.http_denyredirects = http_client(follow_redirects=False, timeout=5, verify=False)
+        self.https_allowredirects = http_client(follow_redirects=True, timeout=5, verify=False)
+        self.https_denyredirects = http_client(follow_redirects=False, timeout=5, verify=False)
 
     async def dispatchHttp(self):
         try:
@@ -101,7 +104,9 @@ class HttpManager:
 
 
 class BadDNS_base:
-    def __init__(self, target):
+    def __init__(self, target,http_client=None,dns_client=None):
+        self.http_client = None
+        self.dns_client = None
         self.target = target
         self.signatures = []
         self.load_signatures()
@@ -128,7 +133,7 @@ class BadDNS_cname(BadDNS_base):
         super().__init__(target)
         log.info(f"Starting CNAME Module with target [{target}]")
         self.found_cname = None
-        self.target_dnsmanager = DNSManager(target)
+        self.target_dnsmanager = DNSManager(target,dns_client=self.dns_client)
         self.target_httpmanager = None
         self.cname_dnsmanager = None
         self.cname_whoismanager = None
@@ -143,13 +148,13 @@ class BadDNS_cname(BadDNS_base):
             log.info("No CNAME Found :/")
             return False
 
-        self.cname_dnsmanager = DNSManager(self.found_cname)
+        self.cname_dnsmanager = DNSManager(self.found_cname,dns_client=self.dns_client)
         await self.cname_dnsmanager.dispatchDNS()
 
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
             log.debug("CNAME resolved correctly, proceeding with HTTP dispatch")
-            self.target_httpmanager = HttpManager(self.target)
+            self.target_httpmanager = HttpManager(self.target,http_client=self.http_client)
             await self.target_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
