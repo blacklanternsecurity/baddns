@@ -129,8 +129,8 @@ class BadDNS_cname(BadDNS_base):
         log.info(f"Starting CNAME Module with target [{target}]")
         self.found_cname = None
         self.target_dnsmanager = DNSManager(target)
-        self.cname_dnsmanager = None
         self.target_httpmanager = None
+        self.cname_dnsmanager = None
         self.cname_whoismanager = None
 
     async def dispatch(self):
@@ -242,5 +242,5 @@ class BadDNS_cname(BadDNS_base):
                             "target": self.target_dnsmanager.target,
                             "cname": self.cname_dnsmanager.target,
                             "signature_name": sig.signature["service_name"],
-                            "Technique": "HTTP String Match",
+                            "technique": "HTTP String Match",
                         }
