@@ -188,7 +188,7 @@ class BadDNS_cname(BadDNS_base):
                             "cname": self.cname_dnsmanager.target,
                             "signature_name": None,
                             "matching_domain": None,
-                            "Technique": "CNAME unregistered",
+                            "technique": "CNAME unregistered",
                         }
                 else:
                     log.warning("Place holder for unregistered domain signature")
