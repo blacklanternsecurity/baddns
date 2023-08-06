@@ -43,8 +43,8 @@ jobs:
         git config --local user.name "GitHub Action"
 
         # Check for existence of previous hashes file and read its content
-        if [[ -f "signatures/signature_history.txt" ]]; then
-          prev_hashes=$(cat signatures/signature_history.txt)
+        if [[ -f "baddns/signatures/signature_history.txt" ]]; then
+          prev_hashes=$(cat baddns/signatures/signature_history.txt)
         fi
         
         # Get only the first file in the signatures_to_test directory
@@ -66,7 +66,7 @@ jobs:
 
             # Add the new hash to the history file
             echo "adding hash $new_hash to signature file" >> readsources_action.log
-            echo -e "$new_hash #$file" >> "signatures/signature_history.txt"
+            echo -e "$new_hash #$file" >> "baddns/signatures/signature_history.txt"
 
             # Copy the file to the signatures directory
             cp "signatures_to_test/$file" "baddns/signatures/$file"
