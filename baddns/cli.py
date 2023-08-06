@@ -65,7 +65,7 @@ def print_version():
 
 
 def validate_target(
-    arg_value, pattern=re.compile(r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$")
+    arg_value, pattern=re.compile(r"^(?:[a-z0-9](?:[a-z0-9-_]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$")
 ):
     if not pattern.match(arg_value):
         raise argparse.ArgumentTypeError("Target subdomain is not correctly formatted")
