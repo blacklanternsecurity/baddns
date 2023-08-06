@@ -21,6 +21,8 @@ class DNSManager:
     def __init__(self, target, dns_client=None):
         if not dns_client:
             self.dns_client = dns.asyncresolver.Resolver()
+        else:
+            self.dns_client = dns_client
         self.target = target
         self.answers = {key: None for key in self.dns_record_types}
         self.answers.update({"NoAnswer": False, "NXDOMAIN": False})
@@ -182,7 +184,7 @@ class BadDNS_cname(BadDNS_base):
                                 "cname": self.cname_dnsmanager.target,
                                 "signature_name": sig.signature["service_name"],
                                 "matching_domain": sig_cname,
-                                "Technique": "CNAME NXDOMAIN",
+                                "technique": "CNAME NXDOMAIN",
                             }
 
             log.debug("analyzing whois results")
