@@ -98,11 +98,11 @@ class HttpManager:
             self.https_allowredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
             self.https_denyredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
         except httpx.RequestError as e:
-            print(f"An error occurred while requesting {e.request.url!r}: {e}")
+            log.debug(f"An error occurred while requesting {e.request.url!r}: {e}")
         except httpx.ConnectError as e:
-            print(f"Http Connect Error {e.request.url!r}: {e}")
+            log.debug(f"Http Connect Error {e.request.url!r}: {e}")
         except ssl.SSLError as e:
-            print(f"SSL Error: {e}")
+            log.debug(f"SSL Error: {e}")
 
 
 class BadDNS_base:
