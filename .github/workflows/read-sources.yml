@@ -45,6 +45,7 @@ jobs:
         # Check for existence of previous hashes file and read its content
         if [[ -f "baddns/signatures/signature_history.txt" ]]; then
           prev_hashes=$(cat baddns/signatures/signature_history.txt)
+        else touch baddns/signatures/signature_history.txt
         fi
         
         # Get only the first file in the signatures_to_test directory
