@@ -198,10 +198,10 @@ class BadDNS_cname(BadDNS_base):
             log.debug("Starting HTTP analysis")
 
             http_results = [
-                self.cname_httpmanager.http_allowredirects_results,
-                self.cname_httpmanager.http_denyredirects_results,
-                self.cname_httpmanager.https_allowredirects_results,
-                self.cname_httpmanager.https_denyredirects_results,
+                self.target_httpmanager.http_allowredirects_results,
+                self.target_httpmanager.http_denyredirects_results,
+                self.target_httpmanager.https_allowredirects_results,
+                self.target_httpmanager.https_denyredirects_results,
             ]
 
             for sig in self.signatures:
