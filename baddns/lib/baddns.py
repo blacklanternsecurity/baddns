@@ -130,7 +130,7 @@ class BadDNS_cname(BadDNS_base):
         self.found_cname = None
         self.target_dnsmanager = DNSManager(target)
         self.cname_dnsmanager = None
-        self.cname_httpmanager = None
+        self.target_httpmanager = None
         self.cname_whoismanager = None
 
     async def dispatch(self):
@@ -149,8 +149,8 @@ class BadDNS_cname(BadDNS_base):
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
             log.debug("CNAME resolved correctly, proceeding with HTTP dispatch")
-            self.cname_httpmanager = HttpManager(self.found_cname)
-            await self.cname_httpmanager.dispatchHttp()
+            self.target_httpmanager = HttpManager(self.target)
+            await self.target_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
         else:
