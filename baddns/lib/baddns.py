@@ -57,6 +57,10 @@ class DNSManager:
                 self.answers["NoAnswer"] = True
             except dns.resolver.NXDOMAIN:
                 self.answers["NXDOMAIN"] = True
+            except dns.resolver.LifetimeTimeout as e:
+                log.debug(f"Dns Timeout: {e}")
+            except dns.resolver.NoNameservers as e:
+                log.debug(f"No nameservers: {e}")
 
 
 class WhoisManager:
