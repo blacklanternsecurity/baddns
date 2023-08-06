@@ -54,7 +54,7 @@ jobs:
           echo "parsing signature file: $file" >> readsources_action.log
           
           # Check if the file exists in the signatures directory and if it has been changed
-          if [[ ! -f "signatures/$file" ]] || ! cmp -s "signatures/$file" "signatures_to_test/$file"; then
+          if [[ ! -f "baddns/signatures/$file" ]] || ! cmp -s "baddns/signatures/$file" "signatures_to_test/$file"; then
 
             # Calculate hash of the new file and check if we've seen it before
             new_hash=$(sha256sum "signatures_to_test/$file" | cut -d ' ' -f 1)
