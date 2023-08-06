@@ -69,13 +69,13 @@ jobs:
             echo -e "$new_hash #$file" >> "signatures/signature_history.txt"
 
             # Copy the file to the signatures directory
-            cp "signatures_to_test/$file" "signatures/$file"
+            cp "signatures_to_test/$file" "baddns/signatures/$file"
 
         
             echo "checking out new branch new-signature-$file" >> readsources_action.log
             git checkout -b new-signature-$file
-            git add "signatures/$file"
-            git add "signatures/signature_history.txt"
+            git add "baddns/signatures/$file"
+            git add "baddns/signatures/signature_history.txt"
 
             echo "about to commit with the following files changed:" >> readsources_action.log
             git status -s >> readsources_action.log
@@ -87,7 +87,7 @@ jobs:
               echo "Add or update signature $file" > pr_message
               echo "This PR adds or updates a signature:" >> pr_message
               echo "\`\`\`" >> pr_message
-              cat "signatures/$file" >> pr_message
+              cat "baddns/signatures/$file" >> pr_message
               echo "\`\`\`" >> pr_message
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
               gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log

@@ -5,6 +5,7 @@ import httpx
 import whois
 import logging
 import tldextract
+import pkg_resources
 import dns.asyncresolver
 
 from .matcher import Matcher
@@ -106,8 +107,7 @@ class BadDNS_base:
         self.load_signatures()
 
     def load_signatures(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        signatures_dir = os.path.join(dir_path, "../../signatures")
+        signatures_dir = pkg_resources.resource_filename('baddns', 'signatures')
 
         for filename in os.listdir(signatures_dir):
             if filename.endswith(".yml"):
