@@ -35,7 +35,7 @@ jobs:
             echo "PR $pr_title NOT Qualified" >> signaturetest.log
           fi
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
 
       - name: Run signature test
         if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
@@ -62,7 +62,7 @@ jobs:
             gh pr edit $PR_NUMBER --add-label "tests-failed"
           fi
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
 
       - name: Post result comment
         if: always() && steps.check_conditions.outputs.is_new_signature_pr == 'true'
@@ -99,7 +99,7 @@ jobs:
           echo "Attempting to add comment to PR..." >> signaturetest.log
           gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
 
 
       - name: Upload Signature Test Log
