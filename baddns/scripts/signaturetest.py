@@ -94,22 +94,24 @@ def process_file(file_path):
         matcher_rule = sig.signature["matcher_rule"]
         matcher = Matcher(matcher_rule)
         if len(sig.signature["identifiers"]["cnames"]) > 0:
-            for cname in sig.signature["identifiers"]["cnames"]:
-                # temporary
-                cname = cname.lstrip(".")
+            for cname_dict in sig.signature["identifiers"]["cnames"]:
+                if cname_dict["type"] == "word":
+                    cname = cname_dict["value"]
 
-                # try
-                match_found = False
-                for scheme in ("http", "https"):
-                    for allow_redirects in [True, False]:
-                        url = f"{scheme}://{rand_string()}.{cname}"
-                        # print(f"Requesting URL: [{url}] with redirects? [{str(allow_redirects)}]")
-                        r = requests.get(url, allow_redirects=allow_redirects)
-                        if matcher.is_match(r):
-                            match_found = True
-                if match_found:
-                    signature_pass = True
-                    match_table[cname] = True
+                    match_found = False
+                    for scheme in ("http", "https"):
+                        for allow_redirects in [True, False]:
+                            url = f"{scheme}://{rand_string()}.{cname}"
+                            # print(f"Requesting URL: [{url}] with redirects? [{str(allow_redirects)}]")
+                            r = requests.get(url, allow_redirects=allow_redirects)
+                            if matcher.is_match(r):
+                                match_found = True
+                    if match_found:
+                        signature_pass = True
+                        match_table[cname] = True
+                else:
+                    pass
+                    # TODO: Support other types
         if signature_pass == False:
             error = "No CNAMES passed random subdomain matcher validation"
 
