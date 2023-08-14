@@ -1,10 +1,8 @@
 import os
 import pytest
 import pkg_resources
-from unittest.mock import AsyncMock
 import dns
 import requests
-import tldextract
 
 from baddns.lib.baddns import BadDNS_cname, WhoisManager
 
