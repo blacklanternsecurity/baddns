@@ -27,7 +27,7 @@ jobs:
           pr_creator="${{ github.event.pull_request.user.login }}"
           echo "Pull Request title: $pr_title" > signaturetest.log
           echo "Pull Request creator: $pr_creator" >> signaturetest.log
-          if [[ "$pr_title" == "[SignatureBot]"* && "$pr_creator" == "github-actions[bot]" ]]; then
+          if [[ "$pr_title" == "[SignatureBot]"*]]; then
             echo "::set-output name=is_new_signature_pr::true"
             echo "PR $pr_title Qualified" >> signaturetest.log
           else
