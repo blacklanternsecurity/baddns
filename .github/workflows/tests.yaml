@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   lint:
-    if: github.actor != 'github-actions[bot]'
+    if: contains(github.event.pull_request.title, 'SignatureBot') == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
         run: |
           flake8 --select F,E722 --ignore F403,F405,F541 --per-file-ignores="*/__init__.py:F401,F403"
   test:
-    if: github.actor != 'github-actions[bot]'
+    if: contains(github.event.pull_request.title, 'SignatureBot') == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
