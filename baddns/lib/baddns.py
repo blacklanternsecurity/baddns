@@ -110,16 +110,22 @@ class HttpManager:
 
 
 class BadDNS_base:
-    def __init__(self, target, http_client=None, dns_client=None):
+    def __init__(self, target, http_client=None, dns_client=None, signatures_dir=None):
         self.http_client = http_client
         self.dns_client = dns_client
         self.target = target
         self.signatures = []
-        self.load_signatures()
+        self.load_signatures(signatures_dir)
 
-    def load_signatures(self):
-        signatures_dir = pkg_resources.resource_filename("baddns", "signatures")
+    def load_signatures(self, signatures_dir=None):
+        if signatures_dir:
+            if not os.path.exists(signatures_dir):
+                raise BadDNSSignatureException(f"Signatures directory [{signatures_dir}] does not exist")
+        else:
+            signatures_dir = pkg_resources.resource_filename("baddns", "signatures")
+
         log.debug(f"attempting to load signatures from: {signatures_dir}")
+
         for filename in os.listdir(signatures_dir):
             if filename.endswith(".yml"):
                 file_path = os.path.join(signatures_dir, filename)
@@ -133,6 +139,10 @@ class BadDNS_base:
                         self.signatures.append(signature)
                 except BadDNSSignatureException as e:
                     log.error(f"Error loading signature from {filename}: {e}")
+        if len(self.signatures) == 0:
+            raise BadDNSSignatureException(f"No signatures were successfuly loaded from [{signatures_dir}]")
+        else:
+            log.info(f"Loaded [{str(len(self.signatures))}] signatures from [{signatures_dir}]")
 
 
 class BadDNS_cname(BadDNS_base):
@@ -203,7 +213,8 @@ class BadDNS_cname(BadDNS_base):
                             "technique": "CNAME unregistered",
                         }
                 else:
-                    log.warning("Place holder for unregistered domain signature")
+                    pass
+                    # this is where expiration based detection would go
             else:
                 log.debug("whois_result was NoneType")
         else:

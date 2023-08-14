@@ -11,6 +11,7 @@ import logging
 import pkg_resources
 
 from .lib.baddns import BadDNS_cname
+from .lib.errors import BadDNSSignatureException
 
 from colorama import Fore, Style, init
 
@@ -80,10 +81,25 @@ async def _main():
 
     parser.add_argument("target", type=validate_target, help="subdomain to analyze")
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
+
+    parser.add_argument(
+        "-c",
+        "--custom-signatures",
+        help="Use an alternate directory for loadings signatures",
+    )
+
     args = parser.parse_args()
     debug_logging(args.debug)
 
-    baddns_cname = BadDNS_cname(args.target)
+    if args.custom_signatures:
+        log.info(f"Using custom signatures directory: [{args.custom_signatures}]")
+
+    try:
+        baddns_cname = BadDNS_cname(args.target, signatures_dir=args.custom_signatures)
+    except BadDNSSignatureException as e:
+        log.error(f"Error loading signatures: {e}")
+        sys.exit(1)
+
     if await baddns_cname.dispatch():
         finding = baddns_cname.analyze()
         if finding:
