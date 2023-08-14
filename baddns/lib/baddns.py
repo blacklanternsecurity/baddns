@@ -82,25 +82,30 @@ class WhoisManager:
 
 
 class HttpManager:
-    def __init__(self, target, http_client=None):
-        if not http_client:
-            http_client = httpx.AsyncClient
+    def __init__(self, target, http_client_class=None):
+        if not http_client_class:
+            http_client_class = httpx.AsyncClient
+        self.http_client = http_client_class(timeout=5, verify=False)
         self.target = target
         self.http_allowredirects_results = None
         self.http_denyredirects_results = None
         self.https_allowredirects_results = None
         self.https_denyredirects_results = None
-        self.http_allowredirects = http_client(follow_redirects=True, timeout=5, verify=False)
-        self.http_denyredirects = http_client(follow_redirects=False, timeout=5, verify=False)
-        self.https_allowredirects = http_client(follow_redirects=True, timeout=5, verify=False)
-        self.https_denyredirects = http_client(follow_redirects=False, timeout=5, verify=False)
 
     async def dispatchHttp(self):
         try:
-            self.http_allowredirects_results = await self.http_allowredirects.get(f"http://{self.target}/")
-            self.http_denyredirects_results = await self.http_allowredirects.get(f"http://{self.target}/")
-            self.https_allowredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
-            self.https_denyredirects_results = await self.http_allowredirects.get(f"https://{self.target}/")
+            self.http_allowredirects_results = await self.http_client.get(
+                f"http://{self.target}/", follow_redirects=True
+            )
+            self.http_denyredirects_results = await self.http_client.get(
+                f"http://{self.target}/", follow_redirects=False
+            )
+            self.https_allowredirects_results = await self.http_client.get(
+                f"https://{self.target}/", follow_redirects=True
+            )
+            self.https_denyredirects_results = await self.http_client.get(
+                f"https://{self.target}/", follow_redirects=False
+            )
         except httpx.RequestError as e:
             log.debug(f"An error occurred while requesting {e.request.url!r}: {e}")
         except httpx.ConnectError as e:
@@ -110,8 +115,8 @@ class HttpManager:
 
 
 class BadDNS_base:
-    def __init__(self, target, http_client=None, dns_client=None, signatures_dir=None):
-        self.http_client = http_client
+    def __init__(self, target, http_client_class=None, dns_client=None, signatures_dir=None):
+        self.http_client_class = http_client_class
         self.dns_client = dns_client
         self.target = target
         self.signatures = []
@@ -171,7 +176,7 @@ class BadDNS_cname(BadDNS_base):
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
             log.debug("CNAME resolved correctly, proceeding with HTTP dispatch")
-            self.target_httpmanager = HttpManager(self.target, http_client=self.http_client)
+            self.target_httpmanager = HttpManager(self.target, http_client_class=self.http_client_class)
             await self.target_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
