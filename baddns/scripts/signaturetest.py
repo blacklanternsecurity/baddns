@@ -4,7 +4,7 @@ import yaml
 import json
 import string
 import random
-import requests
+import httpx
 import dns.resolver
 
 rand_pool = string.ascii_lowercase
@@ -66,7 +66,7 @@ yaml_data = yaml.safe_load(testsig)
 match_table = {}
 
 
-requests_headers = {
+headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
     "Cache-Control": "no-cache",
@@ -97,13 +97,11 @@ def process_file(file_path):
             for cname_dict in sig.signature["identifiers"]["cnames"]:
                 if cname_dict["type"] == "word":
                     cname = cname_dict["value"]
-
                     match_found = False
                     for scheme in ("http", "https"):
-                        for allow_redirects in [True, False]:
+                        for follow_redirects in [True, False]:
                             url = f"{scheme}://{rand_string()}.{cname}"
-                            # print(f"Requesting URL: [{url}] with redirects? [{str(allow_redirects)}]")
-                            r = requests.get(url, allow_redirects=allow_redirects)
+                            r = httpx.get(url, headers=headers, follow_redirects=follow_redirects, timeout=5)
                             if matcher.is_match(r):
                                 match_found = True
                     if match_found:
