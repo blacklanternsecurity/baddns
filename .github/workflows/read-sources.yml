@@ -37,7 +37,7 @@ jobs:
 
     - name: Stage, commit, and create PR for changed files
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
       run: |
         echo "starting Read Sources run" >> readsources_action.log
         git config --local user.email "action@github.com"
@@ -63,7 +63,7 @@ jobs:
         for file in $files; do
           echo "attempting to parse signature file: $file" >> readsources_action.log
 
-          if [[ ! -s "signatures_to_test/$file" ]]; then
+          if [[ ! -s "$file" ]]; then
             echo "File $file is empty or doesn't exist, skipping" >> readsources_action.log
             continue
           fi
