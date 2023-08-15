@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: brandpad.io
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - is not registered as whitelabel or custom domain.
+  matchers-condition: and
+mode: http
+service_name: brandpad.io
+source: dnsreaper
