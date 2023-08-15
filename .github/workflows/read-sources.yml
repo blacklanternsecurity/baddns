@@ -137,6 +137,7 @@ jobs:
               echo "## Add or update signature: $file" > pr_message
               echo "This PR adds or updates the follow signature:" >> pr_message
               echo "```" >> pr_message
+              echo "Attempting to read: baddns/signatures/$file" >> readsources_action.log
               cat baddns/signatures/$file >> pr_message
               echo "```" >> pr_message
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
