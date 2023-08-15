@@ -151,7 +151,16 @@ jobs:
               echo '```' >> pr_message
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
               sleep 5
-              gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
+              output=$(gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1)
+
+              # Append the output (both normal and error messages) to the log
+              echo "$output" >> readsources_action.log
+
+              # Check for the specific error message
+              if [[ "$output" == *"was submitted too quickly (createPullRequest)"* ]]; then
+                  echo "Error encountered: Hit rate limit making PRs. Aborting..." >> readsources_action.log
+                  exit 1
+              fi
             }
             git checkout main
           else

@@ -83,11 +83,11 @@ jobs:
           Signature Pass: **$signature_pass** $emoji"
 
           if [[ "$match_table" != "{}" ]]; then
-              comment+="\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |"
+              comment+=$"\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |"
               for row in $(echo "$match_table" | jq -r 'to_entries[] | "\(.key) \(.value)"'); do
                   domain=$(echo $row | cut -d' ' -f1)
                   match=$(echo $row | cut -d' ' -f2)
-                  comment+="\n| $domain | $match |"
+                  comment+=$"\n| $domain | $match |"
               done
           fi
 
