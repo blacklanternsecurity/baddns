@@ -37,7 +37,7 @@ jobs:
 
     - name: Stage, commit, and create PR for changed files
       env:
-        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         echo "starting Read Sources run" >> readsources_action.log
         git config --local user.email "action@github.com"
