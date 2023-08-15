@@ -104,11 +104,23 @@ jobs:
             cp "signatures_to_test/$file" "baddns/signatures/$file"
 
             BRANCH_NAME="new-signature-$file"
+
+            # Fetch the latest remote references
+            git fetch
+
             # Check if the branch exists
-            if git show-ref --verify --quiet refs/heads/$BRANCH_NAME; then
-                echo "Found and deleted stale branch $BRANCH_NAME" >> readsources_action.log
-                git branch -D $BRANCH_NAME  # Delete the branch locally
-                git push origin --delete $BRANCH_NAME  # Delete the branch remotely
+            if git ls-remote --heads origin $BRANCH_NAME | grep $BRANCH_NAME; then
+                # Branch exists remotely, delete it
+                git push origin --delete $BRANCH_NAME
+                echo "Found and deleted stale branch $BRANCH_NAME remotely" >> readsources_action.log
+
+                # If needed, delete the branch locally too. This step might not be necessary if the action doesn't check out all branches.
+                if git show-ref --verify --quiet refs/heads/$BRANCH_NAME; then
+                    git branch -D $BRANCH_NAME
+                    echo "Found and deleted stale branch $BRANCH_NAME locally" >> readsources_action.log
+                fi
+            else
+                echo "No stale branch $BRANCH_NAME found remotely" >> readsources_action.log
             fi
 
             echo "checking out new branch $BRANCH_NAME" >> readsources_action.log
