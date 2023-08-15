@@ -150,6 +150,7 @@ jobs:
               cat baddns/signatures/$file >> pr_message
               echo '```' >> pr_message
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
+              sleep 5
               gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
             }
             git checkout main
