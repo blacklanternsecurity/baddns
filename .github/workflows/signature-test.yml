@@ -84,11 +84,10 @@ jobs:
 
           if [[ "$match_table" != "{}" ]]; then
               comment+=$'\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |'
-              for row in $(echo "$match_table" | jq -r 'to_entries[] | "\(.key) \(.value)"'); do
-                  domain=$(echo $row | cut -d' ' -f1)
-                  match=$(echo $row | cut -d' ' -f2)
+              
+              while IFS="|" read -r domain match; do
                   comment+=$'\n| '"$domain"' | '"$match"' |'
-              done
+              done < <(echo "$match_table" | jq -r 'to_entries[] | "\(.key)|\(.value)"')
           fi
 
           if [[ "$signature_pass" == "false" ]]; then

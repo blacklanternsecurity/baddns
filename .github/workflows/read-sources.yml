@@ -124,6 +124,7 @@ jobs:
                 fi
 
                 # No open PR, so safe to delete the branch
+                sleep 5
                 git push origin --delete $BRANCH_NAME
                 echo "Found and deleted stale branch $BRANCH_NAME remotely" >> readsources_action.log
 
