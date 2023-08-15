@@ -114,7 +114,7 @@ jobs:
             # If the commit operation is successful, then push the changes and create a PR
             git commit -m "[SignatureBot] Add or update signature $file and update signature history" && {
               git push origin new-signature-$file
-              echo "## Add or update signature: `$file`" > pr_message
+              echo "## Add or update signature: \`$file\`" > pr_message
               echo "This PR adds or updates the follow signature:" >> pr_message
               echo "```" >> pr_message
               cat "baddns/signatures/$file" >> pr_message
