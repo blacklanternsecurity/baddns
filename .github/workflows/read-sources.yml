@@ -81,6 +81,8 @@ jobs:
             PR_BLOCKED=false
 
             # Check for existing PRs with the same title
+
+            sleep 5
             PR_TITLE="[SignatureBot] Add or update signature $file"
             EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE)')
 
@@ -89,6 +91,7 @@ jobs:
               continue
             fi
 
+            sleep 5
             EXISTING_CLOSED_BLOCKED_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE and any(.labels[]?; .name == "signature-blocked"))')
 
             if [[ -n "$EXISTING_CLOSED_BLOCKED_PRS" ]]; then
@@ -112,6 +115,7 @@ jobs:
             if git ls-remote --heads origin $BRANCH_NAME | grep $BRANCH_NAME; then
                 # Check for existing PRs with the same title
                 PR_TITLE="[SignatureBot] Add or update signature $file"
+                sleep 5
                 EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE)')
 
                 if [[ -n "$EXISTING_OPEN_PRS" ]]; then
@@ -120,6 +124,7 @@ jobs:
                 fi
 
                 # No open PR, so safe to delete the branch
+                sleep 5
                 git push origin --delete $BRANCH_NAME
                 echo "Found and deleted stale branch $BRANCH_NAME remotely" >> readsources_action.log
 

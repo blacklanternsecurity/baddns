@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: surge.sh
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - project not found
+  matchers-condition: and
+mode: http
+service_name: surge.sh
+source: dnsreaper
