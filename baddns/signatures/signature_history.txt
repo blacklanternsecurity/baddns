@@ -1,3 +1,4 @@
 a91417107a2e6494fdabcee1849863ae60f89f58cabac143daa20610bb1493f2 #dnsreaper_bigcartel.yml
 1b54b082cacaa3502d9f22c2c79265a55b00eb706ae9e13c17880351e2d63b85 #nucleitemplates_azure-takeover-detection.yml
 
+94c3bc63f1823e3f20119dd9bcd1c1981d41220e33a23d5b7b884726fa539faf #dnsreaper_anima.yml
