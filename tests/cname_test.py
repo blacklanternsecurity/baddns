@@ -81,7 +81,7 @@ async def test_cname_dnsnxdomain_azure(fs, mock_dispatch_whois):
     mock_resolver = MockResolver(mock_data)
 
     target = "bad.dns"
-    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection")
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yam")
 
     baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
 
