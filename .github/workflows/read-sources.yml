@@ -42,6 +42,10 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
 
+        echo "Current directory and contents:" >> readsources_action.log
+        pwd >> readsources_action.log
+        ls -la >> readsources_action.log
+
         # Check for existence of previous hashes file and read its content
         if [[ -f "baddns/signatures/signature_history.txt" ]]; then
           prev_hashes=$(cat baddns/signatures/signature_history.txt)
@@ -55,7 +59,13 @@ jobs:
         files=$(ls signatures_to_test/*.yml)
 
         for file in $files; do
-          echo "parsing signature file: $file" >> readsources_action.log
+          echo "attempting to parse signature file: $file" >> readsources_action.log
+
+
+        if [[ ! -s "signatures_to_test/$file" ]]; then
+          echo "File $file is empty or doesn't exist, skipping" >> readsources_action.log
+          continue
+        fi
           
           # Check if the file exists in the signatures directory and if it has been changed
           if [[ ! -f "baddns/signatures/$file" ]] || ! cmp -s "baddns/signatures/$file" "signatures_to_test/$file"; then
