@@ -117,16 +117,16 @@ def process_file(file_path):
             error = "No CNAMES passed random subdomain matcher validation"
 
     elif sig.signature["mode"] == "dns_nxdomain":
-        for cname in sig.signature["identifiers"]["cnames"]:
-            # temporary
-            cname = cname.lstrip(".")
-            test_domain = f"{rand_string()}.{cname}"
-            r = dns_request(test_domain)
-            if r == "NXDOMAIN":
-                signature_pass = True
-                match_table[cname] = True
-            else:
-                match_table[cname] = False
+        for cname_dict in sig.signature["identifiers"]["cnames"]:
+            if cname_dict["type"] == "word":
+                cname = cname_dict["value"]
+                test_domain = f"{rand_string()}.{cname}"
+                r = dns_request(test_domain)
+                if r == "NXDOMAIN":
+                    signature_pass = True
+                    match_table[cname] = True
+                else:
+                    match_table[cname] = False
         if signature_pass == False:
             error = "No CNAMES gave expected NXDOMAIN response"
 
