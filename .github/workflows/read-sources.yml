@@ -111,8 +111,8 @@ jobs:
                 git push origin --delete $BRANCH_NAME  # Delete the branch remotely
             fi
 
-            echo "checking out new branch new-signature-$file" >> readsources_action.log
-            git checkout -b BRANCH_NAME
+            echo "checking out new branch $BRANCH_NAME" >> readsources_action.log
+            git checkout -b $BRANCH_NAME
             git add "baddns/signatures/$file"
             git add "baddns/signatures/signature_history.txt"
             echo "about to commit with the following files changed:" >> readsources_action.log
