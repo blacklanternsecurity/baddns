@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: vendhq.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Sign in to Lightspeed Retail POS Software | Lightspeed Retail
+  matchers-condition: and
+mode: http
+service_name: vendhq.com
+source: dnsreaper
