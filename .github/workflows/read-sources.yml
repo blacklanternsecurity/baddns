@@ -64,6 +64,9 @@ jobs:
             new_hash=$(sha256sum "signatures_to_test/$file" | cut -d ' ' -f 1)
             if echo "$prev_hashes" | grep -q "$new_hash"; then
               echo "File $file has been seen before, skipping" >> readsources_action.log
+
+              echo "Content of prev_hashes: '$prev_hashes'" >> readsources_action.log
+              echo "Content of new_hash: '$new_hash'" >> readsources_action.log
               continue
             fi
 
