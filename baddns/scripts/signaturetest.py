@@ -100,10 +100,13 @@ def process_file(file_path):
                     match_found = False
                     for scheme in ("http", "https"):
                         for follow_redirects in [True, False]:
-                            url = f"{scheme}://{rand_string()}.{cname}"
-                            r = httpx.get(url, headers=headers, follow_redirects=follow_redirects, timeout=5)
-                            if matcher.is_match(r):
-                                match_found = True
+                            try:
+                                url = f"{scheme}://{rand_string()}.{cname}"
+                                r = httpx.get(url, headers=headers, follow_redirects=follow_redirects, timeout=5)
+                                if matcher.is_match(r):
+                                    match_found = True
+                            except httpx.ConnectError:
+                                pass
                     if match_found:
                         signature_pass = True
                         match_table[cname] = True
