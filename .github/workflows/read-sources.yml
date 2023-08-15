@@ -103,8 +103,28 @@ jobs:
             # Copy the file to the signatures directory
             cp "signatures_to_test/$file" "baddns/signatures/$file"
 
-            echo "checking out new branch new-signature-$file" >> readsources_action.log
-            git checkout -b new-signature-$file
+            BRANCH_NAME="new-signature-$file"
+
+            # Fetch the latest remote references
+            git fetch
+
+            # Check if the branch exists
+            if git ls-remote --heads origin $BRANCH_NAME | grep $BRANCH_NAME; then
+                # Branch exists remotely, delete it
+                git push origin --delete $BRANCH_NAME
+                echo "Found and deleted stale branch $BRANCH_NAME remotely" >> readsources_action.log
+
+                # If needed, delete the branch locally too. This step might not be necessary if the action doesn't check out all branches.
+                if git show-ref --verify --quiet refs/heads/$BRANCH_NAME; then
+                    git branch -D $BRANCH_NAME
+                    echo "Found and deleted stale branch $BRANCH_NAME locally" >> readsources_action.log
+                fi
+            else
+                echo "No stale branch $BRANCH_NAME found remotely" >> readsources_action.log
+            fi
+
+            echo "checking out new branch $BRANCH_NAME" >> readsources_action.log
+            git checkout -b $BRANCH_NAME
             git add "baddns/signatures/$file"
             git add "baddns/signatures/signature_history.txt"
             echo "about to commit with the following files changed:" >> readsources_action.log
@@ -114,10 +134,11 @@ jobs:
             # If the commit operation is successful, then push the changes and create a PR
             git commit -m "[SignatureBot] Add or update signature $file and update signature history" && {
               git push origin new-signature-$file
-              echo "Add or update signature $file" > pr_message
-              echo "This PR adds or updates a signature:" >> pr_message
+              echo "## Add or update signature: $file" > pr_message
+              echo "This PR adds or updates the follow signature:" >> pr_message
               echo "```" >> pr_message
-              cat "baddns/signatures/$file" >> pr_message
+              echo "Attempting to read: baddns/signatures/$file" >> readsources_action.log
+              cat baddns/signatures/$file >> pr_message
               echo "```" >> pr_message
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
               gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log

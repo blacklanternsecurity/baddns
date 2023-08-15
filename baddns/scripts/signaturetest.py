@@ -100,30 +100,35 @@ def process_file(file_path):
                     match_found = False
                     for scheme in ("http", "https"):
                         for follow_redirects in [True, False]:
-                            url = f"{scheme}://{rand_string()}.{cname}"
-                            r = httpx.get(url, headers=headers, follow_redirects=follow_redirects, timeout=5)
-                            if matcher.is_match(r):
-                                match_found = True
+                            try:
+                                url = f"{scheme}://{rand_string()}.{cname}"
+                                r = httpx.get(url, headers=headers, follow_redirects=follow_redirects, timeout=5)
+                                if matcher.is_match(r):
+                                    match_found = True
+                            except httpx.ConnectError:
+                                pass
                     if match_found:
                         signature_pass = True
                         match_table[cname] = True
                 else:
                     pass
                     # TODO: Support other types
+        else:
+            signature_pass = True
         if signature_pass == False:
             error = "No CNAMES passed random subdomain matcher validation"
 
     elif sig.signature["mode"] == "dns_nxdomain":
-        for cname in sig.signature["identifiers"]["cnames"]:
-            # temporary
-            cname = cname.lstrip(".")
-            test_domain = f"{rand_string()}.{cname}"
-            r = dns_request(test_domain)
-            if r == "NXDOMAIN":
-                signature_pass = True
-                match_table[cname] = True
-            else:
-                match_table[cname] = False
+        for cname_dict in sig.signature["identifiers"]["cnames"]:
+            if cname_dict["type"] == "word":
+                cname = cname_dict["value"]
+                test_domain = f"{rand_string()}.{cname}"
+                r = dns_request(test_domain)
+                if r == "NXDOMAIN":
+                    signature_pass = True
+                    match_table[cname] = True
+                else:
+                    match_table[cname] = False
         if signature_pass == False:
             error = "No CNAMES gave expected NXDOMAIN response"
 
