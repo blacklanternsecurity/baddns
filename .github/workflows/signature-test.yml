@@ -62,7 +62,7 @@ jobs:
             gh pr edit $PR_NUMBER --add-label "tests-failed"
           fi
         env:
-          GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post result comment
         if: always() && steps.check_conditions.outputs.is_new_signature_pr == 'true'
