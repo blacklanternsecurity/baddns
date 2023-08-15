@@ -58,12 +58,12 @@ jobs:
         fi
 
         # Get only the files in the signatures_to_test directory
-        files=$(ls signatures_to_test/*.yml)
+        files=$(basename -a signatures_to_test/*.yml)
 
         for file in $files; do
           echo "attempting to parse signature file: $file" >> readsources_action.log
 
-          if [[ ! -s "$file" ]]; then
+          if [[ ! -s "signatures_to_test/$file" ]]; then
             echo "File $file is empty or doesn't exist, skipping" >> readsources_action.log
             continue
           fi
