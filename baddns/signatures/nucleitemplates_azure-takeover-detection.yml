@@ -1,0 +1,47 @@
+identifiers:
+  cnames:
+  - type: word
+    value: azure-api.net
+  - type: word
+    value: azure-mobile.net
+  - type: word
+    value: azurecontainer.io
+  - type: word
+    value: azurecr.io
+  - type: word
+    value: azuredatalakestore.net
+  - type: word
+    value: azureedge.net
+  - type: word
+    value: azurefd.net
+  - type: word
+    value: azurehdinsight.net
+  - type: word
+    value: azurewebsites.net
+  - type: word
+    value: azurewebsites.windows.net
+  - type: word
+    value: blob.core.windows.net
+  - type: word
+    value: cloudapp.azure.com
+  - type: word
+    value: cloudapp.net
+  - type: word
+    value: database.windows.net
+  - type: word
+    value: redis.cache.windows.net
+  - type: word
+    value: search.windows.net
+  - type: word
+    value: servicebus.windows.net
+  - type: word
+    value: trafficmanager.net
+  - type: word
+    value: visualstudio.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule: null
+mode: dns_nxdomain
+service_name: Microsoft Azure Takeover Detection
+source: nucleitemplates
