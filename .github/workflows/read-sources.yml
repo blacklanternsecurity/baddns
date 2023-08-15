@@ -46,7 +46,10 @@ jobs:
         if [[ -f "baddns/signatures/signature_history.txt" ]]; then
           prev_hashes=$(cat baddns/signatures/signature_history.txt)
           echo "signature_history.txt was present and read into prev_hashes..." >> readsources_action.log
+        else
+          echo "signature_history.txt was NOT present" >> readsources_action.log
         fi
+        prev_hashes=${prev_hashes:-""}
 
         
         # Get only the files in the signatures_to_test directory
