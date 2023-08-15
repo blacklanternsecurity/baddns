@@ -30,103 +30,104 @@ jobs:
         repository: projectdiscovery/nuclei-templates
         path: nuclei-templates
 
+
     - name: Read Sources
       run: |
         poetry run python3 baddns/scripts/readsources.py
 
     - name: Stage, commit, and create PR for changed files
-    env:
-      GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
-    run: |
-      echo "starting Read Sources run" >> readsources_action.log
-      git config --local user.email "action@github.com"
-      git config --local user.name "GitHub Action"
+      env:
+        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+      run: |
+        echo "starting Read Sources run" >> readsources_action.log
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
 
-      echo "Current directory and contents:" >> readsources_action.log
-      pwd >> readsources_action.log
-      echo "Contents of signatures_to_test directory:" >> readsources_action.log
-      ls -la signatures_to_test >> readsources_action.log
+        echo "Current directory and contents:" >> readsources_action.log
+        pwd >> readsources_action.log
+        echo "Contents of signatures_to_test directory:" >> readsources_action.log
+        ls -la signatures_to_test >> readsources_action.log
 
-      # Check for existence of previous hashes file and read its content
-      if [[ -f "baddns/signatures/signature_history.txt" ]]; then
-        prev_hashes=$(cat baddns/signatures/signature_history.txt)
-        echo "signature_history.txt was present and read into prev_hashes..." >> readsources_action.log
-      else
-        echo "signature_history.txt was NOT present" >> readsources_action.log
-        prev_hashes=""
-      fi
-
-      # Get only the files in the signatures_to_test directory
-      files=$(ls signatures_to_test/*.yml)
-
-      for file in $files; do
-        echo "attempting to parse signature file: $file" >> readsources_action.log
-
-        if [[ ! -s "signatures_to_test/$file" ]]; then
-          echo "File $file is empty or doesn't exist, skipping" >> readsources_action.log
-          continue
-        fi
-
-        # Check if the file exists in the signatures directory and if it has been changed
-        if [[ ! -f "baddns/signatures/$file" ]] || ! cmp -s "baddns/signatures/$file" "signatures_to_test/$file"; then
-
-          # Calculate hash of the new file and check if we've seen it before
-          new_hash=$(sha256sum "signatures_to_test/$file" | cut -d ' ' -f 1)
-          if echo "$prev_hashes" | grep -q "$new_hash"; then
-            echo "File $file has been seen before, skipping" >> readsources_action.log
-            continue
-          fi
-
-          PR_BLOCKED=false
-
-          # Check for existing PRs with the same title
-          PR_TITLE="[SignatureBot] Add or update signature $file"
-          EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE)')
-
-          if [[ -n "$EXISTING_OPEN_PRS" ]]; then
-            echo "Found an open PR with title '$PR_TITLE', skipping this signature" >> readsources_action.log
-            continue
-          fi
-
-          EXISTING_CLOSED_BLOCKED_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE and any(.labels[]?; .name == "signature-blocked"))')
-
-          if [[ -n "$EXISTING_CLOSED_BLOCKED_PRS" ]]; then
-            echo "Found a closed PR with title '$PR_TITLE' and label 'signature-blocked', skipping this signature" >> readsources_action.log
-            continue
-          fi
-
-          # Add the new hash to the history file
-          echo "adding hash $new_hash to signature file" >> readsources_action.log
-          echo "$new_hash #$file" >> "baddns/signatures/signature_history.txt"
-
-          # Copy the file to the signatures directory
-          cp "signatures_to_test/$file" "baddns/signatures/$file"
-
-          echo "checking out new branch new-signature-$file" >> readsources_action.log
-          git checkout -b new-signature-$file
-          git add "baddns/signatures/$file"
-          git add "baddns/signatures/signature_history.txt"
-          echo "about to commit with the following files changed:" >> readsources_action.log
-          git status -s >> readsources_action.log
-
-          echo "adding commit and pushing branch..." >> readsources_action.log
-          # If the commit operation is successful, then push the changes and create a PR
-          git commit -m "[SignatureBot] Add or update signature $file and update signature history" && {
-            git push origin new-signature-$file
-            echo "Add or update signature $file" > pr_message
-            echo "This PR adds or updates a signature:" >> pr_message
-            echo "```" >> pr_message
-            cat "baddns/signatures/$file" >> pr_message
-            echo "```" >> pr_message
-            echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
-            gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
-          }
-          git checkout main
+        # Check for existence of previous hashes file and read its content
+        if [[ -f "baddns/signatures/signature_history.txt" ]]; then
+          prev_hashes=$(cat baddns/signatures/signature_history.txt)
+          echo "signature_history.txt was present and read into prev_hashes..." >> readsources_action.log
         else
-          echo "Skipping signature file: $file - no changes detected" >> readsources_action.log
+          echo "signature_history.txt was NOT present" >> readsources_action.log
+          prev_hashes=""
         fi
-      done
-      echo "completed read sources" >> readsources_action.log
+
+        # Get only the files in the signatures_to_test directory
+        files=$(ls signatures_to_test/*.yml)
+
+        for file in $files; do
+          echo "attempting to parse signature file: $file" >> readsources_action.log
+
+          if [[ ! -s "signatures_to_test/$file" ]]; then
+            echo "File $file is empty or doesn't exist, skipping" >> readsources_action.log
+            continue
+          fi
+
+          # Check if the file exists in the signatures directory and if it has been changed
+          if [[ ! -f "baddns/signatures/$file" ]] || ! cmp -s "baddns/signatures/$file" "signatures_to_test/$file"; then
+
+            # Calculate hash of the new file and check if we've seen it before
+            new_hash=$(sha256sum "signatures_to_test/$file" | cut -d ' ' -f 1)
+            if echo "$prev_hashes" | grep -q "$new_hash"; then
+              echo "File $file has been seen before, skipping" >> readsources_action.log
+              continue
+            fi
+
+            PR_BLOCKED=false
+
+            # Check for existing PRs with the same title
+            PR_TITLE="[SignatureBot] Add or update signature $file"
+            EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE)')
+
+            if [[ -n "$EXISTING_OPEN_PRS" ]]; then
+              echo "Found an open PR with title '$PR_TITLE', skipping this signature" >> readsources_action.log
+              continue
+            fi
+
+            EXISTING_CLOSED_BLOCKED_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE and any(.labels[]?; .name == "signature-blocked"))')
+
+            if [[ -n "$EXISTING_CLOSED_BLOCKED_PRS" ]]; then
+              echo "Found a closed PR with title '$PR_TITLE' and label 'signature-blocked', skipping this signature" >> readsources_action.log
+              continue
+            fi
+
+            # Add the new hash to the history file
+            echo "adding hash $new_hash to signature file" >> readsources_action.log
+            echo "$new_hash #$file" >> "baddns/signatures/signature_history.txt"
+
+            # Copy the file to the signatures directory
+            cp "signatures_to_test/$file" "baddns/signatures/$file"
+
+            echo "checking out new branch new-signature-$file" >> readsources_action.log
+            git checkout -b new-signature-$file
+            git add "baddns/signatures/$file"
+            git add "baddns/signatures/signature_history.txt"
+            echo "about to commit with the following files changed:" >> readsources_action.log
+            git status -s >> readsources_action.log
+
+            echo "adding commit and pushing branch..." >> readsources_action.log
+            # If the commit operation is successful, then push the changes and create a PR
+            git commit -m "[SignatureBot] Add or update signature $file and update signature history" && {
+              git push origin new-signature-$file
+              echo "Add or update signature $file" > pr_message
+              echo "This PR adds or updates a signature:" >> pr_message
+              echo "```" >> pr_message
+              cat "baddns/signatures/$file" >> pr_message
+              echo "```" >> pr_message
+              echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
+              gh pr create --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
+            }
+            git checkout main
+          else
+            echo "Skipping signature file: $file - no changes detected" >> readsources_action.log
+          fi
+        done
+        echo "completed read sources" >> readsources_action.log
 
 
     - name: Upload readsources.py log
