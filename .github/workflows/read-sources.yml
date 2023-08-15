@@ -103,8 +103,16 @@ jobs:
             # Copy the file to the signatures directory
             cp "signatures_to_test/$file" "baddns/signatures/$file"
 
+            BRANCH_NAME="new-signature-$file"
+            # Check if the branch exists
+            if git show-ref --verify --quiet refs/heads/$BRANCH_NAME; then
+                echo "Found and deleted stale branch $BRANCH_NAME" >> readsources_action.log
+                git branch -D $BRANCH_NAME  # Delete the branch locally
+                git push origin --delete $BRANCH_NAME  # Delete the branch remotely
+            fi
+
             echo "checking out new branch new-signature-$file" >> readsources_action.log
-            git checkout -b new-signature-$file
+            git checkout -b BRANCH_NAME
             git add "baddns/signatures/$file"
             git add "baddns/signatures/signature_history.txt"
             echo "about to commit with the following files changed:" >> readsources_action.log
