@@ -1,0 +1,17 @@
+identifiers:
+  cnames:
+  - type: word
+    value: forms.cs.zohohost.com
+  - type: word
+    value: forms.cs.zohohost.eu
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - status: 400
+    type: status
+  matchers-condition: and
+mode: http
+service_name: zoho forms
+source: dnsreaper
