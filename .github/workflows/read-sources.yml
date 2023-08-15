@@ -45,10 +45,11 @@ jobs:
         # Check for existence of previous hashes file and read its content
         if [[ -f "baddns/signatures/signature_history.txt" ]]; then
           prev_hashes=$(cat baddns/signatures/signature_history.txt)
+          echo "signature_history.txt was present and read into prev_hashes..." >> readsources_action.log
         fi
 
         
-        # Get only the first file in the signatures_to_test directory
+        # Get only the files in the signatures_to_test directory
         files=$(ls signatures_to_test/*.yml)
 
         for file in $files; do
