@@ -1,0 +1,15 @@
+identifiers:
+  cnames:
+  - type: word
+    value: domains.tribeplatform.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - status: 0
+    type: status
+  matchers-condition: and
+mode: http
+service_name: tribe.so
+source: dnsreaper
