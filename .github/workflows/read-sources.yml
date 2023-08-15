@@ -49,7 +49,7 @@ jobs:
 
         
         # Get only the first file in the signatures_to_test directory
-        files=$(ls signatures_to_test | head -n 3)
+        files=$(ls signatures_to_test/*.yml)
 
         for file in $files; do
           echo "parsing signature file: $file" >> readsources_action.log
