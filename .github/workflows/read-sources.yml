@@ -44,7 +44,9 @@ jobs:
 
         echo "Current directory and contents:" >> readsources_action.log
         pwd >> readsources_action.log
-        ls -la >> readsources_action.log
+
+        echo "Contents of signatures_to_test directory:" >> readsources_action.log
+        ls -la signatures_to_test >> readsources_action.log
 
         # Check for existence of previous hashes file and read its content
         if [[ -f "baddns/signatures/signature_history.txt" ]]; then
