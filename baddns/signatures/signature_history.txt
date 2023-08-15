@@ -1,0 +1,1 @@
+46c10ab391c670822a8e1e77815ba354b6452f5e3f20679ae65af64912da887b #nucleitemplates_cargocollective-takeover.yml
