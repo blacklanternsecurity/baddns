@@ -1,0 +1,25 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - regex:
+    - ^page not found$
+    type: regex
+  - case-insensitive: true
+    condition: and
+    part: header
+    type: word
+    words:
+    - 'Server: Caddy'
+  - status: 404
+    type: status
+  matchers-condition: and
+mode: http
+service_name: uptimerobot takeover detection
+source: nucleitemplates
