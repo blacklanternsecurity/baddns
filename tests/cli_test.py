@@ -31,26 +31,6 @@ def test_cli_cname_nxdomain(monkeypatch, capsys, mocker):
     mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
     mock_resolver = MockResolver(mock_data)
     mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
-    target = "bad.dns"
-
-    cli.main()
-    captured = capsys.readouterr()
-    assert "Vulnerable!" in captured.out
-    assert "baddns.azurewebsites.net" in captured.out
-
-
-def test_cli_cname_nxdomain(monkeypatch, capsys, mocker):
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "python",
-            "bad.dns",
-        ],
-    )
-
-    mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
-    mock_resolver = MockResolver(mock_data)
-    mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
 
     cli.main()
     captured = capsys.readouterr()

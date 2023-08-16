@@ -1,7 +1,6 @@
 import os
 import pytest
 import pkg_resources
-import dns
 import requests
 
 from baddns.lib.baddns import BadDNS_cname, WhoisManager
