@@ -1,0 +1,22 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: or
+    part: body
+    type: word
+    words:
+    - The page you are looking for doesn't exist or has been moved.
+    - The page you are looking for doesn&#x27;t exist or has been moved
+    - <p class="description">The page you are looking for doesn't exist or has been
+      moved.</p>
+  matchers-condition: and
+mode: http
+service_name: webflow takeover detection
+source: nucleitemplates
