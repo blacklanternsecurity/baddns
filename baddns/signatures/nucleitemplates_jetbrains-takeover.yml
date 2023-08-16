@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - is not a registered InCloud YouTrack.
+  matchers-condition: and
+mode: http
+service_name: Jetbrains Takeover Detection
+source: nucleitemplates
