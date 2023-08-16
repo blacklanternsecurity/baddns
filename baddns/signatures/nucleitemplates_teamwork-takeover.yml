@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Oops - We didn't find your site.
+  matchers-condition: and
+mode: http
+service_name: Teamwork Takeover Detection
+source: nucleitemplates
