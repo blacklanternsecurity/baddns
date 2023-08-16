@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: wordpress.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Do you want to register
+  matchers-condition: and
+mode: http
+service_name: wordpress.com
+source: dnsreaper
