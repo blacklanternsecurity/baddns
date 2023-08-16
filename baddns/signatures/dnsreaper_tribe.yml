@@ -6,12 +6,13 @@ identifiers:
   nameservers: []
   not_cnames: []
 matcher_rule:
-- condition: and
-  part: body
-  type: word
-  words:
-  - This community is not available at the moment
-  matchers-condition: and
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - This community is not available at the moment
+    matchers-condition: and
 mode: http
 service_name: tribe.so
 source: dnsreaper
