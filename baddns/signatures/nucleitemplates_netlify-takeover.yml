@@ -1,0 +1,25 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - case-insensitive: true
+    condition: and
+    part: body
+    type: word
+    words:
+    - 'Not Found - Request ID:'
+  - condition: and
+    part: header
+    type: word
+    words:
+    - Netlify
+  matchers-condition: and
+mode: http
+service_name: netlify takeover detection
+source: nucleitemplates
