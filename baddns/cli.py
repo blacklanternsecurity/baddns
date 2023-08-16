@@ -11,7 +11,7 @@ import logging
 import pkg_resources
 
 from .lib.baddns import BadDNS_cname
-from .lib.errors import BadDNSSignatureException
+from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 
 from colorama import Fore, Style, init
 
@@ -55,7 +55,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         self.print_usage()
         log.error(message)
-        self.exit(1)
+        raise BadDNSCLIException(message)
 
 
 def print_version():
@@ -89,16 +89,18 @@ async def _main():
     )
 
     args = parser.parse_args()
+
     debug_logging(args.debug)
 
     if args.custom_signatures:
         log.info(f"Using custom signatures directory: [{args.custom_signatures}]")
 
     try:
+        pass
         baddns_cname = BadDNS_cname(args.target, signatures_dir=args.custom_signatures)
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
-        sys.exit(1)
+        raise BadDNSCLIException(f"Error loading signatures: {e}")
 
     if await baddns_cname.dispatch():
         finding = baddns_cname.analyze()
@@ -112,6 +114,9 @@ def main():
         asyncio.run(_main())
     except asyncio.CancelledError:
         log.error("Got asyncio.CancelledError")
+
+    except BadDNSCLIException:
+        sys.exit(1)
 
     except KeyboardInterrupt:
         sys.exit(1)

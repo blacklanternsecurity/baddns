@@ -27,6 +27,8 @@ pytest-cov = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest-asyncio = "^0.21.1"
+mock = "^5.1.0"
+pytest-mock = "^3.11.1"
 
 [build-system]
 requires = ["poetry-core"]
