@@ -1,0 +1,20 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Profile not found
+    - Hmmm....something is not right.
+  matchers-condition: and
+mode: http
+service_name: wufoo takeover detection
+source: nucleitemplates
