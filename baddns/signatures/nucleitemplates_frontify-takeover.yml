@@ -1,0 +1,20 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - 404 - Page Not Found
+    - "Oops\u2026 looks like you got lost"
+  matchers-condition: and
+mode: http
+service_name: frontify takeover detection
+source: nucleitemplates
