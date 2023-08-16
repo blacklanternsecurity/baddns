@@ -92,11 +92,18 @@ jobs:
             fi
 
             sleep 5
-            EXISTING_CLOSED_BLOCKED_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE and any(.labels[]?; .name == "signature-blocked"))')
+            # Encode the PR title for use in a URL
+            ENCODED_PR_TITLE=$(echo "$PR_TITLE" | jq -sRr @uri)
 
-            if [[ -n "$EXISTING_CLOSED_BLOCKED_PRS" ]]; then
-              echo "Found a closed PR with title '$PR_TITLE' and label 'signature-blocked', skipping this signature" >> readsources_action.log
-              continue
+            # Check for existing closed PRs with the same title and label 'signature-blocked'
+            SEARCH_RESULT=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/search/issues?q=repo:${{ github.repository }}+type:pr+state:closed+label:signature-blocked+in:title+$ENCODED_PR_TITLE")
+
+            # Use jq to determine if any matching PRs are found. If so, skip processing this signature.
+            MATCHING_CLOSED_BLOCKED_PR_COUNT=$(echo "$SEARCH_RESULT" | jq '.total_count')
+
+            if [[ $MATCHING_CLOSED_BLOCKED_PR_COUNT -gt 0 ]]; then
+                echo "Found a closed PR with title '$PR_TITLE' and label 'signature-blocked', skipping this signature" >> readsources_action.log
+                continue
             fi
 
             # Add the new hash to the history file
