@@ -121,17 +121,18 @@ async def test_cname_http_bigcartel(fs, mock_dispatch_whois, httpx_mock):
     httpx_mock.add_response(
         url="http://bad.dns/",
         status_code=200,
-        text="<html><p>DNS resolution error</p></html>",
+        text="<h1>Oops! We couldn&#8217;t find that page.</h1>",
     )
 
     mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": "127.0.0.1"}}
 
     mock_resolver = MockResolver(mock_data)
     target = "bad.dns"
-    mock_signature_load(fs, "dnsreaper_bigcartel.yml")
+    mock_signature_load(fs, "nucleitemplates_bigcartel-takeover.yml")
 
     baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
     finding = None
+
     if await baddns_cname.dispatch():
         finding = baddns_cname.analyze()
 
@@ -139,7 +140,7 @@ async def test_cname_http_bigcartel(fs, mock_dispatch_whois, httpx_mock):
     assert finding == {
         "target": "bad.dns",
         "cname": "baddns.bigcartel.com",
-        "signature_name": "bigcartel.com",
+        "signature_name": "Bigcartel Takeover Detection",
         "technique": "HTTP String Match",
     }
 
@@ -150,7 +151,7 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
 
     mock_resolver = MockResolver(mock_data)
     target = "bad.dns"
-    mock_signature_load(fs, "dnsreaper_bigcartel.yml")
+    mock_signature_load(fs, "nucleitemplates_bigcartel-takeover.yml")
 
     baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
     finding = None
