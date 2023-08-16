@@ -1,0 +1,49 @@
+identifiers:
+  cnames:
+  - type: word
+    value: us-east-1.elasticbeanstalk.com
+  - type: word
+    value: us-east-2.elasticbeanstalk.com
+  - type: word
+    value: us-west-2.elasticbeanstalk.com
+  - type: word
+    value: af-south-1.elasticbeanstalk.com
+  - type: word
+    value: ap-east-1.elasticbeanstalk.com
+  - type: word
+    value: ap-southeast-3.elasticbeanstalk.com
+  - type: word
+    value: ap-south-1.elasticbeanstalk.com
+  - type: word
+    value: ap-northeast-3.elasticbeanstalk.com
+  - type: word
+    value: ap-northeast-2.elasticbeanstalk.com
+  - type: word
+    value: ap-northeast-1.elasticbeanstalk.com
+  - type: word
+    value: ca-central-1.elasticbeanstalk.com
+  - type: word
+    value: eu-central-1.elasticbeanstalk.com
+  - type: word
+    value: eu-west-1.elasticbeanstalk.com
+  - type: word
+    value: eu-west-2.elasticbeanstalk.com
+  - type: word
+    value: eu-south-1.elasticbeanstalk.com
+  - type: word
+    value: eu-west-2.elasticbeanstalk.com
+  - type: word
+    value: eu-west-3.elasticbeanstalk.com
+  - type: word
+    value: eu-north-1.elasticbeanstalk.com
+  - type: word
+    value: me-south-1.elasticbeanstalk.com
+  - type: word
+    value: sa-east-1.elasticbeanstalk.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule: null
+mode: dns_nxdomain
+service_name: AWS Elastic Beanstalk
+source: dnsreaper
