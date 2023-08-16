@@ -7,17 +7,13 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
+  - status: 404
+    type: status
   - condition: and
     part: body
     type: word
     words:
-    - The gods are wise, but do not know of the site which you seek.
-  - dsl:
-    - '!contains(host,"apigee.io")'
-    type: dsl
+    - 404 Not Found
   matchers-condition: and
 mode: http
 service_name: Pantheon Takeover Detection
