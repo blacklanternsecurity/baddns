@@ -1,0 +1,21 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - 404 - Page Not Found
+    - Start Your New Landing Page Now!
+    - pagewiz
+  matchers-condition: and
+mode: http
+service_name: Pagewiz subdomain takeover
+source: nucleitemplates
