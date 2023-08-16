@@ -1,14 +1,16 @@
 identifiers:
   cnames:
   - type: word
-    value: domains.tribeplatform.com
+    value: tribeplatform.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
-  matchers:
-  - status: 0
-    type: status
+- condition: and
+    part: body
+    type: word
+    words:
+    - This community is not available at the moment
   matchers-condition: and
 mode: http
 service_name: tribe.so
