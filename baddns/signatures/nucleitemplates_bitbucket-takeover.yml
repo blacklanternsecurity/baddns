@@ -1,0 +1,24 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Repository not found
+  - condition: and
+    part: header
+    type: word
+    words:
+    - text/plain
+  matchers-condition: and
+mode: http
+service_name: Bitbucket Takeover Detection
+source: nucleitemplates
