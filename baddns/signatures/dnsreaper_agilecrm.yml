@@ -7,11 +7,8 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: or
-    part: body
-    type: word
-    words:
-    - No landing page found.
+  - status: 302
+    type: status
   matchers-condition: and
 mode: http
 service_name: agilecrm.com
