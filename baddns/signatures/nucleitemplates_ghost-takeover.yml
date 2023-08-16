@@ -1,0 +1,21 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: header
+    type: word
+    words:
+    - offline.ghost.org
+  - status: 302
+    type: status
+  matchers-condition: and
+mode: http
+service_name: ghost takeover detection
+source: nucleitemplates
