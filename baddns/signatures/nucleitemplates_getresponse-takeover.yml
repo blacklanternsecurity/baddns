@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - With GetResponse Landing Pages, lead generation has never been easier
+  matchers-condition: and
+mode: http
+service_name: Getresponse Takeover Detection
+source: nucleitemplates
