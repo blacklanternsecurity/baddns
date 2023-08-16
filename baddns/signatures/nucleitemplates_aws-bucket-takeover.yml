@@ -1,0 +1,25 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames:
+  - type: word
+    value: amazonaws.com
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - The specified bucket does not exist
+  - dsl:
+    - contains(tolower(header), 'x-guploader-uploadid')
+    negative: true
+    type: dsl
+  matchers-condition: and
+mode: http
+service_name: AWS Bucket Takeover Detection
+source: nucleitemplates
