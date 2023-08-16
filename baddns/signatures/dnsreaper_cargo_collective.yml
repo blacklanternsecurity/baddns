@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: cargo.site
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - "<div class=\"notfound\">\n\t\t\t404 Not Found<br>\n\t\t\t<a class=\"homepage_link"
+  matchers-condition: and
+mode: http
+service_name: Cargo Collective
+source: dnsreaper
