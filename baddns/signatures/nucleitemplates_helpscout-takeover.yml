@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - 'No settings were found for this company:'
+  matchers-condition: and
+mode: http
+service_name: helpscout takeover detection
+source: nucleitemplates
