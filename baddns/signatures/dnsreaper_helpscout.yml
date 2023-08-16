@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: helpscoutdocs.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Not Found
+  matchers-condition: and
+mode: http
+service_name: helpscoutdocs.com
+source: dnsreaper
