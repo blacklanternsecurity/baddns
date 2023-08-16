@@ -1,0 +1,20 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - <strong>Trying to access your account?</strong>
+    - or <a href="mailto:help@createsend.com
+  matchers-condition: and
+mode: http
+service_name: CampaignMonitor Takeover Detection
+source: nucleitemplates

@@ -1,0 +1,22 @@
+identifiers:
+  cnames:
+  - type: word
+    value: bcvp0rtal.com
+  - type: word
+    value: brightcovegallery.com
+  - type: word
+    value: gallery.video
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Page Not Found
+  matchers-condition: and
+mode: http
+service_name: BrightCove
+source: dnsreaper
