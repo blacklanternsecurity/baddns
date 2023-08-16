@@ -1,0 +1,20 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Alias not configured!
+    - Admin of this Helprace account needs to set up domain alias
+  matchers-condition: and
+mode: http
+service_name: Helprace Takeover Detection
+source: nucleitemplates
