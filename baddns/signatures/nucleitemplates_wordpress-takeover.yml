@@ -1,0 +1,26 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Do you want to register
+    - .wordpress.com</em> doesn&#8217;t&nbsp;exist
+  - condition: and
+    negative: true
+    part: body
+    type: word
+    words:
+    - cannot be registered
+  matchers-condition: and
+mode: http
+service_name: WordPress takeover detection
+source: nucleitemplates
