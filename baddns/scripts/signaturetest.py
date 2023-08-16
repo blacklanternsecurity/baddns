@@ -110,10 +110,13 @@ def process_file(file_path):
                     if match_found:
                         signature_pass = True
                         match_table[cname] = True
+                    else:
+                        match_table[cname] = False
                 else:
                     pass
                     # TODO: Support other types
         else:
+
             signature_pass = True
         if signature_pass == False:
             error = "No CNAMES passed random subdomain matcher validation"
