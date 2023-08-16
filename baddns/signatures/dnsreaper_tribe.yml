@@ -11,7 +11,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - This community is not available at the moment
+    - You can claim this address and build your own community right now!
     matchers-condition: and
 mode: http
 service_name: tribe.so
