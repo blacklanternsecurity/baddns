@@ -1,0 +1,22 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Domain isn't configured
+    - flexbe
+  - status: 404
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Flexbe Subdomain Takeover
+source: nucleitemplates
