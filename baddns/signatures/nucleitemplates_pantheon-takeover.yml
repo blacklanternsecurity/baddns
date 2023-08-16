@@ -1,0 +1,24 @@
+identifiers:
+  cnames:
+  - type: word
+    value: apigee.io
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - The gods are wise, but do not know of the site which you seek.
+  - dsl:
+    - '!contains(host,"apigee.io")'
+    type: dsl
+  matchers-condition: and
+mode: http
+service_name: Pantheon Takeover Detection
+source: nucleitemplates
