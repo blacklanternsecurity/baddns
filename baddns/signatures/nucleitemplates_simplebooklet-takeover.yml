@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - We can't find this <a href="https://simplebooklet.com
+  matchers-condition: and
+mode: http
+service_name: simplebooklet takeover detection
+source: nucleitemplates
