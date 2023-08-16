@@ -1,0 +1,12 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.wordpress.com
+  - ns2.wordpress.com
+  - ns3.wordpress.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: wordpress.com
+source: dnsreaper
