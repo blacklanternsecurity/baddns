@@ -1,0 +1,24 @@
+identifiers:
+  cnames:
+  - type: word
+    value: bigcartel.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - <h1>Oops! We couldn&#8217;t find that page.</h1>
+  - dsl:
+    - '!contains(host,"bigcartel.com")'
+    type: dsl
+  matchers-condition: and
+mode: http
+service_name: Bigcartel Takeover Detection
+source: nucleitemplates

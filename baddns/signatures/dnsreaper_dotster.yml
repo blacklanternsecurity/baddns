@@ -1,0 +1,13 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.dotster.com
+  - ns2.dotster.com
+  - ns1.nameresolve.com
+  - ns2.nameresolve.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: nameresolve.com
+source: dnsreaper
