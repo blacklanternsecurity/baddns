@@ -1,0 +1,15 @@
+identifiers:
+  cnames:
+  - type: word
+    value: launchrock.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - status: 500
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Launchrock
+source: dnsreaper
