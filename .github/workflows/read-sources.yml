@@ -2,6 +2,8 @@ name: Read Sources
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 17 * * *'
 jobs:
   readsources:
     runs-on: ubuntu-latest
