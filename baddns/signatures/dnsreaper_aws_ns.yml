@@ -1,0 +1,10 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - awsdns
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: AWS Route53
+source: dnsreaper

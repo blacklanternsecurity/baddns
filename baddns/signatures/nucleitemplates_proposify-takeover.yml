@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - If you need immediate assistance, please contact <a href="mailto:support@proposify.biz
+  matchers-condition: and
+mode: http
+service_name: proposify takeover detection
+source: nucleitemplates
