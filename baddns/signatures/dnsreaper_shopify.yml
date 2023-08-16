@@ -1,9 +1,7 @@
 identifiers:
   cnames:
   - type: word
-    value: shops.myshopify.com
-  ips:
-  - 23.227.38.65
+    value: myshopify.com
   nameservers: []
   not_cnames: []
 matcher_rule:
@@ -12,7 +10,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Only one step left!
+    - This store does not exist.
   matchers-condition: and
 mode: http
 service_name: Shopify
