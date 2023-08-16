@@ -1,0 +1,12 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.digitalocean.com
+  - ns2.digitalocean.com
+  - ns3.digitalocean.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: digitalocean.com
+source: dnsreaper
