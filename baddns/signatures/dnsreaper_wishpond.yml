@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: wishpond.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - https://www.wishpond.com/404?campaign=true
+  matchers-condition: and
+mode: http
+service_name: wishpond.com
+source: dnsreaper
