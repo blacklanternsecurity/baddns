@@ -1,0 +1,32 @@
+identifiers:
+  cnames:
+  - type: word
+    value: githubapp.com
+  - type: word
+    value: github.com
+  - type: word
+    value: github.io
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: or
+    part: body
+    type: word
+    words:
+    - There isn't a GitHub Pages site here.
+    - For root URLs (like http://example.com/) you must provide an index.html file
+  - condition: and
+    dsl:
+    - '!contains(host,"githubapp.com")'
+    - '!contains(host,"github.com")'
+    - '!contains(host,"github.io")'
+    type: dsl
+  matchers-condition: and
+mode: http
+service_name: Github Takeover Detection
+source: nucleitemplates
