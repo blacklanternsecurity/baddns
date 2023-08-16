@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips:
+  - 3.13.222.255
+  - 3.13.246.91
+  - 3.130.60.26
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - The page you were looking for doesn
+  matchers-condition: and
+mode: http
+service_name: Convert Pages
+source: dnsreaper

@@ -1,0 +1,11 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.linode.com
+  - ns2.linode.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: linode.com
+source: dnsreaper
