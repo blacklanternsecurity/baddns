@@ -1,7 +1,7 @@
 identifiers:
   cnames:
   - type: word
-    value: bigcartel.com
+    value: brandpad.io
   ips: []
   nameservers: []
   not_cnames: []
@@ -11,8 +11,8 @@ matcher_rule:
     part: body
     type: word
     words:
-    - DNS resolution error
+    - is not registered as whitelabel or custom domain.
   matchers-condition: and
 mode: http
-service_name: bigcartel.com
+service_name: brandpad.io
 source: dnsreaper
