@@ -1,0 +1,17 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - regex:
+    - (?:Company Not Found|you&rsquo;re looking for doesn&rsquo;t exist)
+    type: regex
+  matchers-condition: and
+mode: http
+service_name: worksites takeover detection
+source: nucleitemplates
