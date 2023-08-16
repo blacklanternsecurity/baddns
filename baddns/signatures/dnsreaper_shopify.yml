@@ -4,6 +4,7 @@ identifiers:
     value: myshopify.com
   nameservers: []
   not_cnames: []
+  ips: []
 matcher_rule:
   matchers:
   - condition: or
