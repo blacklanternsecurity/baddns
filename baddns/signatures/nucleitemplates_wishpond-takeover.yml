@@ -1,0 +1,20 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: or
+    part: body
+    type: word
+    words:
+    - https://www.wishpond.com/404?campaign=true
+    - "Oops! There isn\u2019t a Wishpond Campaign published to this page."
+  matchers-condition: and
+mode: http
+service_name: Wishpond Takeover Detection
+source: nucleitemplates
