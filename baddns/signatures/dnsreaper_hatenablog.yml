@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: hatenablog.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - 404 Blog is not found
+  matchers-condition: and
+mode: http
+service_name: hatenablog.com
+source: dnsreaper
