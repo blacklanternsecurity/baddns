@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '{"text":"Page Not Found"'
+  matchers-condition: and
+mode: http
+service_name: Smugmug Takeover Detection
+source: nucleitemplates
