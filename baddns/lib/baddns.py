@@ -151,7 +151,6 @@ class BadDNS_base:
         self.dns_client = dns_client
         self.target = target
         self.signatures = []
-        findings = []
         self.load_signatures(signatures_dir)
         self.custom_nameservers = custom_nameservers
 
