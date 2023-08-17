@@ -186,10 +186,10 @@ class BadDNS_base:
 class BadDNS_ns(BadDNS_base):
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
-        log.info(f"Starting NS Module with target [{target}]")
         self.target_dnsmanager = DNSManager(
             target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
         )
+        self.name = "Nameserver Module"
 
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
@@ -253,11 +253,11 @@ class BadDNS_ns(BadDNS_base):
 class BadDNS_cname(BadDNS_base):
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
-        log.info(f"Starting CNAME Module with target [{target}]")
         self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
         self.target_httpmanager = None
         self.cname_dnsmanager = None
         self.cname_whoismanager = None
+        self.name = "CNAME Module"
 
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()

@@ -84,6 +84,22 @@ def validate_nameservers(
     return arg_value
 
 
+async def execute_module(ModuleClass, target, custom_nameservers, signatures_dir):
+    try:
+        module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures_dir=signatures_dir)
+    except BadDNSSignatureException as e:
+        log.error(f"Error loading signatures: {e}")
+        raise BadDNSCLIException(f"Error loading signatures: {e}")
+
+    log.info(f"Starting [{module_instance.name}] with target [{target}]")
+    if await module_instance.dispatch():
+        findings = module_instance.analyze()
+        if findings:
+            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
+            for finding in findings:
+                print(finding)
+
+
 async def _main():
     setup_logging()
     parser = CustomArgumentParser(description="Check subdomains for subdomain takeovers and other DNS tomfoolery")
@@ -117,38 +133,8 @@ async def _main():
         custom_nameservers = args.custom_nameservers.split(",")
         log.info(f"Using custom nameservers: [{', '.join(custom_nameservers)}]")
 
-    # cname module
-
-    try:
-        baddns_cname = BadDNS_cname(
-            args.target, custom_nameservers=custom_nameservers, signatures_dir=args.custom_signatures
-        )
-    except BadDNSSignatureException as e:
-        log.error(f"Error loading signatures: {e}")
-        raise BadDNSCLIException(f"Error loading signatures: {e}")
-
-    if await baddns_cname.dispatch():
-        findings = baddns_cname.analyze()
-        if findings:
-            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
-            for finding in findings:
-                print(finding)
-
-    # ns module
-    try:
-        baddns_ns = BadDNS_ns(
-            args.target, custom_nameservers=custom_nameservers, signatures_dir=args.custom_signatures
-        )
-    except BadDNSSignatureException as e:
-        log.error(f"Error loading signatures: {e}")
-        raise BadDNSCLIException(f"Error loading signatures: {e}")
-
-    if await baddns_ns.dispatch():
-        findings = baddns_ns.analyze()
-        if findings:
-            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
-            for finding in findings:
-                print(finding)
+    await execute_module(BadDNS_cname, args.target, custom_nameservers, args.custom_signatures)
+    await execute_module(BadDNS_ns, args.target, custom_nameservers, args.custom_signatures)
 
 
 def main():
