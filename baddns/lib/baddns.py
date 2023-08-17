@@ -233,7 +233,6 @@ class BadDNS_cname(BadDNS_base):
                                 "technique": "CNAME NXDOMAIN",
                             }
 
-
         else:
             log.debug("Starting HTTP analysis")
 
@@ -285,11 +284,9 @@ class BadDNS_cname(BadDNS_base):
                             "technique": "HTTP String Match",
                         }
 
-
         # check whois data for expiring domains
         log.debug("analyzing whois results")
         if self.cname_whoismanager.whois_result:
-
             # check for unregistered CNAME
             if self.cname_whoismanager.whois_result["type"] == "error":
                 log.debug("whois result was an error")
@@ -308,17 +305,19 @@ class BadDNS_cname(BadDNS_base):
                 expiration_date = self.cname_whoismanager.whois_result["data"]["expiration_date"]
                 current_date = date.today()
                 if expiration_date.date() < current_date:
-                    log.info(f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})")
+                    log.info(
+                        f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
+                    )
                     return {
                         "target": self.target_dnsmanager.target,
                         "cnames": self.target_dnsmanager.answers["CNAME"],
                         "signature_name": None,
                         "matching_domain": None,
                         "technique": "CNAME Base Domain Expired",
-                        "expiration_date": expiration_date.strftime('%Y-%m-%d %H:%M:%S')
+                        "expiration_date": expiration_date.strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 else:
-                    log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")                    
+                    log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")
 
         else:
             log.debug("whois_result was NoneType")
