@@ -10,7 +10,7 @@ import argparse
 import logging
 import pkg_resources
 
-from .lib.baddns import BadDNS_cname
+from .lib.baddns import BadDNS_cname, BadDNS_ns
 from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 
 from colorama import Fore, Style, init
@@ -73,21 +73,38 @@ def validate_target(
     return arg_value
 
 
+def validate_nameservers(
+    arg_value,
+    pattern=re.compile(
+        r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(,((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))*$"
+    ),
+):
+    if not pattern.match(arg_value):
+        raise argparse.ArgumentTypeError("Nameservers argument is incorrectly formatted")
+    return arg_value
+
+
 async def _main():
     setup_logging()
     parser = CustomArgumentParser(description="Check subdomains for subdomain takeovers and other DNS tomfoolery")
     print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
     print_version()
 
-    parser.add_argument("target", type=validate_target, help="subdomain to analyze")
-    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument(
+        "-n",
+        "--custom-nameservers",
+        type=validate_nameservers,
+        help="Provide a list of custom nameservers separated by comma.",
+    )
 
     parser.add_argument(
         "-c",
         "--custom-signatures",
         help="Use an alternate directory for loadings signatures",
     )
+    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
 
+    parser.add_argument("target", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
 
     debug_logging(args.debug)
@@ -95,18 +112,43 @@ async def _main():
     if args.custom_signatures:
         log.info(f"Using custom signatures directory: [{args.custom_signatures}]")
 
+    custom_nameservers = None
+    if args.custom_nameservers:
+        custom_nameservers = args.custom_nameservers.split(",")
+        log.info(f"Using custom nameservers: [{', '.join(custom_nameservers)}]")
+
+    # cname module
+
     try:
-        pass
-        baddns_cname = BadDNS_cname(args.target, signatures_dir=args.custom_signatures)
+        baddns_cname = BadDNS_cname(
+            args.target, custom_nameservers=custom_nameservers, signatures_dir=args.custom_signatures
+        )
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
         raise BadDNSCLIException(f"Error loading signatures: {e}")
 
     if await baddns_cname.dispatch():
-        finding = baddns_cname.analyze()
-        if finding:
+        findings = baddns_cname.analyze()
+        if findings:
             print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
-            print(finding)
+            for finding in findings:
+                print(finding)
+
+    # ns module
+    try:
+        baddns_ns = BadDNS_ns(
+            args.target, custom_nameservers=custom_nameservers, signatures_dir=args.custom_signatures
+        )
+    except BadDNSSignatureException as e:
+        log.error(f"Error loading signatures: {e}")
+        raise BadDNSCLIException(f"Error loading signatures: {e}")
+
+    if await baddns_ns.dispatch():
+        findings = baddns_ns.analyze()
+        if findings:
+            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
+            for finding in findings:
+                print(finding)
 
 
 def main():

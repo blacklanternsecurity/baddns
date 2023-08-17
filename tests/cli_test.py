@@ -19,6 +19,26 @@ def test_cli_validation_target(monkeypatch, capsys):
         assert "the following arguments are required: target" in captured.err
 
 
+def test_cli_validation_customnameservers_valid(monkeypatch, capsys):
+    with patch("sys.exit") as exit_mock:
+        monkeypatch.setattr("sys.argv", ["python", "-n", "1.1.1.1,8.8.8.8", "bad.dns"])
+        cli.main()
+        captured = capsys.readouterr()
+        print(captured.out)
+        assert not exit_mock.called
+        assert "custom nameservers: [1.1.1.1, 8.8.8.8]" in captured.err
+
+
+def test_cli_validation_customnameservers_invalid(monkeypatch, capsys):
+    with patch("sys.exit") as exit_mock:
+        monkeypatch.setattr("sys.argv", ["python", "-n", "1.1.1.1 8.8.8.8", "bad.dns"])
+        cli.main()
+        captured = capsys.readouterr()
+        print(captured.out)
+        assert exit_mock.called
+        assert "Nameservers argument is incorrectly formatted" in captured.err
+
+
 def test_cli_cname_nxdomain(monkeypatch, capsys, mocker):
     monkeypatch.setattr(
         "sys.argv",

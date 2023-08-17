@@ -19,11 +19,15 @@ log = logging.getLogger(__name__)
 class DNSManager:
     dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]
 
-    def __init__(self, target, dns_client=None):
+    def __init__(self, target, dns_client=None, custom_nameservers=None):
         if not dns_client:
             self.dns_client = dns.asyncresolver.Resolver()
         else:
             self.dns_client = dns_client
+
+        if custom_nameservers:
+            self.dns_client.nameservers = custom_nameservers
+
         self.target = target
         self.answers = {key: None for key in self.dns_record_types}
         self.answers.update({"NoAnswer": False, "NXDOMAIN": False})
@@ -142,12 +146,14 @@ class HttpManager:
 
 
 class BadDNS_base:
-    def __init__(self, target, http_client_class=None, dns_client=None, signatures_dir=None):
+    def __init__(self, target, http_client_class=None, dns_client=None, signatures_dir=None, custom_nameservers=None):
         self.http_client_class = http_client_class
         self.dns_client = dns_client
         self.target = target
         self.signatures = []
+        findings = []
         self.load_signatures(signatures_dir)
+        self.custom_nameservers = custom_nameservers
 
     def load_signatures(self, signatures_dir=None):
         if signatures_dir:
@@ -174,7 +180,74 @@ class BadDNS_base:
         if len(self.signatures) == 0:
             raise BadDNSSignatureException(f"No signatures were successfuly loaded from [{signatures_dir}]")
         else:
-            log.info(f"Loaded [{str(len(self.signatures))}] signatures from [{signatures_dir}]")
+            log.debug(f"Loaded [{str(len(self.signatures))}] signatures from [{signatures_dir}]")
+
+
+class BadDNS_ns(BadDNS_base):
+    def __init__(self, target, **kwargs):
+        super().__init__(target, **kwargs)
+        log.info(f"Starting NS Module with target [{target}]")
+        self.target_dnsmanager = DNSManager(
+            target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+        )
+
+    async def dispatch(self):
+        await self.target_dnsmanager.dispatchDNS()
+        return True
+
+    @staticmethod
+    def get_substring_matches(nameservers, strings):
+        matched_nameservers = set()
+        matched_signatures = set()
+
+        for ns in nameservers:
+            for s in strings:
+                if s in ns:
+                    matched_nameservers.add(ns)
+                    matched_signatures.add(s)
+
+        if not matched_nameservers and not matched_signatures:
+            return None
+
+        return list(matched_nameservers), list(matched_signatures)
+
+    def analyze(self):
+        findings = []
+        if self.target_dnsmanager.answers["NS"] != None:
+            target_nameservers = [ns.to_text() for ns in self.target_dnsmanager.answers["NS"]]
+            log.debug("Nameserver(s) found. Continuing...")
+        else:
+            return False
+
+        if self.target_dnsmanager.answers["SOA"] == None:
+            log.debug("No SOA record found w/nameservers present")
+
+            signature_name = "GENERIC"
+            matching_signatures = None
+            r = None
+            for sig in self.signatures:
+                if sig.signature["mode"] == "dns_nosoa":
+                    sig_nameservers = [ns for ns in sig.signature["identifiers"]["nameservers"]]
+                    r = self.get_substring_matches(target_nameservers, sig_nameservers)
+                    if r:
+                        matching_signatures = r[1]
+                        signature_name = sig.signature["service_name"]
+                        log.debug(
+                            f"Found match for for target nameservers {', '.join(target_nameservers)} with signature [{sig.signature['service_name']}] "
+                        )
+                        break
+
+            findings.append(
+                {
+                    "target": self.target_dnsmanager.target,
+                    "nameservers": [ns.to_text() for ns in self.target_dnsmanager.answers["NS"]],
+                    "signature_name": signature_name,
+                    "matching_signatures": matching_signatures,
+                    "technique": "NS RECORD WITHOUT SOA",
+                }
+            )
+
+        return findings
 
 
 class BadDNS_cname(BadDNS_base):
@@ -215,7 +288,11 @@ class BadDNS_cname(BadDNS_base):
         return True
 
     def analyze(self):
+        findings = []
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
+            signature_name = "Generic Dangling CNAME"
+            matching_domain = None
+
             log.info(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
             for sig in self.signatures:
                 if sig.signature["mode"] == "dns_nxdomain":
@@ -225,13 +302,19 @@ class BadDNS_cname(BadDNS_base):
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
                         if self.cname_dnsmanager.target.endswith(sig_cname):
                             log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable ({sig_cname})")
-                            return {
-                                "target": self.target_dnsmanager.target,
-                                "cnames": self.target_dnsmanager.answers["CNAME"],
-                                "signature_name": sig.signature["service_name"],
-                                "matching_domain": sig_cname,
-                                "technique": "CNAME NXDOMAIN",
-                            }
+                            signature_name = sig.signature["service_name"]
+                            matching_domain = sig_cname
+                            break
+
+            findings.append(
+                {
+                    "target": self.target_dnsmanager.target,
+                    "cnames": self.target_dnsmanager.answers["CNAME"],
+                    "signature_name": signature_name,
+                    "matching_domain": matching_domain,
+                    "technique": "CNAME NXDOMAIN",
+                }
+            )
 
         else:
             log.debug("Starting HTTP analysis")
@@ -277,12 +360,14 @@ class BadDNS_cname(BadDNS_base):
                     if any(m.is_match(hr) for hr in http_results if hr is not None):
                         log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
                         log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
-                        return {
-                            "target": self.target_dnsmanager.target,
-                            "cnames": self.target_dnsmanager.answers["CNAME"],
-                            "signature_name": sig.signature["service_name"],
-                            "technique": "HTTP String Match",
-                        }
+                        findings.append(
+                            {
+                                "target": self.target_dnsmanager.target,
+                                "cnames": self.target_dnsmanager.answers["CNAME"],
+                                "signature_name": sig.signature["service_name"],
+                                "technique": "HTTP String Match",
+                            }
+                        )
 
         # check whois data for expiring domains
         log.debug("analyzing whois results")
@@ -291,33 +376,44 @@ class BadDNS_cname(BadDNS_base):
             if self.cname_whoismanager.whois_result["type"] == "error":
                 log.debug("whois result was an error")
                 if "No match for" in self.cname_whoismanager.whois_result["data"]:
-                    return {
-                        "target": self.target_dnsmanager.target,
-                        "cnames": self.target_dnsmanager.answers["CNAME"],
-                        "signature_name": None,
-                        "matching_domain": None,
-                        "technique": "CNAME unregistered",
-                    }
+                    findings.append(
+                        {
+                            "target": self.target_dnsmanager.target,
+                            "cnames": self.target_dnsmanager.answers["CNAME"],
+                            "signature_name": None,
+                            "matching_domain": None,
+                            "technique": "CNAME unregistered",
+                        }
+                    )
 
             # check for expired domain
             elif self.cname_whoismanager.whois_result["type"] == "response":
                 log.debug("whois resulted in a response")
-                expiration_date = self.cname_whoismanager.whois_result["data"]["expiration_date"]
+                expiration_data = self.cname_whoismanager.whois_result["data"]["expiration_date"]
+                if isinstance(expiration_data, list):
+                    expiration_date = expiration_data[0]
+                else:
+                    expiration_date = expiration_data
+
                 current_date = date.today()
                 if expiration_date.date() < current_date:
                     log.info(
                         f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
                     )
-                    return {
-                        "target": self.target_dnsmanager.target,
-                        "cnames": self.target_dnsmanager.answers["CNAME"],
-                        "signature_name": None,
-                        "matching_domain": None,
-                        "technique": "CNAME Base Domain Expired",
-                        "expiration_date": expiration_date.strftime("%Y-%m-%d %H:%M:%S"),
-                    }
+                    findings.append(
+                        {
+                            "target": self.target_dnsmanager.target,
+                            "cnames": self.target_dnsmanager.answers["CNAME"],
+                            "signature_name": None,
+                            "matching_domain": None,
+                            "technique": "CNAME Base Domain Expired",
+                            "expiration_date": expiration_date.strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
                 else:
                     log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")
 
         else:
             log.debug("whois_result was NoneType")
+
+        return findings
