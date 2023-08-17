@@ -7,6 +7,7 @@ import logging
 import tldextract
 import pkg_resources
 import dns.asyncresolver
+from datetime import date, datetime
 
 from .matcher import Matcher
 from .signature import BadDNSSignature
@@ -206,11 +207,11 @@ class BadDNS_cname(BadDNS_base):
             await self.target_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
-        else:
-            log.debug("CNAME didn't resolve, checking for unregistered base domain")
-            self.cname_whoismanager = WhoisManager(self.target_dnsmanager.answers["CNAME"][-1])
-            await self.cname_whoismanager.dispatchWHOIS()
-            log.debug("WHOIS dispatch complete")
+        # even if it is registered, we still use whois to check for expired domains
+        log.debug("performing WHOIS lookup")
+        self.cname_whoismanager = WhoisManager(self.target_dnsmanager.answers["CNAME"][-1])
+        await self.cname_whoismanager.dispatchWHOIS()
+        log.debug("WHOIS dispatch complete")
         return True
 
     def analyze(self):
@@ -232,22 +233,6 @@ class BadDNS_cname(BadDNS_base):
                                 "technique": "CNAME NXDOMAIN",
                             }
 
-            log.debug("analyzing whois results")
-            if self.cname_whoismanager.whois_result:
-                if self.cname_whoismanager.whois_result["type"] == "error":
-                    if "No match for" in self.cname_whoismanager.whois_result["data"]:
-                        return {
-                            "target": self.target_dnsmanager.target,
-                            "cnames": self.target_dnsmanager.answers["CNAME"],
-                            "signature_name": None,
-                            "matching_domain": None,
-                            "technique": "CNAME unregistered",
-                        }
-                else:
-                    pass
-                    # this is where expiration based detection would go
-            else:
-                log.debug("whois_result was NoneType")
         else:
             log.debug("Starting HTTP analysis")
 
@@ -298,3 +283,42 @@ class BadDNS_cname(BadDNS_base):
                             "signature_name": sig.signature["service_name"],
                             "technique": "HTTP String Match",
                         }
+
+        # check whois data for expiring domains
+        log.debug("analyzing whois results")
+        log.critical(self.cname_whoismanager.whois_result)
+        if self.cname_whoismanager.whois_result:
+            # check for unregistered CNAME
+            if self.cname_whoismanager.whois_result["type"] == "error":
+                log.debug("whois result was an error")
+                if "No match for" in self.cname_whoismanager.whois_result["data"]:
+                    return {
+                        "target": self.target_dnsmanager.target,
+                        "cnames": self.target_dnsmanager.answers["CNAME"],
+                        "signature_name": None,
+                        "matching_domain": None,
+                        "technique": "CNAME unregistered",
+                    }
+
+            # check for expired domain
+            elif self.cname_whoismanager.whois_result["type"] == "response":
+                log.debug("whois resulted in a response")
+                expiration_date = self.cname_whoismanager.whois_result["data"]["expiration_date"]
+                current_date = date.today()
+                if expiration_date.date() < current_date:
+                    log.info(
+                        f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
+                    )
+                    return {
+                        "target": self.target_dnsmanager.target,
+                        "cnames": self.target_dnsmanager.answers["CNAME"],
+                        "signature_name": None,
+                        "matching_domain": None,
+                        "technique": "CNAME Base Domain Expired",
+                        "expiration_date": expiration_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                else:
+                    log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")
+
+        else:
+            log.debug("whois_result was NoneType")

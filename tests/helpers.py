@@ -1,6 +1,12 @@
 import dns
 
 
+class MockWhois:
+    pass
+
+    # TODO
+
+
 class MockResolver:
     class MockRRSet:
         def __init__(self, answer):
@@ -22,5 +28,4 @@ class MockResolver:
         answers = self.mock_responses.get(query_name, {}).get(rdtype, [])
         print(f"MockResolver is returning: {answers}")  # Debug line
 
-        # Return objects that mimic the expected response.
         return [self.MockRRSet(answer) for answer in answers]
