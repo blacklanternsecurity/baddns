@@ -76,7 +76,7 @@ class DNSManager:
                         r = await self.dns_client.resolve(target, "CNAME")
                         if len(r) == 0:
                             break
-                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
+                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
                         break
                 return cname_chain
             return r
