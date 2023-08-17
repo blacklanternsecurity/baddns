@@ -44,23 +44,49 @@ class DNSManager:
             ipv6.append(str(answer))
         return ipv6
 
-    async def dispatchDNS(self):
+    async def do_resolve(self, target, rdatatype):
+        try:
+            r = await self.dns_client.resolve(target, rdatatype)
+        except dns.resolver.NoAnswer:
+            self.answers["NoAnswer"] = True
+            return
+        except dns.resolver.NXDOMAIN:
+            self.answers["NXDOMAIN"] = True
+            return
+        except dns.resolver.LifetimeTimeout as e:
+            log.debug(f"Dns Timeout: {e}")
+            return
+        except dns.resolver.NoNameservers as e:
+            log.debug(f"No nameservers: {e}")
+            return
+        if r and len(r) > 0:
+            if rdatatype == "A":
+                self.ips.extend(self.get_ipv4(r))
+            elif rdatatype == "AAAA":
+                self.ips.extend(self.get_ipv6(r))
+
+            elif rdatatype == "CNAME":
+                cname_chain = []
+
+                while 1:
+                    result_cname = r[0].to_text().rstrip(".")
+                    cname_chain.append(result_cname)
+                    target = result_cname
+                    try:
+                        r = await self.dns_client.resolve(target, "CNAME")
+                        if len(r) == 0:
+                            break
+                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
+                        break
+                return cname_chain
+            return r
+
+    async def dispatchDNS(self, skip_cname=False):
         log.debug(f"attempting to resolve {self.target}")
         for rdatatype in self.dns_record_types:
-            try:
-                self.answers[rdatatype] = await self.dns_client.resolve(self.target, rdatatype)
-                if rdatatype == "A":
-                    self.ips.extend(self.get_ipv4(self.answers[rdatatype]))
-                if rdatatype == "AAAA":
-                    self.ips.extend(self.get_ipv6(self.answers[rdatatype]))
-            except dns.resolver.NoAnswer:
-                self.answers["NoAnswer"] = True
-            except dns.resolver.NXDOMAIN:
-                self.answers["NXDOMAIN"] = True
-            except dns.resolver.LifetimeTimeout as e:
-                log.debug(f"Dns Timeout: {e}")
-            except dns.resolver.NoNameservers as e:
-                log.debug(f"No nameservers: {e}")
+            if rdatatype == "CNAME" and skip_cname == True:
+                continue
+            self.answers[rdatatype] = await self.do_resolve(self.target, rdatatype)
 
 
 class WhoisManager:
@@ -154,7 +180,6 @@ class BadDNS_cname(BadDNS_base):
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
         log.info(f"Starting CNAME Module with target [{target}]")
-        self.found_cname = None
         self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
         self.target_httpmanager = None
         self.cname_dnsmanager = None
@@ -163,15 +188,16 @@ class BadDNS_cname(BadDNS_base):
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
 
-        if self.target_dnsmanager.answers["CNAME"]:
-            self.found_cname = self.target_dnsmanager.answers["CNAME"][0].to_text().rstrip(".")
-            log.info(f"Found CNAME [{self.found_cname}]")
+        if self.target_dnsmanager.answers["CNAME"] != None:
+            log.info(
+                f"Found CNAME(S) [{' -> '.join([self.target_dnsmanager.target] + self.target_dnsmanager.answers['CNAME'])}]"
+            )
         else:
             log.info("No CNAME Found :/")
             return False
 
-        self.cname_dnsmanager = DNSManager(self.found_cname, dns_client=self.dns_client)
-        await self.cname_dnsmanager.dispatchDNS()
+        self.cname_dnsmanager = DNSManager(self.target_dnsmanager.answers["CNAME"][-1], dns_client=self.dns_client)
+        await self.cname_dnsmanager.dispatchDNS(skip_cname=True)
 
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
@@ -182,7 +208,7 @@ class BadDNS_cname(BadDNS_base):
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
         else:
             log.debug("CNAME didn't resolve, checking for unregistered base domain")
-            self.cname_whoismanager = WhoisManager(self.found_cname)
+            self.cname_whoismanager = WhoisManager(self.target_dnsmanager.answers["CNAME"][-1])
             await self.cname_whoismanager.dispatchWHOIS()
             log.debug("WHOIS dispatch complete")
         return True
@@ -200,7 +226,7 @@ class BadDNS_cname(BadDNS_base):
                             log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable ({sig_cname})")
                             return {
                                 "target": self.target_dnsmanager.target,
-                                "cname": self.cname_dnsmanager.target,
+                                "cnames": self.target_dnsmanager.answers["CNAME"],
                                 "signature_name": sig.signature["service_name"],
                                 "matching_domain": sig_cname,
                                 "technique": "CNAME NXDOMAIN",
@@ -212,7 +238,7 @@ class BadDNS_cname(BadDNS_base):
                     if "No match for" in self.cname_whoismanager.whois_result["data"]:
                         return {
                             "target": self.target_dnsmanager.target,
-                            "cname": self.cname_dnsmanager.target,
+                            "cnames": self.target_dnsmanager.answers["CNAME"],
                             "signature_name": None,
                             "matching_domain": None,
                             "technique": "CNAME unregistered",
@@ -240,11 +266,11 @@ class BadDNS_cname(BadDNS_base):
                             f"Signature contains cnames [{sig.signature['identifiers']['cnames']}], checking them"
                         )
                         if not any(
-                            cname_dict["value"] in self.found_cname
+                            cname_dict["value"] in self.target_dnsmanager.answers["CNAME"][-1]
                             for cname_dict in sig.signature["identifiers"]["cnames"]
                         ):
                             log.debug(
-                                f"no match for {sig.signature['identifiers']['cnames']} for in {self.found_cname}"
+                                f"no match for {sig.signature['identifiers']['cnames']} for in {self.target_dnsmanager.answers['CNAME'][-1]}"
                             )
                             continue
                         log.debug("passed CNAME check")
@@ -268,7 +294,7 @@ class BadDNS_cname(BadDNS_base):
                         log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
                         return {
                             "target": self.target_dnsmanager.target,
-                            "cname": self.cname_dnsmanager.target,
+                            "cnames": self.target_dnsmanager.answers["CNAME"],
                             "signature_name": sig.signature["service_name"],
                             "technique": "HTTP String Match",
                         }

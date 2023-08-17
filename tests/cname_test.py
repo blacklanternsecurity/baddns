@@ -67,7 +67,7 @@ async def test_cname_dnsnxdomain_azure(fs, mock_dispatch_whois):
     assert finding
     assert finding == {
         "target": "bad.dns",
-        "cname": "baddns.azurewebsites.net",
+        "cnames": ["baddns.azurewebsites.net"],
         "signature_name": "Microsoft Azure Takeover Detection",
         "matching_domain": "azurewebsites.net",
         "technique": "CNAME NXDOMAIN",
@@ -114,7 +114,7 @@ async def test_cname_http_bigcartel(fs, mock_dispatch_whois, httpx_mock):
     assert finding
     assert finding == {
         "target": "bad.dns",
-        "cname": "baddns.bigcartel.com",
+        "cnames": ["baddns.bigcartel.com"],
         "signature_name": "Bigcartel Takeover Detection",
         "technique": "HTTP String Match",
     }
@@ -133,3 +133,32 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
     if await baddns_cname.dispatch():
         finding = baddns_cname.analyze()
     assert not finding
+
+
+@pytest.mark.asyncio
+async def test_cname_chainedcname_nxdomain(fs, mock_dispatch_whois, httpx_mock):
+    mock_data = {
+        "chain.bad.dns": {"CNAME": ["chain2.bad.dns."]},
+        "chain2.bad.dns": {"CNAME": ["baddns.azurewebsites.net."]},
+        "_NXDOMAIN": ["baddns.azurewebsites.net"],
+    }
+
+    mock_resolver = MockResolver(mock_data)
+
+    target = "chain.bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+
+    finding = None
+    if await baddns_cname.dispatch():
+        finding = baddns_cname.analyze()
+
+    assert finding
+    assert finding == {
+        "target": "chain.bad.dns",
+        "cnames": ["chain2.bad.dns", "baddns.azurewebsites.net"],
+        "signature_name": "Microsoft Azure Takeover Detection",
+        "matching_domain": "azurewebsites.net",
+        "technique": "CNAME NXDOMAIN",
+    }
