@@ -7,13 +7,31 @@ import logging
 import tldextract
 import pkg_resources
 import dns.asyncresolver
-from datetime import date
+from datetime import date, datetime
+from dateutil import parser as date_parser
 
 from .matcher import Matcher
 from .signature import BadDNSSignature
 from .errors import BadDNSSignatureException
 
 log = logging.getLogger(__name__)
+
+
+def date_parse(unknown_date):
+    # Check if it's already a datetime object
+    if isinstance(unknown_date, datetime):
+        return unknown_date
+
+    # If it's a string, try to parse it
+    if isinstance(unknown_date, str):
+        try:
+            return date_parser.parse(unknown_date)
+        except ValueError as e:
+            log.debug(f"Failed to parse date from string: {unknown_date}. Error: {e}")
+            return None
+
+    log.debug(f"Unsupported date object type: {type(unknown_date)}. Value: {unknown_date}")
+    return None
 
 
 class DNSManager:
@@ -394,23 +412,26 @@ class BadDNS_cname(BadDNS_base):
                 else:
                     expiration_date = expiration_data
 
-                current_date = date.today()
-                if expiration_date.date() < current_date:
-                    log.info(
-                        f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
-                    )
-                    findings.append(
-                        {
-                            "target": self.target_dnsmanager.target,
-                            "cnames": self.target_dnsmanager.answers["CNAME"],
-                            "signature_name": None,
-                            "matching_domain": None,
-                            "technique": "CNAME Base Domain Expired",
-                            "expiration_date": expiration_date.strftime("%Y-%m-%d %H:%M:%S"),
-                        }
-                    )
-                else:
-                    log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")
+                expiration_date = date_parse(expiration_date)
+
+                if expiration_date:
+                    current_date = date.today()
+                    if expiration_date.date() < current_date:
+                        log.info(
+                            f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
+                        )
+                        findings.append(
+                            {
+                                "target": self.target_dnsmanager.target,
+                                "cnames": self.target_dnsmanager.answers["CNAME"],
+                                "signature_name": None,
+                                "matching_domain": None,
+                                "technique": "CNAME Base Domain Expired",
+                                "expiration_date": expiration_date.strftime("%Y-%m-%d %H:%M:%S"),
+                            }
+                        )
+                    else:
+                        log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")
 
         else:
             log.debug("whois_result was NoneType")

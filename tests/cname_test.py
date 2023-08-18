@@ -1,7 +1,7 @@
 import pytest
 import requests
 import datetime
-
+from mock import patch
 from baddns.lib.baddns import BadDNS_cname, WhoisManager
 from .helpers import MockResolver, mock_signature_load
 
@@ -256,3 +256,53 @@ async def test_cname_whois_unregistered(fs, mock_dispatch_whois, httpx_mock):
         "matching_domain": None,
         "technique": "CNAME unregistered",
     } in findings
+
+
+whois_mock_expired_baddata = {
+    "type": "response",
+    "data": {
+        "domain_name": ["WORSE.DNS", "worse.dns"],
+        "registrar": "Google LLC",
+        "whois_server": "whois.google.com",
+        "referral_url": None,
+        "updated_date": datetime.datetime(2022, 4, 26, 17, 5, 40),
+        "creation_date": datetime.datetime(2020, 4, 25, 15, 56, 10),
+        "expiration_date": "2024-Jul-06",
+        "name_servers": [
+            "NS-CLOUD-B1.GOOGLEDOMAINS.COM",
+            "NS-CLOUD-B2.GOOGLEDOMAINS.COM",
+            "NS-CLOUD-B3.GOOGLEDOMAINS.COM",
+            "NS-CLOUD-B4.GOOGLEDOMAINS.COM",
+        ],
+        "status": [
+            "clientTransferProhibited https://icann.org/epp#clientTransferProhibited",
+            "clientTransferProhibited https://www.icann.org/epp#clientTransferProhibited",
+        ],
+        "emails": "registrar-abuse@google.com",
+        "dnssec": "unsigned",
+        "name": "Contact Privacy Inc. Customer 7151571251",
+        "org": "Contact Privacy Inc. Customer 7151571251",
+        "address": "96 Mowat Ave",
+        "city": "Toronto",
+        "state": "ON",
+        "registrant_postal_code": "M4K 3K1",
+        "country": "CA",
+    },
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mock_dispatch_whois", [whois_mock_expired_baddata], indirect=True)
+async def test_cname_whois_unregistered_baddata(fs, mock_dispatch_whois, httpx_mock):
+    with patch("sys.exit") as exit_mock:
+        mock_data = {"bad.dns": {"CNAME": ["worse.dns."]}, "worse.dns": {"A": ["127.0.0.2"]}}
+
+        mock_resolver = MockResolver(mock_data)
+        target = "bad.dns"
+        mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+        baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        findings = None
+        if await baddns_cname.dispatch():
+            findings = baddns_cname.analyze()
+
+        assert not exit_mock.called

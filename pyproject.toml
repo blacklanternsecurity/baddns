@@ -19,6 +19,7 @@ python-whois = "^0.8.0"
 tldextract = "^3.4.4"
 pyfakefs = "^5.2.3"
 pytest = "^7.4.0"
+python-dateutil = "^2.8.2"
 
 [tool.poetry.dev-dependencies]
 requests-mock = "^1.11.0"
