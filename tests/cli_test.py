@@ -6,7 +6,6 @@ from mock import patch
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(f"{os.path.dirname(SCRIPT_DIR)}")
 
-from .helpers import MockResolver
 from baddns import cli
 
 
@@ -24,7 +23,6 @@ def test_cli_validation_customnameservers_valid(monkeypatch, capsys):
         monkeypatch.setattr("sys.argv", ["python", "-n", "1.1.1.1,8.8.8.8", "bad.dns"])
         cli.main()
         captured = capsys.readouterr()
-        print(captured.out)
         assert not exit_mock.called
         assert "custom nameservers: [1.1.1.1, 8.8.8.8]" in captured.err
 
@@ -39,35 +37,35 @@ def test_cli_validation_customnameservers_invalid(monkeypatch, capsys):
         assert "Nameservers argument is incorrectly formatted" in captured.err
 
 
-def test_cli_cname_nxdomain(monkeypatch, capsys, mocker):
+def test_cli_cname_nxdomain(monkeypatch, capsys, mocker, configure_mock_resolver):
     monkeypatch.setattr(
         "sys.argv",
-        [
-            "python",
-            "bad.dns",
-        ],
+        ["python", "bad.dns", "-m", "CNAME"],
     )
 
     mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
-    mock_resolver = MockResolver(mock_data)
+    mock_resolver = configure_mock_resolver(mock_data)
     mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
 
     cli.main()
     captured = capsys.readouterr()
+    print(captured)
     assert "Vulnerable!" in captured.out
     assert "baddns.azurewebsites.net" in captured.out
 
 
-def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock):
+def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_resolver):
     monkeypatch.setattr(
         "sys.argv",
         [
             "python",
+            "-m",
+            "CNAME",
             "bad.dns",
         ],
     )
     mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": "127.0.0.1"}}
-    mock_resolver = MockResolver(mock_data)
+    mock_resolver = configure_mock_resolver(mock_data)
     mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
 
     httpx_mock.add_response(

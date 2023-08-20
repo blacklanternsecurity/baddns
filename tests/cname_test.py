@@ -2,8 +2,8 @@ import pytest
 import requests
 import datetime
 from mock import patch
-from baddns.lib.baddns import BadDNS_cname, WhoisManager
-from .helpers import MockResolver, mock_signature_load
+from baddns.modules.cname import BadDNS_cname
+from .helpers import mock_signature_load
 
 import ssl
 
@@ -18,22 +18,10 @@ requests.Session.request = functools.partialmethod(requests.Session.request, ver
 requests.request = functools.partial(requests.request, verify=False)
 
 
-@pytest.fixture()
-def mock_dispatch_whois(request, monkeypatch):
-    value = getattr(request, "param", None)
-
-    async def fake_dispatch_whois(self):
-        print(f"Running mock_dispatch_whois with value: [{value}]")
-        self.whois_result = value
-
-    monkeypatch.setattr(WhoisManager, "dispatchWHOIS", fake_dispatch_whois)
-
-
 @pytest.mark.asyncio
-async def test_cname_dnsnxdomain_azure(fs, mock_dispatch_whois):
+async def test_cname_dnsnxdomain_azure_match(fs, mock_dispatch_whois, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
-
-    mock_resolver = MockResolver(mock_data)
+    mock_resolver = configure_mock_resolver(mock_data)
 
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
@@ -55,13 +43,13 @@ async def test_cname_dnsnxdomain_azure(fs, mock_dispatch_whois):
 
 
 @pytest.mark.asyncio
-async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois):
+async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.somerandomthing.net."]}, "_NXDOMAIN": ["baddns.somerandomthing.net"]}
-
-    mock_resolver = MockResolver(mock_data)
+    mock_resolver = configure_mock_resolver(mock_data)
 
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
     baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
 
     findings = None
@@ -79,10 +67,10 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois):
 
 
 @pytest.mark.asyncio
-async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois):
+async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "baddns.azurewebsites.net.": {"A": "127.0.0.1"}}
+    mock_resolver = configure_mock_resolver(mock_data)
 
-    mock_resolver = MockResolver(mock_data)
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
@@ -96,16 +84,16 @@ async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois):
 
 
 @pytest.mark.asyncio
-async def test_cname_http_bigcartel(fs, mock_dispatch_whois, httpx_mock):
+async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": "127.0.0.1"}}
+    mock_resolver = configure_mock_resolver(mock_data)
+
     httpx_mock.add_response(
         url="http://bad.dns/",
         status_code=200,
         text="<h1>Oops! We couldn&#8217;t find that page.</h1>",
     )
 
-    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": "127.0.0.1"}}
-
-    mock_resolver = MockResolver(mock_data)
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_bigcartel-takeover.yml")
 
@@ -125,10 +113,10 @@ async def test_cname_http_bigcartel(fs, mock_dispatch_whois, httpx_mock):
 
 
 @pytest.mark.asyncio
-async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock):
+async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "_NXDOMAIN": ["baddns.bigcartel.com"]}
+    mock_resolver = configure_mock_resolver(mock_data)
 
-    mock_resolver = MockResolver(mock_data)
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_bigcartel-takeover.yml")
 
@@ -141,14 +129,13 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
 
 
 @pytest.mark.asyncio
-async def test_cname_chainedcname_nxdomain(fs, mock_dispatch_whois, httpx_mock):
+async def test_cname_chainedcname_nxdomain(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     mock_data = {
         "chain.bad.dns": {"CNAME": ["chain2.bad.dns."]},
         "chain2.bad.dns": {"CNAME": ["baddns.azurewebsites.net."]},
         "_NXDOMAIN": ["baddns.azurewebsites.net"],
     }
-
-    mock_resolver = MockResolver(mock_data)
+    mock_resolver = configure_mock_resolver(mock_data)
 
     target = "chain.bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
@@ -204,14 +191,14 @@ whois_mock_expired = {
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mock_dispatch_whois", [whois_mock_expired], indirect=True)
-async def test_cname_whois_expired(fs, mock_dispatch_whois, httpx_mock):
+async def test_cname_whois_expired(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     mock_data = {
         "bad.dns": {"CNAME": ["worse.dns."]},
         "_NXDOMAIN": ["worse.dns"],
     }
-
-    mock_resolver = MockResolver(mock_data)
+    mock_resolver = configure_mock_resolver(mock_data)
     target = "bad.dns"
+
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
     baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
     findings = None
@@ -237,10 +224,10 @@ mock_whois_unregistered = {
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mock_dispatch_whois", [mock_whois_unregistered], indirect=True)
-async def test_cname_whois_unregistered(fs, mock_dispatch_whois, httpx_mock):
+async def test_cname_whois_unregistered_match(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["worse.dns."]}, "worse.dns": {"A": ["127.0.0.2"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
 
-    mock_resolver = MockResolver(mock_data)
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
     baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
@@ -293,11 +280,11 @@ whois_mock_expired_baddata = {
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mock_dispatch_whois", [whois_mock_expired_baddata], indirect=True)
-async def test_cname_whois_unregistered_baddata(fs, mock_dispatch_whois, httpx_mock):
+async def test_cname_whois_unregistered_baddata(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"CNAME": ["worse.dns."]}, "worse.dns": {"A": ["127.0.0.2"]}}
+        mock_resolver = configure_mock_resolver(mock_data)
 
-        mock_resolver = MockResolver(mock_data)
         target = "bad.dns"
         mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
         baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
