@@ -112,7 +112,7 @@ class DnsWalk:
                                 final_results.add(rr.target.to_text().rstrip("."))
                 # if there was no authority section, and no answer section, we stop and report whatever the last set was, or and empty set (Probably just has no nameservers)
                 else:
-                    log.debug("There was no answer section (or authority section.")
+                    log.debug("There was no answer section (or authority section)")
             log.debug("Moving on to next nameserver at current recurse level")
         log.debug("Exhausted entire list of nameservers. Returning any results found.")
         return list(final_results)

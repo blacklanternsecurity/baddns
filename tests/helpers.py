@@ -9,12 +9,9 @@ def mock_process_answer(self, answer, rdatatype):
 
 class MockDNSWalk:
     def __init__(self, mock_dnswalk_data=[]):
-        print("??????????????")
-        print(mock_dnswalk_data)
         self.mock_dnswalk_data = mock_dnswalk_data
 
     async def ns_trace(self, target):
-        print(target)
         self.mock_dnswalk_data
 
 
