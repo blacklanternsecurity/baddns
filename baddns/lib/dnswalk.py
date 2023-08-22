@@ -5,6 +5,7 @@ import dns.name
 import dns.resolver
 import logging
 import asyncio
+import random
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class DnsWalk:
             except Exception as e:
                 log.debug(f"raw_query_with_retry: An unexpected error occurred: {e}. Aborting.")
                 retries += 1
-            await asyncio.sleep(1)  # Wait for a second before retrying.
+            await asyncio.sleep(10)  # Wait before retrying. We don't want to piss off the root DNS servers.
         log.warning("raw_query_with_retry: Max retries reached. Query failed.")
         return None, None
 
@@ -78,7 +79,9 @@ class DnsWalk:
         )
         depth += 1
         next_nameservers = set()
-        for nameserver_ip in nameserver_ips:
+
+        # randomize which nameservers we ask first to help minimize rate-limiting
+        for nameserver_ip in random.sample(list(nameserver_ips), len(nameserver_ips)):
             log.debug(f"Asking nameserver [{nameserver_ip}] NS records on {target}")
             query_msg = dns.message.make_query(target, dns.rdatatype.NS)
             response_msg, used_tcp = await self.raw_query_with_retry(query_msg, nameserver_ip)
