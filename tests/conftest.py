@@ -6,6 +6,7 @@ from .helpers import MockResolver, mock_process_answer, DnsWalkHarness
 
 import dns.asyncquery
 
+
 @pytest.fixture()
 def mock_dispatch_whois(request, monkeypatch):
     value = getattr(request, "param", None)
