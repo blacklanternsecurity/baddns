@@ -18,13 +18,16 @@ async def test_ns_nosoa_signature(fs, configure_mock_resolver):
         findings = baddns_ns.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "bad.dns",
-        "nameservers": ["ns1.wordpress.com"],
-        "signature_name": "wordpress.com",
-        "matching_signatures": ["ns1.wordpress.com"],
-        "technique": "NS RECORD WITHOUT SOA",
-    } in findings
+        "description": "Dangling NS Records (NS records without SOA) with known impact",
+        "confidence": "PROBABLE",
+        "signature": "wordpress.com",
+        "indicator": "DnsWalk Analsys with signature match: ['ns1.wordpress.com']",
+        "trigger": "ns1.wordpress.com",
+        "module": "NS",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
@@ -42,10 +45,13 @@ async def test_ns_nosoa_generic(fs, configure_mock_resolver):
         findings = baddns_ns.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "bad.dns",
-        "nameservers": ["ns1.somerandomthing.com"],
-        "signature_name": "GENERIC",
-        "matching_signatures": None,
-        "technique": "NS RECORD WITHOUT SOA",
-    } in findings
+        "description": "Dangling NS Records (NS records without SOA)",
+        "confidence": "POSSIBLE",
+        "signature": "N/A",
+        "indicator": "DNSWalk Analysis",
+        "trigger": "ns1.somerandomthing.com",
+        "module": "NS",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)

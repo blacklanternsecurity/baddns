@@ -7,6 +7,7 @@ from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.httpmanager import HttpManager
 from baddns.lib.whoismanager import WhoisManager
 from baddns.lib.matcher import Matcher
+from baddns.lib.findings import Finding
 
 import logging
 
@@ -69,14 +70,16 @@ class BadDNS_cname(BadDNS_base):
         log.debug("WHOIS dispatch complete")
         return True
 
+    # finigh theree
     def analyze(self):
         findings = []
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
-            signature_name = "Generic Dangling CNAME"
-            matching_domain = None
+            indicator = None
 
             log.info(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
             for sig in self.signatures:
+                log.critical(sig)
+                log.critical(sig.signature)
                 if sig.signature["mode"] == "dns_nxdomain":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
                     sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
@@ -84,19 +87,35 @@ class BadDNS_cname(BadDNS_base):
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
                         if self.cname_dnsmanager.target.endswith(sig_cname):
                             log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable ({sig_cname})")
-                            signature_name = sig.signature["service_name"]
-                            matching_domain = sig_cname
+                            indicator = sig_cname
+                            findings.append(
+                                Finding(
+                                    {
+                                        "target": self.target_dnsmanager.target,
+                                        "description": f"Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
+                                        "confidence": "PROBABLE",
+                                        "signature": sig.signature["service_name"],
+                                        "indicator": indicator,
+                                        "trigger": self.target_dnsmanager.answers["CNAME"],
+                                        "module": type(self),
+                                    }
+                                )
+                            )
                             break
 
-            findings.append(
-                {
-                    "target": self.target_dnsmanager.target,
-                    "cnames": self.target_dnsmanager.answers["CNAME"],
-                    "signature_name": signature_name,
-                    "matching_domain": matching_domain,
-                    "technique": "CNAME NXDOMAIN",
-                }
-            )
+                findings.append(
+                    Finding(
+                        {
+                            "target": self.target_dnsmanager.target,
+                            "description": f"Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
+                            "confidence": "POSSIBLE",
+                            "signature": "GENERIC",
+                            "indicator": "Generic Dangling CNAME",
+                            "trigger": self.target_dnsmanager.answers["CNAME"],
+                            "module": type(self),
+                        }
+                    )
+                )
 
         else:
             log.debug("Starting HTTP analysis")
@@ -143,12 +162,17 @@ class BadDNS_cname(BadDNS_base):
                         log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
                         log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
                         findings.append(
-                            {
-                                "target": self.target_dnsmanager.target,
-                                "cnames": self.target_dnsmanager.answers["CNAME"],
-                                "signature_name": sig.signature["service_name"],
-                                "technique": "HTTP String Match",
-                            }
+                            Finding(
+                                {
+                                    "target": self.target_dnsmanager.target,
+                                    "description": f"Dangling CNAME, probable subdomain takeover (HTTP String Match)",
+                                    "confidence": "PROBABLE",
+                                    "signature": sig.signature["service_name"],
+                                    "indicator": sig.summarize_matcher_rule(),
+                                    "trigger": self.target_dnsmanager.answers["CNAME"],
+                                    "module": type(self),
+                                }
+                            )
                         )
 
         # check whois data for expiring domains
@@ -159,13 +183,17 @@ class BadDNS_cname(BadDNS_base):
                 log.debug("whois result was an error")
                 if "No match for" in self.cname_whoismanager.whois_result["data"]:
                     findings.append(
-                        {
-                            "target": self.target_dnsmanager.target,
-                            "cnames": self.target_dnsmanager.answers["CNAME"],
-                            "signature_name": None,
-                            "matching_domain": None,
-                            "technique": "CNAME unregistered",
-                        }
+                        Finding(
+                            {
+                                "target": self.target_dnsmanager.target,
+                                "description": "CNAME unregistered",
+                                "confidence": "CONFIRMED",
+                                "signature": "N/A",
+                                "indicator": "Whois Data",
+                                "trigger": self.target_dnsmanager.answers["CNAME"],
+                                "module": type(self),
+                            }
+                        )
                     )
 
             # check for expired domain
@@ -186,14 +214,17 @@ class BadDNS_cname(BadDNS_base):
                             f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
                         )
                         findings.append(
-                            {
-                                "target": self.target_dnsmanager.target,
-                                "cnames": self.target_dnsmanager.answers["CNAME"],
-                                "signature_name": None,
-                                "matching_domain": None,
-                                "technique": "CNAME Base Domain Expired",
-                                "expiration_date": expiration_date.strftime("%Y-%m-%d %H:%M:%S"),
-                            }
+                            Finding(
+                                {
+                                    "target": self.target_dnsmanager.target,
+                                    "description": f"CNAME With Expired Registration (Expiration: [{expiration_date.strftime('%Y-%m-%d %H:%M:%S')}])",
+                                    "confidence": "CONFIRMED",
+                                    "signature": "N/A",
+                                    "indicator": "Whois Data",
+                                    "trigger": self.target_dnsmanager.answers["CNAME"],
+                                    "module": type(self),
+                                }
+                            )
                         )
                     else:
                         log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")

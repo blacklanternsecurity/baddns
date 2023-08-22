@@ -83,7 +83,7 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures_dir
         if findings:
             print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
-                print(finding)
+                print(finding.to_dict())
 
 
 async def _main():

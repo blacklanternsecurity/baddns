@@ -2,6 +2,7 @@ from baddns.base import BadDNS_base
 
 from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.dnswalk import DnsWalk
+from baddns.lib.findings import Finding
 
 import logging
 
@@ -62,30 +63,44 @@ class BadDNS_ns(BadDNS_base):
             return False
         if self.target_dnsmanager.answers["SOA"] == None:
             log.debug("No SOA record found w/nameservers present")
-
-            signature_name = "GENERIC"
-            matching_signatures = None
             r = None
             for sig in self.signatures:
                 if sig.signature["mode"] == "dns_nosoa":
                     sig_nameservers = [ns for ns in sig.signature["identifiers"]["nameservers"]]
                     r = self.get_substring_matches(target_nameservers, sig_nameservers)
                     if r:
-                        matching_signatures = r[1]
-                        signature_name = sig.signature["service_name"]
+                        findings.append(
+                            Finding(
+                                {
+                                    "target": self.target_dnsmanager.target,
+                                    "description": "Dangling NS Records (NS records without SOA) with known impact",
+                                    "confidence": "PROBABLE",
+                                    "signature": sig.signature["service_name"],
+                                    "indicator": f"DnsWalk Analsys with signature match: {r[1]}",
+                                    "trigger": target_nameservers,
+                                    "module": type(self),
+                                }
+                            )
+                        )
                         log.debug(
-                            f"Found match for for target nameservers {', '.join(target_nameservers)} with signature [{sig.signature['service_name']}] "
+                            f"Found match for for target nameservers {', '.join(target_nameservers)} with signature [{sig.signature['service_name']}]"
                         )
                         break
-
+            log.debug(
+                f"No signature found, falling back to report generic dangling NS record for nameservers: [{', '.join(target_nameservers)}]]"
+            )
             findings.append(
-                {
-                    "target": self.target_dnsmanager.target,
-                    "nameservers": target_nameservers,
-                    "signature_name": signature_name,
-                    "matching_signatures": matching_signatures,
-                    "technique": "NS RECORD WITHOUT SOA",
-                }
+                Finding(
+                    {
+                        "target": self.target_dnsmanager.target,
+                        "description": "Dangling NS Records (NS records without SOA)",
+                        "confidence": "POSSIBLE",
+                        "signature": "N/A",
+                        "indicator": "DNSWalk Analysis",
+                        "trigger": target_nameservers,
+                        "module": type(self),
+                    }
+                )
             )
 
         return findings

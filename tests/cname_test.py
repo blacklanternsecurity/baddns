@@ -33,13 +33,16 @@ async def test_cname_dnsnxdomain_azure_match(fs, mock_dispatch_whois, configure_
         findings = baddns_cname.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "bad.dns",
-        "cnames": ["baddns.azurewebsites.net"],
-        "signature_name": "Microsoft Azure Takeover Detection",
-        "matching_domain": "azurewebsites.net",
-        "technique": "CNAME NXDOMAIN",
-    } in findings
+        "description": "Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
+        "confidence": "PROBABLE",
+        "signature": "Microsoft Azure Takeover Detection",
+        "indicator": "azurewebsites.net",
+        "trigger": "baddns.azurewebsites.net",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
@@ -57,13 +60,16 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock
         findings = baddns_cname.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "bad.dns",
-        "cnames": ["baddns.somerandomthing.net"],
-        "signature_name": "Generic Dangling CNAME",
-        "matching_domain": None,
-        "technique": "CNAME NXDOMAIN",
-    } in findings
+        "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
+        "confidence": "POSSIBLE",
+        "signature": "GENERIC",
+        "indicator": "Generic Dangling CNAME",
+        "trigger": "baddns.somerandomthing.net",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
@@ -104,12 +110,16 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, httpx_mock, c
         findings = baddns_cname.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "bad.dns",
-        "cnames": ["baddns.bigcartel.com"],
-        "signature_name": "Bigcartel Takeover Detection",
-        "technique": "HTTP String Match",
-    } in findings
+        "description": "Dangling CNAME, probable subdomain takeover (HTTP String Match)",
+        "confidence": "PROBABLE",
+        "signature": "Bigcartel Takeover Detection",
+        "indicator": "[Words: <h1>Oops! We couldn&#8217;t find that page.</h1> | Condition: and | Part: body] Matchers-Condition: and",
+        "trigger": "baddns.bigcartel.com",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
@@ -125,7 +135,16 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
     if await baddns_cname.dispatch():
         findings = baddns_cname.analyze()
     assert findings
-    assert "Generic" in findings[0]["signature_name"]
+    expected = {
+        "target": "bad.dns",
+        "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
+        "confidence": "POSSIBLE",
+        "signature": "GENERIC",
+        "indicator": "Generic Dangling CNAME",
+        "trigger": "baddns.bigcartel.com",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
@@ -147,13 +166,16 @@ async def test_cname_chainedcname_nxdomain(fs, mock_dispatch_whois, httpx_mock, 
         findings = baddns_cname.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "chain.bad.dns",
-        "cnames": ["chain2.bad.dns", "baddns.azurewebsites.net"],
-        "signature_name": "Microsoft Azure Takeover Detection",
-        "matching_domain": "azurewebsites.net",
-        "technique": "CNAME NXDOMAIN",
-    } in findings
+        "description": "Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
+        "confidence": "PROBABLE",
+        "signature": "Microsoft Azure Takeover Detection",
+        "indicator": "azurewebsites.net",
+        "trigger": "chain2.bad.dns, baddns.azurewebsites.net",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 whois_mock_expired = {
@@ -206,14 +228,16 @@ async def test_cname_whois_expired(fs, mock_dispatch_whois, httpx_mock, configur
         findings = baddns_cname.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "bad.dns",
-        "cnames": ["worse.dns"],
-        "signature_name": None,
-        "matching_domain": None,
-        "technique": "CNAME Base Domain Expired",
-        "expiration_date": "2023-02-25 15:56:10",
-    } in findings
+        "description": "CNAME With Expired Registration (Expiration: [2023-02-25 15:56:10])",
+        "confidence": "CONFIRMED",
+        "signature": "N/A",
+        "indicator": "Whois Data",
+        "trigger": "worse.dns",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 mock_whois_unregistered = {
@@ -236,13 +260,16 @@ async def test_cname_whois_unregistered_match(fs, mock_dispatch_whois, httpx_moc
         findings = baddns_cname.analyze()
 
     assert findings
-    assert {
+    expected = {
         "target": "bad.dns",
-        "cnames": ["worse.dns"],
-        "signature_name": None,
-        "matching_domain": None,
-        "technique": "CNAME unregistered",
-    } in findings
+        "description": "CNAME unregistered",
+        "confidence": "CONFIRMED",
+        "signature": "N/A",
+        "indicator": "Whois Data",
+        "trigger": "worse.dns",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
 
 
 whois_mock_expired_baddata = {

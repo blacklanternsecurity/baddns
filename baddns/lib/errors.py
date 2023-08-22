@@ -12,3 +12,7 @@ class BadDNSMatcherException(BadDNSException):
 
 class BadDNSCLIException(BadDNSException):
     pass
+
+
+class BadDNSFindingException(BadDNSException):
+    pass
