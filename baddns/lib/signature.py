@@ -70,9 +70,6 @@ class BadDNSSignature:
                     condition = matcher.get("condition", "")
                     part = matcher.get("part", "")
                     summary.append(f"[Words: {words} | Condition: {condition} | Part: {part}]")
-            log.critical(
-                ", ".join(summary) + f" Matchers-Condition: {self.signature['matcher_rule']['matchers-condition']}"
-            )
             return ", ".join(summary) + f" Matchers-Condition: {self.signature['matcher_rule']['matchers-condition']}"
         else:
             return "No matchers in signature"

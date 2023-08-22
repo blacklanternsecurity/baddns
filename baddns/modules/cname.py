@@ -78,8 +78,6 @@ class BadDNS_cname(BadDNS_base):
 
             log.info(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
             for sig in self.signatures:
-                log.critical(sig)
-                log.critical(sig.signature)
                 if sig.signature["mode"] == "dns_nxdomain":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
                     sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]

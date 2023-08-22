@@ -24,7 +24,7 @@ class BadDNS_ns(BadDNS_base):
         await self.target_dnsmanager.dispatchDNS(omit_types=[["A", "AAAA", "MX", "NS", "SOA", "TXT"]])
 
         if self.target_dnsmanager.answers["CNAME"] != None:
-            log.warning(
+            log.info(
                 f"Detected CNAME(S). Will set target to end of CNAME chain: [{self.target_dnsmanager.answers['CNAME'][-1]}]"
             )
             self.target_dnsmanager.target = self.target_dnsmanager.answers["CNAME"][-1]
