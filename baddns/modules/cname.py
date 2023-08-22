@@ -73,7 +73,9 @@ class BadDNS_cname(BadDNS_base):
     # finigh theree
     def analyze(self):
         findings = []
+
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
+            signature_match = False
             indicator = None
 
             log.info(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
@@ -84,6 +86,7 @@ class BadDNS_cname(BadDNS_base):
                     for sig_cname in sig_cnames:
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
                         if self.cname_dnsmanager.target.endswith(sig_cname):
+                            signature_match = True
                             log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable ({sig_cname})")
                             indicator = sig_cname
                             findings.append(
@@ -100,7 +103,7 @@ class BadDNS_cname(BadDNS_base):
                                 )
                             )
                             break
-
+            if signature_match == False:
                 findings.append(
                     Finding(
                         {

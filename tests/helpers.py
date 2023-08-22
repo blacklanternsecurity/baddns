@@ -89,7 +89,7 @@ class DnsWalkHarness:
                     return hostname
             return ip_address  # If no hostname found, return the original IP.
 
-    async def mock_udp_with_fallback(query_msg, nameserver_ip):
+    async def mock_udp_with_fallback(query_msg, nameserver_ip, timeout=5.0):
         domain = query_msg.question[0].name.to_text().rstrip(".")
         record_type = dns.rdatatype.to_text(query_msg.question[0].rdtype)
 

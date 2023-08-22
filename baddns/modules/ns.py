@@ -85,7 +85,7 @@ class BadDNS_ns(BadDNS_base):
                         log.debug(
                             f"Found match for for target nameservers {', '.join(target_nameservers)} with signature [{sig.signature['service_name']}]"
                         )
-                        break
+                        return findings
             log.debug(
                 f"No signature found, falling back to report generic dangling NS record for nameservers: [{', '.join(target_nameservers)}]]"
             )
