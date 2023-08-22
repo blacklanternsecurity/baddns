@@ -55,7 +55,7 @@ class BadDNS_ns(BadDNS_base):
     def analyze(self):
         log.debug("Staring analysis")
         findings = []
-        if len(self.target_dnsmanager.answers["NS"]) > 0:
+        if self.target_dnsmanager.answers["NS"] and len(self.target_dnsmanager.answers["NS"]) > 0:
             target_nameservers = self.target_dnsmanager.answers["NS"]
             log.debug("Nameserver(s) found. Continuing...")
         else:

@@ -1,18 +1,10 @@
 import pytest
-import logging
-from baddns.lib.logging import setup_logging
 from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.whoismanager import WhoisManager
 from baddns.lib.dnswalk import DnsWalk
-from .helpers import MockResolver, mock_process_answer
+from .helpers import MockResolver, mock_process_answer, DnsWalkHarness
 
-
-@pytest.fixture(scope="function", autouse=True)
-def setup_log():
-    setup_logging()
-    log = logging.getLogger("baddns")
-    return log
-
+import dns.asyncquery
 
 @pytest.fixture()
 def mock_dispatch_whois(request, monkeypatch):
@@ -42,3 +34,20 @@ def configure_mock_resolver(monkeypatch):
         return mock_resolver
 
     return _configure
+
+
+@pytest.fixture()
+def dnswalk_harness(request, monkeypatch):
+    mock_data = getattr(request, "param", {})
+
+    def init_wrapper(mock_data):
+        def mock_init(self):
+            pass
+
+        return mock_init
+
+    monkeypatch.setattr(DnsWalkHarness, "mock_data", mock_data)
+    monkeypatch.setattr(DnsWalk, "__init__", init_wrapper(mock_data))
+    monkeypatch.setattr(DnsWalk, "a_resolve", DnsWalkHarness.mock_a_resolve)
+    monkeypatch.setattr(DnsWalk, "root_servers", ["127.0.0.1"])
+    monkeypatch.setattr(dns.asyncquery, "udp_with_fallback", DnsWalkHarness.mock_udp_with_fallback)

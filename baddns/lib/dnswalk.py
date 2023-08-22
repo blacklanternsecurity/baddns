@@ -44,6 +44,8 @@ class DnsWalk:
         log.debug(f"Attempting to find NS records for {target}")
         nameserver_ips = self.root_servers[:]
         solved_nameservers = await self.ns_recursive_solve(nameserver_ips, target, depth=0)
+        if solved_nameservers == None:
+            solved_nameservers = []
         log.debug(f"Found the following name servers: {solved_nameservers}")
         return solved_nameservers
 
@@ -61,10 +63,13 @@ class DnsWalk:
             log.debug(f"Asking nameserver [{nameserver_ip}] NS records on {target}")
             query_msg = dns.message.make_query(target, dns.rdatatype.NS)
             response_msg, used_tcp = await dns.asyncquery.udp_with_fallback(query_msg, nameserver_ip)
+            log.debug(f"Got response message: \n{response_msg}")
             if response_msg.authority:
                 log.debug(f"Server [{nameserver_ip}] responded with authority section")
                 for ns_rrset in response_msg.authority:
                     for rr in ns_rrset:
+                        if rr.rdtype == dns.rdatatype.SOA:
+                            return None
                         if rr.rdtype == dns.rdatatype.NS:
                             rr_domain = rr.target.to_text().rstrip(".")
                             log.debug(f"Received NS record for [{rr_domain}]")
@@ -81,13 +86,13 @@ class DnsWalk:
                 if not next_nameservers:
                     log.debug("None of the servers provded in the authority section resolved")
                     log.debug(f"Submitting [{' '.join(final_results)}] as final result")
-                    return final_results
+                    return list(final_results)
 
                 # If we had an authority section, and at least one resolved, we need to recurse again
                 log.debug("Resolvable authority results were found. Recursing deeper")
                 recurse = await self.ns_recursive_solve(next_nameservers, target, depth=depth)
 
-                # If we tried again and didn't get an answer, we might be pointing to a real NS server with no resullts - these could be dangling
+                # If we tried again and didn't get an answer, we might be pointing to a real NS server with no results - these could be dangling
                 if recurse == []:
                     log.debug("Did not get any additional results from latest recursion.")
                     log.debug(f"Submitting [{' '.join(final_results)}] as final result")
@@ -106,9 +111,9 @@ class DnsWalk:
                             if rr.rdtype == dns.rdatatype.CNAME:
                                 solved_cname = await self.dns_manager.do_resolve(rr.to_text().rstrip("."), "NS")
                                 if solved_cname:
-                                    log.critical(solved_cname)
                                     final_results.update(solved_cname)
                             elif rr.rdtype == dns.rdatatype.NS:
+                                log.debug(f"adding {rr.target.to_text().rstrip('.')} to results list")
                                 final_results.add(rr.target.to_text().rstrip("."))
                 # if there was no authority section, and no answer section, we stop and report whatever the last set was, or and empty set (Probably just has no nameservers)
                 else:

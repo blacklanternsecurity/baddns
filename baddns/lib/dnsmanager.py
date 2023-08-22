@@ -91,6 +91,7 @@ class DNSManager:
             r = self.process_answer(await self.dns_client.resolve(target, rdatatype), rdatatype)
         except (dns.resolver.NoAnswer, dns.resolver.NoNameservers) as e:
             log.debug(f"encountered error with dns_client.resolve(): {e}")
+            self.answers["NoAnswer"] = True
             return
         except dns.resolver.NXDOMAIN:
             self.answers["NXDOMAIN"] = True
@@ -112,10 +113,11 @@ class DNSManager:
                     cname_chain.append(result_cname)
                     target = result_cname
                     try:
-                        r = await self.dns_client.resolve(target, "CNAME")
+                        r = self.process_answer(await self.dns_client.resolve(target, "CNAME"), "CNAME")
                         if len(r) == 0:
                             break
-                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
+                        log.debug(f"Error resolving cname chain: {e}")
                         break
                 return cname_chain
             return r
