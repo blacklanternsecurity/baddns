@@ -318,5 +318,5 @@ async def test_cname_whois_unregistered_baddata(fs, mock_dispatch_whois, httpx_m
         findings = None
         if await baddns_cname.dispatch():
             findings = baddns_cname.analyze()
-
+            print(finding)
         assert not exit_mock.called
