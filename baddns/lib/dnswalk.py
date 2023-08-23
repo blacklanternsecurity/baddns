@@ -28,7 +28,7 @@ class DnsWalk:
     ]
 
     max_depth = 10
-    raw_query_max_retries = 5
+    raw_query_max_retries = 6
 
     def __init__(self, dns_manager):
         self.dns_manager = dns_manager
@@ -56,7 +56,7 @@ class DnsWalk:
         retries = 0
         while retries < self.raw_query_max_retries:
             try:
-                response_msg, used_tcp = await dns.asyncquery.udp_with_fallback(target, nameserver_ip, timeout=5.0)
+                response_msg, used_tcp = await dns.asyncquery.udp_with_fallback(target, nameserver_ip, timeout=6.0)
                 log.debug("raw_query_with_retry: Had to fall back to TCP")
                 return response_msg, used_tcp
             except (dns.exception.Timeout, dns.message.Truncated) as e:
@@ -65,7 +65,7 @@ class DnsWalk:
             except Exception as e:
                 log.debug(f"raw_query_with_retry: An unexpected error occurred: {e}. Aborting.")
                 retries += 1
-            await asyncio.sleep(10)  # Wait before retrying. We don't want to piss off the root DNS servers.
+            await asyncio.sleep(12)  # Wait before retrying. We don't want to piss off the root DNS servers.
         log.warning("raw_query_with_retry: Max retries reached. Query failed.")
         return None, None
 
