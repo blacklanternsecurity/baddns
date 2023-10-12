@@ -71,6 +71,7 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
 
 
 async def execute_module(ModuleClass, target, custom_nameservers, signatures_dir):
+    findings = None
     try:
         module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures_dir=signatures_dir)
     except BadDNSSignatureException as e:
@@ -84,6 +85,7 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures_dir
             print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
                 print(finding.to_dict())
+    return findings
 
 
 async def _main():

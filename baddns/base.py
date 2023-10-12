@@ -10,10 +10,13 @@ from .lib.errors import BadDNSSignatureException
 
 
 class BadDNS_base:
-    def __init__(self, target, http_client_class=None, dns_client=None, signatures_dir=None, custom_nameservers=None):
+    def __init__(
+        self, target, http_client_class=None, dns_client=None, signatures_dir=None, custom_nameservers=None, **kwargs
+    ):
         self.http_client_class = http_client_class
         self.dns_client = dns_client
         self.target = target
+        self.signatures_dir = signatures_dir
         self.signatures = []
         self.load_signatures(signatures_dir)
         self.custom_nameservers = custom_nameservers
