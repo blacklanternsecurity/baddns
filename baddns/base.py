@@ -20,6 +20,7 @@ class BadDNS_base:
         self.signatures = []
         self.load_signatures(signatures_dir)
         self.custom_nameservers = custom_nameservers
+        self.parent_class = kwargs.get("parent_class", "self")
 
     def load_signatures(self, signatures_dir=None):
         if signatures_dir:

@@ -51,27 +51,28 @@ class BadDNS_cname(BadDNS_base):
                 log.info(
                     f"Found CNAME(S) [{' -> '.join([self.target_dnsmanager.target] + self.target_dnsmanager.answers['CNAME'])}]"
                 )
-                subject = self.target_dnsmanager.answers["CNAME"][-1]
+                self.subject = self.target_dnsmanager.answers["CNAME"][-1]
             else:
-                log.info("No CNAME Found :/")
+                if self.parent_class == "self":
+                    log.info("No CNAME Found :/")
                 return False
         else:
             log.debug("Direct mode enabled. Target will be checked for takeover instead of target's CNAME")
-            subject = self.target
-        self.cname_dnsmanager = DNSManager(subject, dns_client=self.dns_client)
+            self.subject = self.target
+        self.cname_dnsmanager = DNSManager(self.subject, dns_client=self.dns_client)
         await self.cname_dnsmanager.dispatchDNS(omit_types=["CNAME"])
 
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
             log.debug("CNAME resolved correctly, proceeding with HTTP dispatch")
-            self.target_httpmanager = HttpManager(subject, http_client_class=self.http_client_class)
+            self.target_httpmanager = HttpManager(self.subject, http_client_class=self.http_client_class)
             await self.target_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
         # even if it is registered, we still use whois to check for expired domains
         log.debug("performing WHOIS lookup")
 
-        self.cname_whoismanager = WhoisManager(subject)
+        self.cname_whoismanager = WhoisManager(self.subject)
         await self.cname_whoismanager.dispatchWHOIS()
         log.debug("WHOIS dispatch complete")
         return True
@@ -144,12 +145,10 @@ class BadDNS_cname(BadDNS_base):
                             f"Signature contains cnames [{sig.signature['identifiers']['cnames']}], checking them"
                         )
                         if not any(
-                            cname_dict["value"] in self.target_dnsmanager.answers["CNAME"][-1]
+                            cname_dict["value"] in self.subject
                             for cname_dict in sig.signature["identifiers"]["cnames"]
                         ):
-                            log.debug(
-                                f"no match for {sig.signature['identifiers']['cnames']} for in {self.target_dnsmanager.answers['CNAME'][-1]}"
-                            )
+                            log.debug(f"no match for {sig.signature['identifiers']['cnames']} for in {self.subject}")
                             continue
                         log.debug("passed CNAME check")
 
