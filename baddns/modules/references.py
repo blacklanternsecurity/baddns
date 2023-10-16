@@ -65,7 +65,6 @@ class BadDNS_references(BadDNS_base):
         log.debug("HTTP dispatch complete")
 
         live_results = []
-        analysed_results = []
 
         if self.target_httpmanager.http_denyredirects_results:
             log.debug(f"Found live host at {self.target_httpmanager.http_denyredirects_results.url}")
