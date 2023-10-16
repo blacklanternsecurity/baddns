@@ -20,6 +20,8 @@ class BadDNS_cname(BadDNS_base):
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
+
+        self.direct_mode = kwargs.get("direct_mode", False)
         self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
         self.target_httpmanager = None
         self.cname_dnsmanager = None
@@ -44,16 +46,20 @@ class BadDNS_cname(BadDNS_base):
 
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
-
-        if self.target_dnsmanager.answers["CNAME"] != None:
-            log.info(
-                f"Found CNAME(S) [{' -> '.join([self.target_dnsmanager.target] + self.target_dnsmanager.answers['CNAME'])}]"
-            )
+        if self.direct_mode == False:
+            if self.target_dnsmanager.answers["CNAME"] != None:
+                log.info(
+                    f"Found CNAME(S) [{' -> '.join([self.target_dnsmanager.target] + self.target_dnsmanager.answers['CNAME'])}]"
+                )
+                self.subject = self.target_dnsmanager.answers["CNAME"][-1]
+            else:
+                if self.parent_class == "self":
+                    log.info("No CNAME Found :/")
+                return False
         else:
-            log.info("No CNAME Found :/")
-            return False
-
-        self.cname_dnsmanager = DNSManager(self.target_dnsmanager.answers["CNAME"][-1], dns_client=self.dns_client)
+            log.debug("Direct mode enabled. Target will be checked for takeover instead of target's CNAME")
+            self.subject = self.target
+        self.cname_dnsmanager = DNSManager(self.subject, dns_client=self.dns_client)
         await self.cname_dnsmanager.dispatchDNS(omit_types=["CNAME"])
 
         # if the domain resolves, we can try for HTTP connections
@@ -65,15 +71,18 @@ class BadDNS_cname(BadDNS_base):
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
         # even if it is registered, we still use whois to check for expired domains
         log.debug("performing WHOIS lookup")
-        self.cname_whoismanager = WhoisManager(self.target_dnsmanager.answers["CNAME"][-1])
+
+        self.cname_whoismanager = WhoisManager(self.subject)
         await self.cname_whoismanager.dispatchWHOIS()
         log.debug("WHOIS dispatch complete")
         return True
 
-    # finigh theree
     def analyze(self):
         findings = []
-
+        if self.direct_mode == True:
+            trigger = "self"
+        else:
+            trigger = self.target_dnsmanager.answers["CNAME"]
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
             signature_match = False
             indicator = None
@@ -87,7 +96,7 @@ class BadDNS_cname(BadDNS_base):
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
                         if self.cname_dnsmanager.target.endswith(sig_cname):
                             signature_match = True
-                            log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable ({sig_cname})")
+                            log.debug(f"CNAME {self.cname_dnsmanager.target} vulnerable ({sig_cname})")
                             indicator = sig_cname
                             findings.append(
                                 Finding(
@@ -97,7 +106,7 @@ class BadDNS_cname(BadDNS_base):
                                         "confidence": "PROBABLE",
                                         "signature": sig.signature["service_name"],
                                         "indicator": indicator,
-                                        "trigger": self.target_dnsmanager.answers["CNAME"],
+                                        "trigger": trigger,
                                         "module": type(self),
                                     }
                                 )
@@ -112,7 +121,7 @@ class BadDNS_cname(BadDNS_base):
                             "confidence": "POSSIBLE",
                             "signature": "GENERIC",
                             "indicator": "Generic Dangling CNAME",
-                            "trigger": self.target_dnsmanager.answers["CNAME"],
+                            "trigger": trigger,
                             "module": type(self),
                         }
                     )
@@ -136,12 +145,10 @@ class BadDNS_cname(BadDNS_base):
                             f"Signature contains cnames [{sig.signature['identifiers']['cnames']}], checking them"
                         )
                         if not any(
-                            cname_dict["value"] in self.target_dnsmanager.answers["CNAME"][-1]
+                            cname_dict["value"] in self.subject
                             for cname_dict in sig.signature["identifiers"]["cnames"]
                         ):
-                            log.debug(
-                                f"no match for {sig.signature['identifiers']['cnames']} for in {self.target_dnsmanager.answers['CNAME'][-1]}"
-                            )
+                            log.debug(f"no match for {sig.signature['identifiers']['cnames']} for in {self.subject}")
                             continue
                         log.debug("passed CNAME check")
 
@@ -170,7 +177,7 @@ class BadDNS_cname(BadDNS_base):
                                     "confidence": "PROBABLE",
                                     "signature": sig.signature["service_name"],
                                     "indicator": sig.summarize_matcher_rule(),
-                                    "trigger": self.target_dnsmanager.answers["CNAME"],
+                                    "trigger": trigger,
                                     "module": type(self),
                                 }
                             )
@@ -191,7 +198,7 @@ class BadDNS_cname(BadDNS_base):
                                 "confidence": "CONFIRMED",
                                 "signature": "N/A",
                                 "indicator": "Whois Data",
-                                "trigger": self.target_dnsmanager.answers["CNAME"],
+                                "trigger": trigger,
                                 "module": type(self),
                             }
                         )
@@ -223,7 +230,7 @@ class BadDNS_cname(BadDNS_base):
                                     "confidence": "CONFIRMED",
                                     "signature": "N/A",
                                     "indicator": "Whois Data",
-                                    "trigger": self.target_dnsmanager.answers["CNAME"],
+                                    "trigger": trigger,
                                     "module": type(self),
                                 }
                             )
