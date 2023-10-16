@@ -320,3 +320,53 @@ async def test_cname_whois_unregistered_baddata(fs, mock_dispatch_whois, httpx_m
             findings = baddns_cname.analyze()
             print(findings)
         assert not exit_mock.called
+
+
+whois_mock_expired_missingdata = {
+    "type": "response",
+    "data": {
+        "domain_name": ["WORSE.DNS", "worse.dns"],
+        "registrar": "Google LLC",
+        "whois_server": "whois.google.com",
+        "referral_url": None,
+        "updated_date": datetime.datetime(2022, 4, 26, 17, 5, 40),
+        "creation_date": datetime.datetime(2020, 4, 25, 15, 56, 10),
+        "name_servers": [
+            "NS-CLOUD-B1.GOOGLEDOMAINS.COM",
+            "NS-CLOUD-B2.GOOGLEDOMAINS.COM",
+            "NS-CLOUD-B3.GOOGLEDOMAINS.COM",
+            "NS-CLOUD-B4.GOOGLEDOMAINS.COM",
+        ],
+        "status": [
+            "clientTransferProhibited https://icann.org/epp#clientTransferProhibited",
+            "clientTransferProhibited https://www.icann.org/epp#clientTransferProhibited",
+        ],
+        "emails": "registrar-abuse@google.com",
+        "dnssec": "unsigned",
+        "name": "Contact Privacy Inc. Customer 7151571251",
+        "org": "Contact Privacy Inc. Customer 7151571251",
+        "address": "96 Mowat Ave",
+        "city": "Toronto",
+        "state": "ON",
+        "registrant_postal_code": "M4K 3K1",
+        "country": "CA",
+    },
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mock_dispatch_whois", [whois_mock_expired_missingdata], indirect=True)
+async def test_cname_whois_unregistered_missingdata(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    with patch("sys.exit") as exit_mock:
+        mock_data = {"bad.dns": {"CNAME": ["worse.dns."]}, "worse.dns": {"A": ["127.0.0.2"]}}
+        mock_resolver = configure_mock_resolver(mock_data)
+
+        target = "bad.dns"
+        mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+        baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        findings = None
+        if await baddns_cname.dispatch():
+            findings = baddns_cname.analyze()
+            print(findings)
+        assert not exit_mock.called
+

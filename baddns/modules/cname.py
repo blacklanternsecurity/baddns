@@ -200,7 +200,7 @@ class BadDNS_cname(BadDNS_base):
             # check for expired domain
             elif self.cname_whoismanager.whois_result["type"] == "response":
                 log.debug("whois resulted in a response")
-                expiration_data = self.cname_whoismanager.whois_result["data"]["expiration_date"]
+                expiration_data = self.cname_whoismanager.whois_result.get("data", {}).get("expiration_date", None)
                 if isinstance(expiration_data, list):
                     expiration_date = expiration_data[0]
                 else:
