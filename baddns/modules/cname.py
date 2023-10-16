@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 from dateutil import parser as date_parser
+import tldextract
 
 from baddns.base import BadDNS_base
 
@@ -82,7 +83,7 @@ class BadDNS_cname(BadDNS_base):
         if self.direct_mode == True:
             trigger = "self"
         else:
-            trigger = self.target_dnsmanager.answers["CNAME"]
+            trigger = self.target_dnsmanager.answers["CNAME"][-1]
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
             signature_match = False
             indicator = None
@@ -112,7 +113,12 @@ class BadDNS_cname(BadDNS_base):
                                 )
                             )
                             break
-            if signature_match == False:
+            if (
+                signature_match == False
+                and trigger != "self"
+                and tldextract.extract(trigger).registered_domain
+                != tldextract.extract(self.target_dnsmanager.target).registered_domain
+            ):
                 findings.append(
                     Finding(
                         {
