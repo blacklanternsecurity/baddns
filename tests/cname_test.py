@@ -369,4 +369,3 @@ async def test_cname_whois_unregistered_missingdata(fs, mock_dispatch_whois, htt
             findings = baddns_cname.analyze()
             print(findings)
         assert not exit_mock.called
-

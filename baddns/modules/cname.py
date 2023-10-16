@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from dateutil import parser as date_parser
 
 from baddns.base import BadDNS_base
@@ -210,9 +210,10 @@ class BadDNS_cname(BadDNS_base):
 
                 if expiration_date:
                     current_date = date.today()
-                    if expiration_date.date() < current_date:
-                        log.info(
-                            f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
+                    expiration_plus_one = expiration_date.date() + timedelta(days=1)
+                    if expiration_plus_one < current_date:
+                        log.debug(
+                            f"Current Date (minus one) ({current_date.strftime('%Y-%m-%d')}) is after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
                         )
                         findings.append(
                             Finding(
