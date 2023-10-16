@@ -128,4 +128,8 @@ class DNSManager:
         for rdatatype in self.dns_record_types:
             if rdatatype in omit_types:
                 continue
-            self.answers[rdatatype] = await self.do_resolve(self.target, rdatatype)
+            try:
+                self.answers[rdatatype] = await self.do_resolve(self.target, rdatatype)
+            except dns.resolver.LifetimeTimeout:
+                log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
+                self.answers[rdatatype] = None
