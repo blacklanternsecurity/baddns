@@ -81,9 +81,9 @@ class BadDNS_cname(BadDNS_base):
     def analyze(self):
         findings = []
         if self.direct_mode == True:
-            trigger = "self"
+            trigger = ["self"]
         else:
-            trigger = self.target_dnsmanager.answers["CNAME"][-1]
+            trigger = self.target_dnsmanager.answers["CNAME"]
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
             signature_match = False
             indicator = None
@@ -115,8 +115,8 @@ class BadDNS_cname(BadDNS_base):
                             break
             if (
                 signature_match == False
-                and trigger != "self"
-                and tldextract.extract(trigger).registered_domain
+                and trigger[-1] != "self"
+                and tldextract.extract(trigger[-1]).registered_domain
                 != tldextract.extract(self.target_dnsmanager.target).registered_domain
             ):
                 findings.append(
