@@ -1,0 +1,20 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Public Report Not Activated
+    - This public report page has not been activated by the user
+  matchers-condition: and
+mode: http
+service_name: Pingdom Takeover Detection
+source: nucleitemplates
