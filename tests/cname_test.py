@@ -73,6 +73,23 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock
 
 
 @pytest.mark.asyncio
+async def test_cname_dnsnxdomain_generic_negative(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {"bad.dns": {"CNAME": ["baddns.somerandomthing.dns."]}, "_NXDOMAIN": ["baddns.somerandomthing.dns"]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
 async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "baddns.azurewebsites.net.": {"A": "127.0.0.1"}}
     mock_resolver = configure_mock_resolver(mock_data)
