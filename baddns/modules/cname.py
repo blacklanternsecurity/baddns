@@ -175,8 +175,6 @@ class BadDNS_cname(BadDNS_base):
                         )
 
         # check whois data for unregistered and expiring domains
-
-        #      for whois_domain,whois_data in self.cname_whoismanager.items():
         if self.cname_whoismanager.whois_result:
             for whois_finding in self.cname_whoismanager.analyzeWHOIS():
                 findings.append(
