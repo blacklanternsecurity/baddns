@@ -92,6 +92,8 @@ class BadDNS_references(BadDNS_base):
                         signatures_dir=self.signatures_dir,
                         direct_mode=True,
                         parent_class="references",
+                        http_client_class=self.http_client_class,
+                        dns_client=self.dns_client,
                     )
                     if await cname_instance_direct.dispatch():
                         self.cname_findings_direct.append(
@@ -108,6 +110,8 @@ class BadDNS_references(BadDNS_base):
                         signatures_dir=self.signatures_dir,
                         direct_mode=False,
                         parent_class="references",
+                        http_client_class=self.http_client_class,
+                        dns_client=self.dns_client,
                     )
                     if await cname_instance.dispatch():
                         self.cname_findings.append(

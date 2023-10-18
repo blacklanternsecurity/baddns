@@ -123,8 +123,11 @@ async def _main():
 
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
 
-    parser.add_argument("target", type=validate_target, help="subdomain to analyze")
+    parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
+
+    if not args.target and not args.list_modules:
+        parser.error("the following arguments are required: target")
 
     if args.list_modules:
         r = get_all_modules()

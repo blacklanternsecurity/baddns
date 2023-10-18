@@ -247,7 +247,7 @@ async def test_cname_whois_expired(fs, mock_dispatch_whois, httpx_mock, configur
     assert findings
     expected = {
         "target": "bad.dns",
-        "description": "CNAME With Expired Registration (Expiration: [2023-02-25 15:56:10])",
+        "description": "CNAME Registration Expired (Expiration: [2023-02-25 15:56:10]",
         "confidence": "CONFIRMED",
         "signature": "N/A",
         "indicator": "Whois Data",
