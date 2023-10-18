@@ -1,5 +1,3 @@
-from datetime import date, datetime, timedelta
-from dateutil import parser as date_parser
 import tldextract
 
 from baddns.base import BadDNS_base
@@ -27,23 +25,6 @@ class BadDNS_cname(BadDNS_base):
         self.target_httpmanager = None
         self.cname_dnsmanager = None
         self.cname_whoismanager = None
-
-    @staticmethod
-    def date_parse(unknown_date):
-        # Check if it's already a datetime object
-        if isinstance(unknown_date, datetime):
-            return unknown_date
-
-        # If it's a string, try to parse it
-        if isinstance(unknown_date, str):
-            try:
-                return date_parser.parse(unknown_date)
-            except ValueError as e:
-                log.debug(f"Failed to parse date from string: {unknown_date}. Error: {e}")
-                return None
-
-        log.debug(f"Unsupported date object type: {type(unknown_date)}. Value: {unknown_date}")
-        return None
 
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
@@ -132,6 +113,10 @@ class BadDNS_cname(BadDNS_base):
                         }
                     )
                 )
+            else:
+                log.debug(
+                    f"Not reporting generic cname for trigger [{trigger}] from domain [{self.target_dnsmanager.target}]"
+                )
 
         else:
             log.debug("Starting HTTP analysis")
@@ -189,62 +174,21 @@ class BadDNS_cname(BadDNS_base):
                             )
                         )
 
-        # check whois data for expiring domains
-        log.debug("analyzing whois results")
+        # check whois data for unregistered and expiring domains
         if self.cname_whoismanager.whois_result:
-            # check for unregistered CNAME
-            if self.cname_whoismanager.whois_result["type"] == "error":
-                log.debug("whois result was an error")
-                if "No match for" in self.cname_whoismanager.whois_result["data"]:
-                    findings.append(
-                        Finding(
-                            {
-                                "target": self.target_dnsmanager.target,
-                                "description": "CNAME unregistered",
-                                "confidence": "CONFIRMED",
-                                "signature": "N/A",
-                                "indicator": "Whois Data",
-                                "trigger": trigger,
-                                "module": type(self),
-                            }
-                        )
+            for whois_finding in self.cname_whoismanager.analyzeWHOIS():
+                findings.append(
+                    Finding(
+                        {
+                            "target": self.target_dnsmanager.target,
+                            "description": f"CNAME {whois_finding}",
+                            "confidence": "CONFIRMED",
+                            "signature": "N/A",
+                            "indicator": "Whois Data",
+                            "trigger": self.subject,
+                            "module": type(self),
+                        }
                     )
-
-            # check for expired domain
-            elif self.cname_whoismanager.whois_result["type"] == "response":
-                log.debug("whois resulted in a response")
-                expiration_data = self.cname_whoismanager.whois_result.get("data", {}).get("expiration_date", None)
-                if isinstance(expiration_data, list):
-                    expiration_date = expiration_data[0]
-                else:
-                    expiration_date = expiration_data
-
-                expiration_date = self.date_parse(expiration_date)
-
-                if expiration_date:
-                    current_date = date.today()
-                    expiration_plus_one = expiration_date.date() + timedelta(days=1)
-                    if expiration_plus_one < current_date:
-                        log.debug(
-                            f"Current Date (minus one) ({current_date.strftime('%Y-%m-%d')}) is after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
-                        )
-                        findings.append(
-                            Finding(
-                                {
-                                    "target": self.target_dnsmanager.target,
-                                    "description": f"CNAME With Expired Registration (Expiration: [{expiration_date.strftime('%Y-%m-%d %H:%M:%S')}])",
-                                    "confidence": "CONFIRMED",
-                                    "signature": "N/A",
-                                    "indicator": "Whois Data",
-                                    "trigger": trigger,
-                                    "module": type(self),
-                                }
-                            )
-                        )
-                    else:
-                        log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")
-
-        else:
-            log.debug("whois_result was NoneType")
+                )
 
         return findings
