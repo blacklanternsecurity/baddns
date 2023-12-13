@@ -15,7 +15,6 @@ matcher_rule:
     type: word
     words:
     - The specified bucket does not exist
-    - The specified bucket does not have a website configuration
   - dsl:
     - contains(tolower(header), 'x-guploader-uploadid')
     negative: true
