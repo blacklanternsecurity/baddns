@@ -1,5 +1,3 @@
-import re
-
 from baddns.base import BadDNS_base
 from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.httpmanager import HttpManager
@@ -7,7 +5,6 @@ from baddns.modules.cname import BadDNS_cname
 from baddns.lib.findings import Finding
 
 import logging
-from urllib.parse import urlparse
 
 log = logging.getLogger(__name__)
 
@@ -26,9 +23,6 @@ class BadDNS_txt(BadDNS_base):
         self.cname_findings = None
         self.cname_findings_direct = None
         self.reference_data = {}
-
-    def parse_txt_record(self, txt):
-        return results
 
     async def dispatch(self):
         self.cname_findings_direct = []
