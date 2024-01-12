@@ -53,6 +53,10 @@ class Finding:
             raise BadDNSFindingException("Module was not a valid baddns module")
         self.finding_dict["module"] = module.name
 
+        data = finding_dict.get("data", None)
+        if data:
+            self.finding_dict["data"] = data
+
     def to_dict(self):
         return self.finding_dict
 
