@@ -8,6 +8,7 @@ import dns.query
 
 log = logging.getLogger(__name__)
 
+
 class BadDNS_zonetransfer(BadDNS_base):
     name = "zonetransfer"
     description = "Attempt a DNS zone transfer"
@@ -19,7 +20,7 @@ class BadDNS_zonetransfer(BadDNS_base):
 
         self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
 
-    def parse_zone(self,zone):
+    def parse_zone(self, zone):
         for name, node in zone.nodes.items():
             for rdataset in node.rdatasets:
                 record_type = dns.rdatatype.to_text(rdataset.rdtype)
@@ -51,29 +52,30 @@ class BadDNS_zonetransfer(BadDNS_base):
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "MX", "AAAA", "CNAME", "SOA", "TXT"])
         if self.target_dnsmanager.answers["NS"]:
-            
             for ns in self.target_dnsmanager.answers["NS"]:
                 log.debug(f"Attempting Zone Transfer against NS [{ns}] for target [{self.target_dnsmanager.target}]")
-                r = await self.zone_transfer(ns,self.target_dnsmanager.target)
+                r = await self.zone_transfer(ns, self.target_dnsmanager.target)
                 if r:
-                    log.info(f"Successful Zone Transfer against NS [{ns}] for target [{self.target_dnsmanager.target}]")
+                    log.info(
+                        f"Successful Zone Transfer against NS [{ns}] for target [{self.target_dnsmanager.target}]"
+                    )
         return True
 
     def analyze(self):
         findings = []
         if self.zone_records:
             findings.append(
-                    Finding(
-                        {
-                            "target": self.target_dnsmanager.target,
-                            "description": "Successful Zone Transfer",
-                            "confidence": "CONFIRMED",
-                            "signature": "N/A",
-                            "indicator": "Successful XFR Request",
-                            "trigger": self.zone_nameservers,
-                            "module": type(self),
-                            "data": self.zone_records
-                        }
-                    )
+                Finding(
+                    {
+                        "target": self.target_dnsmanager.target,
+                        "description": "Successful Zone Transfer",
+                        "confidence": "CONFIRMED",
+                        "signature": "N/A",
+                        "indicator": "Successful XFR Request",
+                        "trigger": self.zone_nameservers,
+                        "module": type(self),
+                        "data": self.zone_records,
+                    }
                 )
+            )
         return findings
