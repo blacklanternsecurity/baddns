@@ -76,10 +76,7 @@ class DNSManager:
             elif rdtype == "TXT":
                 for s in record.strings:
                     s = s.decode()
-                    for match in self.dns_name_regex.finditer(s):
-                        start, end = match.span()
-                        host = s[start:end]
-                        results.add(host)
+                    results.add(s)
             elif rdtype == "NSEC":
                 results.add(self._clean_dns_record(record.next))
             else:
