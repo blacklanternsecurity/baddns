@@ -85,55 +85,6 @@ class BadDNS_txt(BadDNS_base):
 
         return True
 
-        # self.cname_findings_direct = []
-        # self.cname_findings = []
-
-        # for r in live_results:
-        #     parsed_results = self.parse_body(r.text)
-        #     if parsed_results:
-        #         for pr in parsed_results:
-        #             if pr["domain"] == self.target:
-        #                 log.debug(f"Found domain matches target ({self.target}), ignoring")
-        #                 continue
-        #             log.debug(f"Initializing cname instance for target {pr['domain']}")
-
-        #             cname_instance_direct = BadDNS_cname(
-        #                 pr["domain"],
-        #                 custom_nameservers=self.custom_nameservers,
-        #                 signatures_dir=self.signatures_dir,
-        #                 direct_mode=True,
-        #                 parent_class="references",
-        #                 http_client_class=self.http_client_class,
-        #                 dns_client=self.dns_client,
-        #             )
-        #             if await cname_instance_direct.dispatch():
-        #                 self.cname_findings_direct.append(
-        #                     {
-        #                         "finding": cname_instance_direct.analyze(),
-        #                         "description": pr["description"],
-        #                         "trigger": pr["trigger"],
-        #                     }
-        #                 )
-
-        #             cname_instance = BadDNS_cname(
-        #                 pr["domain"],
-        #                 custom_nameservers=self.custom_nameservers,
-        #                 signatures_dir=self.signatures_dir,
-        #                 direct_mode=False,
-        #                 parent_class="references",
-        #                 http_client_class=self.http_client_class,
-        #                 dns_client=self.dns_client,
-        #             )
-        #             if await cname_instance.dispatch():
-        #                 self.cname_findings.append(
-        #                     {
-        #                         "finding": cname_instance.analyze(),
-        #                         "description": pr["description"],
-        #                         "trigger": pr["trigger"],
-        #                     }
-        #                 )
-        # return True
-
     def _convert_findings(self, finding_sets):
         converted_findings = []
         for finding_set in finding_sets:
