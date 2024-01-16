@@ -5,6 +5,7 @@ from baddns.lib.dnsmanager import DNSManager
 import logging
 import dns.zone
 import dns.query
+import asyncio
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class BadDNS_zonetransfer(BadDNS_base):
         ns_ips = await self.target_dnsmanager.do_resolve(nameserver, "A")
         ns_ip = ns_ips[0]
         try:
-            zone = dns.zone.from_xfr(dns.query.xfr(ns_ip, domain, timeout=10))
+            zone = await asyncio.to_thread(dns.zone.from_xfr, dns.query.xfr(ns_ip, domain, timeout=10))
         except TimeoutError:
             log.warning("TimeoutError attempting zone transfer")
             return False
