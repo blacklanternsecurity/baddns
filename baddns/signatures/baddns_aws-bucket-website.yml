@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: amazonaws.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - The specified bucket does not have a website configuration
+  matchers-condition: and
+mode: http
+service_name: AWS Bucket Website
+source: self
