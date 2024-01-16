@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 
 
 class DNSManager:
-    dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]
+    dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT", "NSEC"]
 
     _dns_name_regex = r"(?:\w(?:[\w-]{0,100}\w)?\.)+[^\W_]{1,63}"
     dns_name_regex = re.compile(_dns_name_regex, re.I)
@@ -76,10 +76,7 @@ class DNSManager:
             elif rdtype == "TXT":
                 for s in record.strings:
                     s = s.decode()
-                    for match in self.dns_name_regex.finditer(s):
-                        start, end = match.span()
-                        host = s[start:end]
-                        results.add(host)
+                    results.add(s)
             elif rdtype == "NSEC":
                 results.add(self._clean_dns_record(record.next))
             else:
@@ -128,4 +125,8 @@ class DNSManager:
         for rdatatype in self.dns_record_types:
             if rdatatype in omit_types:
                 continue
-            self.answers[rdatatype] = await self.do_resolve(self.target, rdatatype)
+            try:
+                self.answers[rdatatype] = await self.do_resolve(self.target, rdatatype)
+            except dns.resolver.LifetimeTimeout:
+                log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
+                self.answers[rdatatype] = None

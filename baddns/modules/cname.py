@@ -1,5 +1,4 @@
-from datetime import date, datetime
-from dateutil import parser as date_parser
+import tldextract
 
 from baddns.base import BadDNS_base
 
@@ -20,41 +19,30 @@ class BadDNS_cname(BadDNS_base):
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
+
+        self.direct_mode = kwargs.get("direct_mode", False)
         self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
         self.target_httpmanager = None
         self.cname_dnsmanager = None
         self.cname_whoismanager = None
 
-    @staticmethod
-    def date_parse(unknown_date):
-        # Check if it's already a datetime object
-        if isinstance(unknown_date, datetime):
-            return unknown_date
-
-        # If it's a string, try to parse it
-        if isinstance(unknown_date, str):
-            try:
-                return date_parser.parse(unknown_date)
-            except ValueError as e:
-                log.debug(f"Failed to parse date from string: {unknown_date}. Error: {e}")
-                return None
-
-        log.debug(f"Unsupported date object type: {type(unknown_date)}. Value: {unknown_date}")
-        return None
-
     async def dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
-
-        if self.target_dnsmanager.answers["CNAME"] != None:
-            log.info(
-                f"Found CNAME(S) [{' -> '.join([self.target_dnsmanager.target] + self.target_dnsmanager.answers['CNAME'])}]"
-            )
+        if self.direct_mode == False:
+            if self.target_dnsmanager.answers["CNAME"] != None:
+                log.info(
+                    f"Found CNAME(S) [{' -> '.join([self.target_dnsmanager.target] + self.target_dnsmanager.answers['CNAME'])}]"
+                )
+                self.subject = self.target_dnsmanager.answers["CNAME"][-1]
+            else:
+                if self.parent_class == "self":
+                    log.info("No CNAME Found :/")
+                return False
         else:
-            log.info("No CNAME Found :/")
-            return False
-
-        self.cname_dnsmanager = DNSManager(self.target_dnsmanager.answers["CNAME"][-1], dns_client=self.dns_client)
-        await self.cname_dnsmanager.dispatchDNS(omit_types=["CNAME"])
+            log.debug("Direct mode enabled. Target will be checked for takeover instead of target's CNAME")
+            self.subject = self.target
+        self.cname_dnsmanager = DNSManager(self.subject, dns_client=self.dns_client)
+        await self.cname_dnsmanager.dispatchDNS(omit_types=["CNAME", "NSEC"])
 
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
@@ -65,15 +53,18 @@ class BadDNS_cname(BadDNS_base):
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
         # even if it is registered, we still use whois to check for expired domains
         log.debug("performing WHOIS lookup")
-        self.cname_whoismanager = WhoisManager(self.target_dnsmanager.answers["CNAME"][-1])
+
+        self.cname_whoismanager = WhoisManager(self.subject)
         await self.cname_whoismanager.dispatchWHOIS()
         log.debug("WHOIS dispatch complete")
         return True
 
-    # finigh theree
     def analyze(self):
         findings = []
-
+        if self.direct_mode == True:
+            trigger = ["self"]
+        else:
+            trigger = self.target_dnsmanager.answers["CNAME"]
         if self.cname_dnsmanager.answers["NXDOMAIN"]:
             signature_match = False
             indicator = None
@@ -87,7 +78,7 @@ class BadDNS_cname(BadDNS_base):
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
                         if self.cname_dnsmanager.target.endswith(sig_cname):
                             signature_match = True
-                            log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable ({sig_cname})")
+                            log.debug(f"CNAME {self.cname_dnsmanager.target} vulnerable ({sig_cname})")
                             indicator = sig_cname
                             findings.append(
                                 Finding(
@@ -97,13 +88,18 @@ class BadDNS_cname(BadDNS_base):
                                         "confidence": "PROBABLE",
                                         "signature": sig.signature["service_name"],
                                         "indicator": indicator,
-                                        "trigger": self.target_dnsmanager.answers["CNAME"],
+                                        "trigger": trigger,
                                         "module": type(self),
                                     }
                                 )
                             )
                             break
-            if signature_match == False:
+            if (
+                signature_match == False
+                and trigger[-1] != "self"
+                and tldextract.extract(trigger[-1]).registered_domain
+                != tldextract.extract(self.target_dnsmanager.target).registered_domain
+            ):
                 findings.append(
                     Finding(
                         {
@@ -112,10 +108,14 @@ class BadDNS_cname(BadDNS_base):
                             "confidence": "POSSIBLE",
                             "signature": "GENERIC",
                             "indicator": "Generic Dangling CNAME",
-                            "trigger": self.target_dnsmanager.answers["CNAME"],
+                            "trigger": trigger,
                             "module": type(self),
                         }
                     )
+                )
+            else:
+                log.debug(
+                    f"Not reporting generic cname for trigger [{trigger}] from domain [{self.target_dnsmanager.target}]"
                 )
 
         else:
@@ -136,12 +136,10 @@ class BadDNS_cname(BadDNS_base):
                             f"Signature contains cnames [{sig.signature['identifiers']['cnames']}], checking them"
                         )
                         if not any(
-                            cname_dict["value"] in self.target_dnsmanager.answers["CNAME"][-1]
+                            cname_dict["value"] in self.subject
                             for cname_dict in sig.signature["identifiers"]["cnames"]
                         ):
-                            log.debug(
-                                f"no match for {sig.signature['identifiers']['cnames']} for in {self.target_dnsmanager.answers['CNAME'][-1]}"
-                            )
+                            log.debug(f"no match for {sig.signature['identifiers']['cnames']} for in {self.subject}")
                             continue
                         log.debug("passed CNAME check")
 
@@ -170,67 +168,27 @@ class BadDNS_cname(BadDNS_base):
                                     "confidence": "PROBABLE",
                                     "signature": sig.signature["service_name"],
                                     "indicator": sig.summarize_matcher_rule(),
-                                    "trigger": self.target_dnsmanager.answers["CNAME"],
+                                    "trigger": trigger,
                                     "module": type(self),
                                 }
                             )
                         )
 
-        # check whois data for expiring domains
-        log.debug("analyzing whois results")
+        # check whois data for unregistered and expiring domains
         if self.cname_whoismanager.whois_result:
-            # check for unregistered CNAME
-            if self.cname_whoismanager.whois_result["type"] == "error":
-                log.debug("whois result was an error")
-                if "No match for" in self.cname_whoismanager.whois_result["data"]:
-                    findings.append(
-                        Finding(
-                            {
-                                "target": self.target_dnsmanager.target,
-                                "description": "CNAME unregistered",
-                                "confidence": "CONFIRMED",
-                                "signature": "N/A",
-                                "indicator": "Whois Data",
-                                "trigger": self.target_dnsmanager.answers["CNAME"],
-                                "module": type(self),
-                            }
-                        )
+            for whois_finding in self.cname_whoismanager.analyzeWHOIS():
+                findings.append(
+                    Finding(
+                        {
+                            "target": self.target_dnsmanager.target,
+                            "description": f"CNAME {whois_finding}",
+                            "confidence": "CONFIRMED",
+                            "signature": "N/A",
+                            "indicator": "Whois Data",
+                            "trigger": self.subject,
+                            "module": type(self),
+                        }
                     )
-
-            # check for expired domain
-            elif self.cname_whoismanager.whois_result["type"] == "response":
-                log.debug("whois resulted in a response")
-                expiration_data = self.cname_whoismanager.whois_result["data"]["expiration_date"]
-                if isinstance(expiration_data, list):
-                    expiration_date = expiration_data[0]
-                else:
-                    expiration_date = expiration_data
-
-                expiration_date = self.date_parse(expiration_date)
-
-                if expiration_date:
-                    current_date = date.today()
-                    if expiration_date.date() < current_date:
-                        log.info(
-                            f"Current Date ({current_date.strftime('%Y-%m-%d')}) after Expiration Date ({expiration_date.date().strftime('%Y-%m-%d')})"
-                        )
-                        findings.append(
-                            Finding(
-                                {
-                                    "target": self.target_dnsmanager.target,
-                                    "description": f"CNAME With Expired Registration (Expiration: [{expiration_date.strftime('%Y-%m-%d %H:%M:%S')}])",
-                                    "confidence": "CONFIRMED",
-                                    "signature": "N/A",
-                                    "indicator": "Whois Data",
-                                    "trigger": self.target_dnsmanager.answers["CNAME"],
-                                    "module": type(self),
-                                }
-                            )
-                        )
-                    else:
-                        log.debug(f"Domain {self.cname_dnsmanager.target} is not expired")
-
-        else:
-            log.debug("whois_result was NoneType")
+                )
 
         return findings

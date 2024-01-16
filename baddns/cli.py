@@ -37,7 +37,7 @@ def print_version():
 
 
 def validate_target(
-    arg_value, pattern=re.compile(r"^(?:[a-z0-9](?:[a-z0-9-_]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$")
+    arg_value, pattern=re.compile(r"^(?:[a-z0-9_](?:[a-z0-9-_]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$")
 ):
     if not pattern.match(arg_value):
         raise argparse.ArgumentTypeError("Target subdomain is not correctly formatted")
@@ -71,6 +71,7 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
 
 
 async def execute_module(ModuleClass, target, custom_nameservers, signatures_dir):
+    findings = None
     try:
         module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures_dir=signatures_dir)
     except BadDNSSignatureException as e:
@@ -84,6 +85,7 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures_dir
             print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
                 print(finding.to_dict())
+    return findings
 
 
 async def _main():
@@ -121,8 +123,11 @@ async def _main():
 
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
 
-    parser.add_argument("target", type=validate_target, help="subdomain to analyze")
+    parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
+
+    if not args.target and not args.list_modules:
+        parser.error("the following arguments are required: target")
 
     if args.list_modules:
         r = get_all_modules()
