@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 
 
 class DNSManager:
-    dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]
+    dns_record_types = ["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT", "NSEC"]
 
     _dns_name_regex = r"(?:\w(?:[\w-]{0,100}\w)?\.)+[^\W_]{1,63}"
     dns_name_regex = re.compile(_dns_name_regex, re.I)
@@ -91,6 +91,7 @@ class DNSManager:
             self.answers["NoAnswer"] = True
             return
         except dns.resolver.NXDOMAIN:
+            log.warning("nxdom")
             self.answers["NXDOMAIN"] = True
             return
         except dns.resolver.LifetimeTimeout as e:

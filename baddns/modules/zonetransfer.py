@@ -50,7 +50,7 @@ class BadDNS_zonetransfer(BadDNS_base):
         return True
 
     async def dispatch(self):
-        await self.target_dnsmanager.dispatchDNS(omit_types=["A", "MX", "AAAA", "CNAME", "SOA", "TXT"])
+        await self.target_dnsmanager.dispatchDNS(omit_types=["A", "MX", "AAAA", "CNAME", "SOA", "TXT", "NSEC"])
         if self.target_dnsmanager.answers["NS"]:
             for ns in self.target_dnsmanager.answers["NS"]:
                 log.debug(f"Attempting Zone Transfer against NS [{ns}] for target [{self.target_dnsmanager.target}]")
