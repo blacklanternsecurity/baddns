@@ -28,7 +28,7 @@ class BadDNS_txt(BadDNS_base):
         self.cname_findings_direct = []
         self.cname_findings = []
 
-        await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX"])
+        await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "NSEC"])
         if self.target_dnsmanager.answers["TXT"] == None:
             log.debug("No TXT records found, aborting")
             return False

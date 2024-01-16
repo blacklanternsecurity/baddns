@@ -42,7 +42,7 @@ class BadDNS_cname(BadDNS_base):
             log.debug("Direct mode enabled. Target will be checked for takeover instead of target's CNAME")
             self.subject = self.target
         self.cname_dnsmanager = DNSManager(self.subject, dns_client=self.dns_client)
-        await self.cname_dnsmanager.dispatchDNS(omit_types=["CNAME"])
+        await self.cname_dnsmanager.dispatchDNS(omit_types=["CNAME", "NSEC"])
 
         # if the domain resolves, we can try for HTTP connections
         if not self.cname_dnsmanager.answers["NXDOMAIN"]:
