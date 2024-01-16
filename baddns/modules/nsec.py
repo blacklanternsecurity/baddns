@@ -61,7 +61,7 @@ class BadDNS_nsec(BadDNS_base):
                     "indicator": "NSEC Records",
                     "trigger": self.target,
                     "module": type(self),
-                    "data": self.nsec_chain,
+                    "found_domains": self.nsec_chain,
                 }
             )
         )
