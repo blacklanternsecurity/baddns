@@ -21,7 +21,7 @@ class BadDNS_ns(BadDNS_base):
 
     async def dispatch(self):
         # omit everything except CNAME. If there is a CNAME chain, we want to run against the end of it.
-        await self.target_dnsmanager.dispatchDNS(omit_types=[["A", "AAAA", "MX", "NS", "SOA", "TXT"]])
+        await self.target_dnsmanager.dispatchDNS(omit_types=[["A", "AAAA", "MX", "NS", "SOA", "TXT", "NSEC"]])
 
         if self.target_dnsmanager.answers["CNAME"] != None:
             log.info(
