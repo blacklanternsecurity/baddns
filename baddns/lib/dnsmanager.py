@@ -91,7 +91,6 @@ class DNSManager:
             self.answers["NoAnswer"] = True
             return
         except dns.resolver.NXDOMAIN:
-            log.warning("nxdom")
             self.answers["NXDOMAIN"] = True
             return
         except dns.resolver.LifetimeTimeout as e:
