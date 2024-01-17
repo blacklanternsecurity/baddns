@@ -26,6 +26,4 @@ async def test_txt_match(fs, mock_dispatch_whois, configure_mock_resolver):
         "trigger": "bad.dns",
         "module": "TXT",
     }
-    for f in findings:
-        print(f.to_dict())
     assert any(expected == finding.to_dict() for finding in findings)
