@@ -43,7 +43,7 @@ class BadDNS_nsec(BadDNS_base):
             return False
 
         self.nsec_chain.append(self.target)
-        log.info(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
+        self.infomsg(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
         await self.nsec_walk(self.target_dnsmanager.answers["NSEC"][0])
         return True
 

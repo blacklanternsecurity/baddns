@@ -30,13 +30,13 @@ class BadDNS_cname(BadDNS_base):
         await self.target_dnsmanager.dispatchDNS()
         if self.direct_mode == False:
             if self.target_dnsmanager.answers["CNAME"] != None:
-                log.info(
+                self.infomsg(
                     f"Found CNAME(S) [{' -> '.join([self.target_dnsmanager.target] + self.target_dnsmanager.answers['CNAME'])}]"
                 )
                 self.subject = self.target_dnsmanager.answers["CNAME"][-1]
             else:
                 if self.parent_class == "self":
-                    log.info("No CNAME Found :/")
+                    self.infomsg("No CNAME Found :/")
                 return False
         else:
             log.debug("Direct mode enabled. Target will be checked for takeover instead of target's CNAME")
@@ -69,7 +69,7 @@ class BadDNS_cname(BadDNS_base):
             signature_match = False
             indicator = None
 
-            log.info(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
+            self.infomsg(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
             for sig in self.signatures:
                 if sig.signature["mode"] == "dns_nxdomain":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
