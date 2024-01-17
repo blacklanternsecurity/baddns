@@ -39,7 +39,7 @@ class BadDNS_txt(BadDNS_base):
             for match in DNSManager.dns_name_regex.finditer(txt_record):
                 start, end = match.span()
                 host = txt_record[start:end]
-                log.info(f"Found host [{host}] in TXT record [{txt_record}] and analyzing with CNAME module")
+                self.infomsg(f"Found host [{host}] in TXT record [{txt_record}] and analyzing with CNAME module")
 
                 cname_instance_direct = BadDNS_cname(
                     host,

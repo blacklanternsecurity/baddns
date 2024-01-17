@@ -39,8 +39,11 @@ class BadDNS_zonetransfer(BadDNS_base):
         ns_ip = ns_ips[0]
         try:
             zone = await asyncio.to_thread(dns.zone.from_xfr, dns.query.xfr(ns_ip, domain, timeout=10))
-        except TimeoutError:
-            log.warning("TimeoutError attempting zone transfer")
+        except dns.exception.Timeout:
+            log.debug("TimeoutError attempting zone transfer")
+            return False
+        except ConnectionResetError:
+            log.debug("ConnectionResetError attempting zone transfer")
             return False
         except dns.xfr.TransferError as e:
             log.debug(f"{nameserver} ({ns_ip}): {e}")
@@ -61,7 +64,6 @@ class BadDNS_zonetransfer(BadDNS_base):
                     log.info(
                         f"Successful Zone Transfer against NS [{ns}] for target [{self.target_dnsmanager.target}]"
                     )
-
         return zone_transfer_detected
 
     def analyze(self):

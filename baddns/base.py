@@ -11,7 +11,14 @@ from .lib.errors import BadDNSSignatureException
 
 class BadDNS_base:
     def __init__(
-        self, target, http_client_class=None, dns_client=None, signatures_dir=None, custom_nameservers=None, **kwargs
+        self,
+        target,
+        http_client_class=None,
+        dns_client=None,
+        signatures_dir=None,
+        custom_nameservers=None,
+        cli=False,
+        **kwargs,
     ):
         self.http_client_class = http_client_class
         self.dns_client = dns_client
@@ -21,6 +28,13 @@ class BadDNS_base:
         self.load_signatures(signatures_dir)
         self.custom_nameservers = custom_nameservers
         self.parent_class = kwargs.get("parent_class", "self")
+        self.cli = cli
+
+    def infomsg(self, msg):
+        if self.cli:
+            log.info(msg)
+        else:
+            log.debug(msg)
 
     def load_signatures(self, signatures_dir=None):
         if signatures_dir:
