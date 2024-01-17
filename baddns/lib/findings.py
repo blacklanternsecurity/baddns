@@ -53,9 +53,9 @@ class Finding:
             raise BadDNSFindingException("Module was not a valid baddns module")
         self.finding_dict["module"] = module.name
 
-        data = finding_dict.get("data", None)
-        if data:
-            self.finding_dict["data"] = data
+        found_domains = finding_dict.get("found_domains", None)
+        if found_domains:
+            self.finding_dict["found_domains"] = found_domains
 
     def to_dict(self):
         return self.finding_dict
