@@ -21,7 +21,9 @@ class BadDNS_cname(BadDNS_base):
         super().__init__(target, **kwargs)
 
         self.direct_mode = kwargs.get("direct_mode", False)
-        self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
+        self.target_dnsmanager = DNSManager(
+            target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+        )
         self.target_httpmanager = None
         self.cname_dnsmanager = None
         self.cname_whoismanager = None

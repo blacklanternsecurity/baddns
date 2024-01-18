@@ -15,7 +15,9 @@ class BadDNS_mx(BadDNS_base):
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
 
-        self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
+        self.target_dnsmanager = DNSManager(
+            target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+        )
         self.mx_whoismanager = {}
 
     async def dispatch(self):
