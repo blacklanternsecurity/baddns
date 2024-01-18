@@ -30,7 +30,7 @@ class BadDNS_nsec(BadDNS_base):
             next_domain = await self.get_nsec_record(current_domain)
             if next_domain is None or next_domain[0] in self.nsec_chain:
                 break
-            log.debug(f"Found additiona NSEC record: {next_domain}")
+            log.debug(f"Found additional NSEC record: {next_domain}")
             if not next_domain[0].startswith("\\"):
                 self.nsec_chain.append(next_domain[0])
             current_domain = next_domain[0]
@@ -44,7 +44,7 @@ class BadDNS_nsec(BadDNS_base):
 
         self.nsec_chain.append(self.target)
         self.infomsg(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
-        await self.nsec_walk(self.target_dnsmanager.answers["NSEC"][0])
+        await self.nsec_walk(self.target)
         return True
 
     def analyze(self):
@@ -55,7 +55,7 @@ class BadDNS_nsec(BadDNS_base):
             Finding(
                 {
                     "target": self.target_dnsmanager.target,
-                    "description": f"DNSSEC NSEC Zone Walking Enabled for domain: {self.target}",
+                    "description": f"DNSSEC NSEC Zone Walking Enabled for domain: [{self.target}]",
                     "confidence": "CONFIRMED",
                     "signature": "N/A",
                     "indicator": "NSEC Records",

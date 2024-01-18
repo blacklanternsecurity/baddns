@@ -1,5 +1,6 @@
 import whois
 import logging
+import asyncio
 import tldextract
 from datetime import date, datetime, timedelta
 from dateutil import parser as date_parser
@@ -17,7 +18,7 @@ class WhoisManager:
         log.debug(f"Extracted base domain [{ext.registered_domain}] from [{self.target}]")
         log.debug(f"Submitting WHOIS query for {ext.registered_domain}")
         try:
-            w = whois.whois(ext.registered_domain)
+            w = await asyncio.to_thread(whois.whois, ext.registered_domain)
             log.debug(f"Got response to whois request for {ext.registered_domain}")
             self.whois_result = {"type": "response", "data": w}
         except whois.parser.PywhoisError as e:

@@ -67,9 +67,6 @@ async def test_mx_unregistered(fs, mock_dispatch_whois, configure_mock_resolver,
             "trigger": "mail2.worse.dns",
             "module": "MX",
         }
-        print("!!!!!!!!SDFSDFDSF")
-
-        print(findings[0].to_dict())
         assert any(expected == finding.to_dict() for finding in findings)
 
 
