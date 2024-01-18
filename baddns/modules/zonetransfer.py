@@ -18,7 +18,9 @@ class BadDNS_zonetransfer(BadDNS_base):
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
-        self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
+        self.target_dnsmanager = DNSManager(
+            target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+        )
 
     def parse_zone(self, zone):
         for name, node in zone.nodes.items():
@@ -48,6 +50,9 @@ class BadDNS_zonetransfer(BadDNS_base):
             return False
         except dns.xfr.TransferError as e:
             log.debug(f"{nameserver} ({ns_ip}): {e}")
+            return False
+        except EOFError:
+            log.debug("EOFError attempting zone transfer")
             return False
         self.zone_nameservers.append(nameserver)
         self.parse_zone(zone)

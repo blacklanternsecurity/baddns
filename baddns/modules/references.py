@@ -22,7 +22,9 @@ class BadDNS_references(BadDNS_base):
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
         self.target = target
-        self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
+        self.target_dnsmanager = DNSManager(
+            target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+        )
         self.target_httpmanager = HttpManager(
             self.target, http_client_class=self.http_client_class, skip_redirects=True
         )

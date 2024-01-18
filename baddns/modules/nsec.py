@@ -14,7 +14,9 @@ class BadDNS_nsec(BadDNS_base):
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
         self.target = target
-        self.target_dnsmanager = DNSManager(target, dns_client=self.dns_client)
+        self.target_dnsmanager = DNSManager(
+            target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+        )
         self.nsec_chain = []
 
     async def get_nsec_record(self, domain):
