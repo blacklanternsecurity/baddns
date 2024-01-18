@@ -8,3 +8,11 @@ class BadDNSSignatureException(BadDNSException):
 
 class BadDNSMatcherException(BadDNSException):
     pass
+
+
+class BadDNSCLIException(BadDNSException):
+    pass
+
+
+class BadDNSFindingException(BadDNSException):
+    pass
