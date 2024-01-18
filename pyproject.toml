@@ -38,3 +38,8 @@ line-length = 119
 
 [tool.poetry.scripts]
 baddns = 'baddns.cli:main'
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
