@@ -104,7 +104,6 @@ def test_matcher_3(httpx_mock):
     assert m.is_match(r)
 
 
-
 def test_matcher_4(httpx_mock):
     httpx_mock.add_response(
         url="https://baddns.com/test4",
