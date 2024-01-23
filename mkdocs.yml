@@ -1,0 +1,36 @@
+# Project information
+site_name: BadDNS Docs
+site_url: https://blacklanternsecurity.github.io/baddns/
+site_author: Paul Mueller
+site_description: Check subdomains for subdomain takeovers and other DNS tomfoolery
+# Repository
+repo_name: blacklanternsecurity/baddns
+repo_url: https://github.com/blacklanternsecurity/baddns
+  - "mkdocs.yml"
+  - "baddns"
+  - "docs"
+
+# Page tree
+nav:
+- User Manual:
+  - Introduction: intro.md
+  - Modules: modules.md
+  - Signatures: signatures.md
+  - Research: research.md
+  - Resources: resources.md
+
+theme:
+  name: material
+  logo: logo-md.jpg
+  favicon: baddns.ico
+  features:
+    - content.code.copy
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+  palette:
+    - scheme: slate
+
+extra_css:
+  - stylesheets/extra.css
