@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 # from lib.errors import BadDNSMatcherException
 
-log = logging.getLogger("baddns.matcher")
+log = logging.getLogger(__name__)
 
 
 class Matcher:

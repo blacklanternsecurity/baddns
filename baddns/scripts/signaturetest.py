@@ -116,7 +116,6 @@ def process_file(file_path):
                     pass
                     # TODO: Support other types
         else:
-
             signature_pass = True
         if signature_pass == False:
             error = "No CNAMES passed random subdomain matcher validation"
