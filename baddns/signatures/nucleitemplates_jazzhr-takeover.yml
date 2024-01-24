@@ -1,5 +1,7 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: jazzhr.com
   ips: []
   nameservers: []
   not_cnames: []
