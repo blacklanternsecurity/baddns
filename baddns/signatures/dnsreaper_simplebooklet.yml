@@ -7,10 +7,11 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: or
+  - condition: and
     part: body
     type: word
     words:
+    - This is a surprise. The
     - you're looking for isn't here.
   matchers-condition: and
 mode: http
