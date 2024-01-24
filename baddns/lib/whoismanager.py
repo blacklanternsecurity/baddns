@@ -40,8 +40,8 @@ class WhoisManager:
                 if isinstance(expiration_data, list):
                     log.debug("Expiration data:")
                     log.debug(expiration_data)
-                    log.debug("Got multiple expiration dates. Falling back to earliest...")
-                    expiration_date = min(expiration_data)
+                    log.debug("Got multiple expiration dates. Falling back to the latest...")
+                    expiration_date = max(expiration_data)
                 else:
                     expiration_date = expiration_data
 
