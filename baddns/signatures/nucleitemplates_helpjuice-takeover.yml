@@ -1,5 +1,7 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: helpjuice.com
   ips: []
   nameservers: []
   not_cnames: []
