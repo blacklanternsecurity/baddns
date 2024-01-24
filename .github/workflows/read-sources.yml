@@ -2,6 +2,8 @@ name: Read Sources
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 17 * * *'
 jobs:
   readsources:
     runs-on: ubuntu-latest
@@ -84,19 +86,31 @@ jobs:
 
             sleep 5
             PR_TITLE="[SignatureBot] Add or update signature $file"
-            EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE)')
+            SEARCH_QUERY="repo:${{ github.repository }} type:pr state:open in:title \"$PR_TITLE\""
 
-            if [[ -n "$EXISTING_OPEN_PRS" ]]; then
+            # Encode the search query
+            ENCODED_QUERY=$(echo "$SEARCH_QUERY" | jq -sRr @uri)
+
+            EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/search/issues?q=$ENCODED_QUERY" | jq '.items')
+
+            if [[ -n "$EXISTING_OPEN_PRS" && "$EXISTING_OPEN_PRS" != "[]" ]]; then
               echo "Found an open PR with title '$PR_TITLE', skipping this signature" >> readsources_action.log
               continue
             fi
 
             sleep 5
-            EXISTING_CLOSED_BLOCKED_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE and any(.labels[]?; .name == "signature-blocked"))')
+            # Encode the PR title for use in a URL
+            ENCODED_PR_TITLE=$(echo "$PR_TITLE" | jq -sRr @uri)
 
-            if [[ -n "$EXISTING_CLOSED_BLOCKED_PRS" ]]; then
-              echo "Found a closed PR with title '$PR_TITLE' and label 'signature-blocked', skipping this signature" >> readsources_action.log
-              continue
+            # Check for existing closed PRs with the same title and label 'signature-blocked'
+            SEARCH_RESULT=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/search/issues?q=repo:${{ github.repository }}+type:pr+state:closed+label:signature-blocked+in:title+$ENCODED_PR_TITLE")
+
+            # Use jq to determine if any matching PRs are found. If so, skip processing this signature.
+            MATCHING_CLOSED_BLOCKED_PR_COUNT=$(echo "$SEARCH_RESULT" | jq '.total_count')
+
+            if [[ $MATCHING_CLOSED_BLOCKED_PR_COUNT -gt 0 ]]; then
+                echo "Found a closed PR with title '$PR_TITLE' and label 'signature-blocked', skipping this signature" >> readsources_action.log
+                continue
             fi
 
             # Add the new hash to the history file
@@ -115,10 +129,18 @@ jobs:
             if git ls-remote --heads origin $BRANCH_NAME | grep $BRANCH_NAME; then
                 # Check for existing PRs with the same title
                 PR_TITLE="[SignatureBot] Add or update signature $file"
-                sleep 5
-                EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | jq --arg PR_TITLE "$PR_TITLE" '.[] | select(.title == $PR_TITLE)')
 
-                if [[ -n "$EXISTING_OPEN_PRS" ]]; then
+                # Construct the search query
+                SEARCH_QUERY="repo:${{ github.repository }} type:pr state:open in:title \"$PR_TITLE\""
+
+                # Encode the search query for the URL
+                ENCODED_QUERY=$(echo "$SEARCH_QUERY" | jq -sRr @uri)
+
+                # Short delay, then check for existing PRs with the Search API
+                sleep 5
+                EXISTING_OPEN_PRS=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/search/issues?q=$ENCODED_QUERY" | jq '.items')
+
+                if [[ -n "$EXISTING_OPEN_PRS" && "$EXISTING_OPEN_PRS" != "[]" ]]; then
                     echo "Found an open PR with title '$PR_TITLE', skipping branch deletion for safety" >> readsources_action.log
                     continue
                 fi
