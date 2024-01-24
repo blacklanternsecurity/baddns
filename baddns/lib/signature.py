@@ -2,7 +2,7 @@ import logging
 
 from .errors import BadDNSSignatureException
 
-log = logging.getLogger("baddns.signature")
+log = logging.getLogger(__name__)
 
 
 class BadDNSSignature:
@@ -59,3 +59,17 @@ class BadDNSSignature:
 
     def output(self):
         return self.signature
+
+    def summarize_matcher_rule(self):
+        summary = []
+
+        if "matchers" in self.signature["matcher_rule"].keys():
+            for matcher in self.signature["matcher_rule"]["matchers"]:
+                if matcher["type"] == "word":
+                    words = ", ".join(matcher["words"])
+                    condition = matcher.get("condition", "")
+                    part = matcher.get("part", "")
+                    summary.append(f"[Words: {words} | Condition: {condition} | Part: {part}]")
+            return ", ".join(summary) + f" Matchers-Condition: {self.signature['matcher_rule']['matchers-condition']}"
+        else:
+            return "No matchers in signature"

@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: thinkific.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - You may have mistyped the address or the page may have moved.
+  matchers-condition: and
+mode: http
+service_name: thinkific.com
+source: dnsreaper

@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: mashery.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - Unrecognized domain
+  matchers-condition: and
+mode: http
+service_name: mashery.com
+source: dnsreaper
