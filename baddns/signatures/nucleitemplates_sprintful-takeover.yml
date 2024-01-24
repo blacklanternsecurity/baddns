@@ -1,0 +1,28 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: or
+    part: body
+    type: word
+    words:
+    - The user account associated with this calendar has been deactivated.
+    - Please contact the owner of this calendar directly in order to book a meeting.
+    - This domain name does not have a default page configured.
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Sprintful
+  - status: 200
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Sprintful Takeover
+source: nucleitemplates
