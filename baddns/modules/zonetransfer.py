@@ -42,7 +42,7 @@ class BadDNS_zonetransfer(BadDNS_base):
             ns_ip = ns_ips[0]
             try:
                 zone = await asyncio.to_thread(
-                    dns.zone.from_xfr, dns.query.xfr(ns_ip, domain, lifetime=10, timeout=10)
+                    dns.zone.from_xfr, dns.query.xfr(ns_ip, domain, lifetime=6, timeout=6)
                 )
 
             except (TimeoutError, dns.exception.Timeout):
