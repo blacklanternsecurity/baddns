@@ -102,3 +102,35 @@ def test_matcher_3(httpx_mock):
     m = Matcher(rules)
     r = httpx.get("https://baddns.com/test3")
     assert m.is_match(r)
+
+
+def test_matcher_4(httpx_mock):
+    httpx_mock.add_response(
+        url="https://baddns.com/test4",
+        status_code=302,
+        text="<html><p>regex_matcher_test_1234</p></html>",
+        headers={"Foo": "offline.ghost.org"},
+    )
+    rules = """
+  identifiers:
+    cnames: []
+    ips: []
+    nameservers: []
+    not_cnames: []
+  matcher_rule:
+    matchers:
+    - dsl:
+      - Host != ip
+      type: dsl
+    - regex:
+      - 'regex_matcher_test_\d{1,4}'
+      type: regex
+    matchers-condition: and
+  mode: http
+  service_name: test signature regex
+  source: nucleitemplates
+        """
+    m = Matcher(rules)
+    r = httpx.get("https://baddns.com/test4")
+    print(m.is_match(r))
+    assert m.is_match(r)

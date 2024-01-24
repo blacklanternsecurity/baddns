@@ -157,7 +157,7 @@ class BadDNS_cname(BadDNS_base):
                             continue
                         log.debug("passed IPS")
 
-                    m = Matcher(sig.signature["matcher_rule"])
+                    m = Matcher(sig.signature)
                     log.debug("Checking for HTTP matches")
                     if any(m.is_match(hr) for hr in http_results if hr is not None):
                         log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
