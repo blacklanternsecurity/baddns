@@ -1,0 +1,22 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Error ConnectYourDomain occurred
+    - wixErrorPagesApp
+  - status: 404
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Wix Takeover Detection
+source: nucleitemplates

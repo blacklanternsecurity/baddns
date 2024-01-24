@@ -1,0 +1,10 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - dnsmadeeasy
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: dnsmadeeasy.com
+source: dnsreaper
