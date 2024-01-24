@@ -20,22 +20,21 @@ class BadDNS_nsec(BadDNS_base):
         self.nsec_chain = []
 
     async def get_nsec_record(self, domain):
-        domain = domain.replace("\\000.", "")
         result = await self.target_dnsmanager.do_resolve(domain, "NSEC")
         if result:
-            return result
+            return result[0].replace("\\000.", "")
 
     async def nsec_walk(self, domain):
         log.debug("in nsec_walk")
         current_domain = domain
         while 1:
             next_domain = await self.get_nsec_record(current_domain)
-            if next_domain is None or next_domain[0] in self.nsec_chain:
+            if next_domain is None or next_domain in self.nsec_chain:
                 break
             log.debug(f"Found additional NSEC record: {next_domain}")
-            if not next_domain[0].startswith("\\"):
-                self.nsec_chain.append(next_domain[0])
-            current_domain = next_domain[0]
+            if not next_domain.startswith("\\"):
+                self.nsec_chain.append(next_domain)
+            current_domain = next_domain
 
     async def dispatch(self):
         log.debug("in dispatch")
