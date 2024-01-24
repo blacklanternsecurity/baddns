@@ -7,11 +7,13 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: or
+  - condition: and
     part: body
     type: word
     words:
-    - WHOOPS! The page you're looking for does not exist.
+    - <center>csw</center>
+  - status: 301
+    type: status
   matchers-condition: and
 mode: http
 service_name: campaignmonitor.com
