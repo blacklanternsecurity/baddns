@@ -88,7 +88,7 @@ async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cac
             "signature": "N/A",
             "indicator": "Whois Data",
             "trigger": "CSS Source: [http://css.baddnscdn.com/style.css]",
-            "module": "REFERENCES",
+            "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
 
@@ -119,7 +119,7 @@ async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cach
             "signature": "N/A",
             "indicator": "Whois Data",
             "trigger": "Javascript Source: [http://css.baddnscdn.com/script.js]",
-            "module": "REFERENCES",
+            "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
 
@@ -151,7 +151,7 @@ async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cac
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
             "trigger": "Javascript Source: [http://direct.azurewebsites.net/script.js]",
-            "module": "REFERENCES",
+            "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
 
@@ -183,6 +183,6 @@ async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, ca
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
             "trigger": "CSS Source: [http://direct.azurewebsites.net/style.css]",
-            "module": "REFERENCES",
+            "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
