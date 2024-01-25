@@ -67,3 +67,24 @@ async def test_nsec_preventloop(fs, mock_dispatch_whois, configure_mock_resolver
         "found_domains": ["wat.bad.dns", "asdf.bad.dns", "zzzz.bad.dns", "xyz.bad.dns"],
     }
     assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+async def test_nsec_preventwildcard(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {
+        "wat.bad.dns": {"NSEC": ["wat.bad.dns"]},
+        "asdf.bad.dns": {"NSEC": ["asdf.bad.dns"]},
+        "zzzz.bad.dns": {"NSEC": ["zzzz.bad.dns"]},
+        "xyz.bad.dns": {"NSEC": ["xyz.bad.dns"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+    for target in mock_data.keys():
+        baddns_nsec = BadDNS_nsec(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+
+        findings = None
+        if await baddns_nsec.dispatch():
+            findings = baddns_nsec.analyze()
+        print(findings)
+        assert not findings

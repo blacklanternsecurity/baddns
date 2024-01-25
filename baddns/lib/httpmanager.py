@@ -1,6 +1,6 @@
 import ssl
+import anyio
 import httpx
-
 import logging
 import httpx_cache
 
@@ -34,9 +34,9 @@ class HttpManager:
             self.https_denyredirects_results = await self.http_client.get(
                 f"https://{self.target}/", follow_redirects=False
             )
-        except httpx.RequestError as e:
-            log.debug(f"An error occurred while requesting {e.request.url!r}: {e}")
-        except httpx.ConnectError as e:
-            log.debug(f"Http Connect Error {e.request.url!r}: {e}")
+        except (httpx.RequestError, httpx.ConnectError, httpx.TimeoutException) as e:
+            log.debug(f"An httpx error occurred while requesting {e.request.url!r}: {e}")
         except ssl.SSLError as e:
-            log.debug(f"SSL Error: {e}")
+            log.debug(f"An ssl error occurred while requesting {e.request.url!r}: {e}")
+        except anyio.EndOfStream as e:
+            log.debug(f"An anyio error occurred while requesting {e.request.url!r}: {e}")

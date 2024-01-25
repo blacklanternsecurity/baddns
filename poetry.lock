@@ -2,13 +2,13 @@
 
 [[package]]
 name = "aiorwlock"
-version = "1.3.0"
+version = "1.4.0"
 description = "Read write lock for asyncio."
 optional = false
-python-versions = ">=3.7.0"
+python-versions = ">=3.8"
 files = [
-    {file = "aiorwlock-1.3.0-py3-none-any.whl", hash = "sha256:45baf8e4fa9a23e0bb325fbd67da80de1fd7ae1d4f59a6381754c60cec7b289b"},
-    {file = "aiorwlock-1.3.0.tar.gz", hash = "sha256:83f12d87df4b9728a0b8fda1756585ab0d652b107bab59c6084e1b1ad692ab45"},
+    {file = "aiorwlock-1.4.0-py3-none-any.whl", hash = "sha256:cc99c42463e9915cff528d79b6eb3d518d74bc0edf9edeb8c64228445fb4714b"},
+    {file = "aiorwlock-1.4.0.tar.gz", hash = "sha256:4cea5bec4e9d03533a26919299394822a1422aa519bca9dd09178ec490f8d1cc"},
 ]
 
 [[package]]
@@ -241,22 +241,23 @@ toml = ["tomli"]
 
 [[package]]
 name = "dnspython"
-version = "2.4.2"
+version = "2.5.0"
 description = "DNS toolkit"
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = ">=3.8"
 files = [
-    {file = "dnspython-2.4.2-py3-none-any.whl", hash = "sha256:57c6fbaaeaaf39c891292012060beb141791735dbb4004798328fc2c467402d8"},
-    {file = "dnspython-2.4.2.tar.gz", hash = "sha256:8dcfae8c7460a2f84b4072e26f1c9f4101ca20c071649cb7c34e8b6a93d58984"},
+    {file = "dnspython-2.5.0-py3-none-any.whl", hash = "sha256:6facdf76b73c742ccf2d07add296f178e629da60be23ce4b0a9c927b1e02c3a6"},
+    {file = "dnspython-2.5.0.tar.gz", hash = "sha256:a0034815a59ba9ae888946be7ccca8f7c157b286f8455b379c692efb51022a15"},
 ]
 
 [package.extras]
-dnssec = ["cryptography (>=2.6,<42.0)"]
-doh = ["h2 (>=4.1.0)", "httpcore (>=0.17.3)", "httpx (>=0.24.1)"]
+dev = ["black (>=23.1.0)", "coverage (>=7.0)", "flake8 (>=5.0.3)", "mypy (>=1.0.1)", "pylint (>=2.7)", "pytest (>=6.2.5)", "pytest-cov (>=3.0.0)", "sphinx (>=7.0.0)", "twine (>=4.0.0)", "wheel (>=0.41.0)"]
+dnssec = ["cryptography (>=41)"]
+doh = ["h2 (>=4.1.0)", "httpcore (>=0.17.3)", "httpx (>=0.25.1)"]
 doq = ["aioquic (>=0.9.20)"]
-idna = ["idna (>=2.1,<4.0)"]
-trio = ["trio (>=0.14,<0.23)"]
-wmi = ["wmi (>=1.5.1,<2.0.0)"]
+idna = ["idna (>=2.1)"]
+trio = ["trio (>=0.14)"]
+wmi = ["wmi (>=1.5.1)"]
 
 [[package]]
 name = "exceptiongroup"
@@ -502,13 +503,13 @@ files = [
 
 [[package]]
 name = "pluggy"
-version = "1.3.0"
+version = "1.4.0"
 description = "plugin and hook calling mechanisms for python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pluggy-1.3.0-py3-none-any.whl", hash = "sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7"},
-    {file = "pluggy-1.3.0.tar.gz", hash = "sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12"},
+    {file = "pluggy-1.4.0-py3-none-any.whl", hash = "sha256:7db9f7b503d67d1c5b95f59773ebb58a8c1c288129a88665838012cfb07b8981"},
+    {file = "pluggy-1.4.0.tar.gz", hash = "sha256:8c85c2876142a764e5b7548e7d9a0e0ddb46f5185161049a79b7e974454223be"},
 ]
 
 [package.extras]
@@ -517,13 +518,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pyfakefs"
-version = "5.3.2"
+version = "5.3.4"
 description = "pyfakefs implements a fake file system that mocks the Python file system modules."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyfakefs-5.3.2-py3-none-any.whl", hash = "sha256:5a62194cfa24542a3c9080b66ce65d78b2e977957edfd3cd6fe98e8349bcca32"},
-    {file = "pyfakefs-5.3.2.tar.gz", hash = "sha256:a83776a3c1046d4d103f2f530029aa6cdff5f0386dffd59c15ee16926135493c"},
+    {file = "pyfakefs-5.3.4-py3-none-any.whl", hash = "sha256:fc375229f5417f197f0892a7d6dc49a411e67e10eb8142b19d80e60a9d52a13d"},
+    {file = "pyfakefs-5.3.4.tar.gz", hash = "sha256:dadac1653195a4bfe4c26e9dfa7cc0c0286b1cd8e18706442c2464cae5542a17"},
 ]
 
 [[package]]
