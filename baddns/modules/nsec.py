@@ -29,12 +29,18 @@ class BadDNS_nsec(BadDNS_base):
         current_domain = domain
         while 1:
             next_domain = await self.get_nsec_record(current_domain)
+
+            # NSEC wildcard protection
+            if current_domain == next_domain and len(self.nsec_chain) == 1:
+                return False
+
             if next_domain is None or next_domain in self.nsec_chain:
                 break
             log.debug(f"Found additional NSEC record: {next_domain}")
             if not next_domain.startswith("\\"):
                 self.nsec_chain.append(next_domain)
             current_domain = next_domain
+        return True
 
     async def dispatch(self):
         log.debug("in dispatch")
@@ -44,9 +50,12 @@ class BadDNS_nsec(BadDNS_base):
             return False
 
         self.nsec_chain.append(self.target)
-        self.infomsg(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
-        await self.nsec_walk(self.target)
-        return True
+        nsec_walk = await self.nsec_walk(self.target)
+        if nsec_walk:
+            self.infomsg(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
+            return True
+
+        return False
 
     def analyze(self):
         log.debug("in analyze")
