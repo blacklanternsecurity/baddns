@@ -38,25 +38,26 @@ class BadDNS_zonetransfer(BadDNS_base):
 
     async def zone_transfer(self, nameserver, domain):
         ns_ips = await self.target_dnsmanager.do_resolve(nameserver, "A")
-        ns_ip = ns_ips[0]
-        try:
-            zone = await asyncio.to_thread(dns.zone.from_xfr, dns.query.xfr(ns_ip, domain, timeout=10))
+        if ns_ips:
+            ns_ip = ns_ips[0]
+            try:
+                zone = await asyncio.to_thread(dns.zone.from_xfr, dns.query.xfr(ns_ip, domain, lifetime=6, timeout=6))
 
-        except dns.exception.Timeout:
-            log.debug("TimeoutError attempting zone transfer")
-            return False
-        except ConnectionResetError:
-            log.debug("ConnectionResetError attempting zone transfer")
-            return False
-        except dns.xfr.TransferError as e:
-            log.debug(f"{nameserver} ({ns_ip}): {e}")
-            return False
-        except EOFError:
-            log.debug("EOFError attempting zone transfer")
-            return False
-        self.zone_nameservers.append(nameserver)
-        self.parse_zone(zone)
-        return True
+            except (TimeoutError, dns.exception.Timeout):
+                log.debug("TimeoutError attempting zone transfer")
+                return False
+            except ConnectionResetError:
+                log.debug("ConnectionResetError attempting zone transfer")
+                return False
+            except dns.xfr.TransferError as e:
+                log.debug(f"{nameserver} ({ns_ip}): {e}")
+                return False
+            except EOFError:
+                log.debug("EOFError attempting zone transfer")
+                return False
+            self.zone_nameservers.append(nameserver)
+            self.parse_zone(zone)
+            return True
 
     async def dispatch(self):
         zone_transfer_detected = False
