@@ -5,6 +5,68 @@ identifiers:
   not_cnames:
   - type: word
     value: amazonaws.com
+  - type: word
+    value: ks3.ksyun.com
+  - type: word
+    value: kss.ksyun.com
+  - type: word
+    value: kss3.ksyun.com
+  - type: word
+    value: ks3-cn-beijing.ksyun.com
+  - type: word
+    value: ks3-cn-guangzhou.ksyun.com
+  - type: word
+    value: ks3-cn-hk-1.ksyun.com
+  - type: word
+    value: ks3-cn-shanghai.ksyun.com
+  - type: word
+    value: ks3-jr-beijing.ksyun.com
+  - type: word
+    value: ks3-jr-shanghai.ksyun.com
+  - type: word
+    value: ks3-rus.ksyun.com
+  - type: word
+    value: ks3-sgp.ksyun.com
+  - type: word
+    value: obs.jrzq.huaweicloud.com
+  - type: word
+    value: obs.petalpay.huaweicloud.com
+  - type: word
+    value: oss-cn-hangzhou.aliyuncs.com
+  - type: word
+    value: oss-cn-shanghai.aliyuncs.com
+  - type: word
+    value: oss-cn-qingdao.aliyuncs.com
+  - type: word
+    value: oss-cn-beijing.aliyuncs.com
+  - type: word
+    value: oss-cn-zhangjiakou.aliyuncs.com
+  - type: word
+    value: oss-cn-huhehaote.aliyuncs.com
+  - type: word
+    value: oss-cn-shenzhen.aliyuncs.com
+  - type: word
+    value: oss-cn-hongkong.aliyuncs.com
+  - type: word
+    value: oss-us-west-1.aliyuncs.com
+  - type: word
+    value: oss-us-east-1.aliyuncs.com
+  - type: word
+    value: oss-ap-southeast-1.aliyuncs.com
+  - type: word
+    value: oss-ap-southeast-2.aliyuncs.com
+  - type: word
+    value: oss-ap-southeast-3.aliyuncs.com
+  - type: word
+    value: oss-ap-southeast-5.aliyuncs.com
+  - type: word
+    value: oss-ap-south-1.aliyuncs.com
+  - type: word
+    value: oss-ap-northeast-1.aliyuncs.com
+  - type: word
+    value: oss-eu-central-1.aliyuncs.com
+  - type: word
+    value: oss-me-east-1.aliyuncs.com
 matcher_rule:
   matchers:
   - dsl:
@@ -15,6 +77,7 @@ matcher_rule:
     type: word
     words:
     - The specified bucket does not exist
+    - BucketName
   - dsl:
     - contains(tolower(header), 'x-guploader-uploadid')
     negative: true
