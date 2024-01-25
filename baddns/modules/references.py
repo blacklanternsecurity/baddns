@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 class BadDNS_references(BadDNS_base):
-    name = "REFERENCES"
+    name = "references"
     description = "Check HTML content for links or other references that contain a hijackable domain"
 
     regex_jssrc = re.compile(r'<script[^>]*src\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
