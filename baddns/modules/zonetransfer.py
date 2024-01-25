@@ -55,6 +55,8 @@ class BadDNS_zonetransfer(BadDNS_base):
             except EOFError:
                 log.debug("EOFError attempting zone transfer")
                 return False
+            except dns.exception.FormError:
+                log.debug("dns.exception.FormError attempting zone transfer")
             self.zone_nameservers.append(nameserver)
             self.parse_zone(zone)
             return True
