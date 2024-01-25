@@ -1,0 +1,19 @@
+identifiers:
+  cnames:
+  - type: word
+    value: simplebooklet.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - This is a surprise. The
+    - you're looking for isn't here.
+  matchers-condition: and
+mode: http
+service_name: simplebooklet.com
+source: dnsreaper
