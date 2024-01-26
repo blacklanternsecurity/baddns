@@ -122,13 +122,7 @@ class BadDNS_cname(BadDNS_base):
 
         else:
             log.debug("Starting HTTP analysis")
-
-            http_results = [
-                self.target_httpmanager.http_allowredirects_results,
-                self.target_httpmanager.http_denyredirects_results,
-                self.target_httpmanager.https_allowredirects_results,
-                self.target_httpmanager.https_denyredirects_results,
-            ]
+            http_results = list(self.target_httpmanager.results.values())
 
             for sig in self.signatures:
                 if sig.signature["mode"] == "http":

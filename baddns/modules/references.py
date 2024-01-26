@@ -68,13 +68,10 @@ class BadDNS_references(BadDNS_base):
 
         live_results = []
 
-        if self.target_httpmanager.http_denyredirects_results:
-            log.debug(f"Found live host at {self.target_httpmanager.http_denyredirects_results.url}")
-            live_results.append(self.target_httpmanager.http_denyredirects_results)
-
-        if self.target_httpmanager.https_denyredirects_results:
-            log.debug(f"Found live host at {self.target_httpmanager.https_denyredirects_results.url}")
-            live_results.append(self.target_httpmanager.https_denyredirects_results)
+        if self.target_httpmanager.skip_redirects and self.target_httpmanager.results:
+            for url, result in self.target_httpmanager.results.items():
+                log.debug(f"Found live host at {url}")
+                live_results.append(result)
 
         self.cname_findings_direct = []
         self.cname_findings = []
