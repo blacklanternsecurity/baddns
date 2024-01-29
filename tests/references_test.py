@@ -1,5 +1,4 @@
 import pytest
-import functools
 from mock import patch
 
 from baddns.modules.references import BadDNS_references

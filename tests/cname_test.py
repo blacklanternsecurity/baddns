@@ -9,8 +9,6 @@ import ssl
 # Disable SSL certificate verification
 ssl._create_default_https_context = ssl._create_unverified_context
 
-import functools
-
 
 @pytest.mark.asyncio
 async def test_cname_dnsnxdomain_azure_match(fs, mock_dispatch_whois, configure_mock_resolver):
