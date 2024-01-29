@@ -109,7 +109,7 @@ async def _main():
     parser.add_argument(
         "-c",
         "--custom-signatures",
-        help="Use an alternate directory for loadings signatures",
+        help="Use an alternate directory for loading signatures",
     )
 
     parser.add_argument(
