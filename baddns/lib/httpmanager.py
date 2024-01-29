@@ -27,6 +27,6 @@ class HttpManager:
         except (httpx.RequestError, httpx.ConnectError, httpx.TimeoutException) as e:
             log.debug(f"An httpx error occurred while requesting {e.request.url!r}: {e}")
         except ssl.SSLError as e:
-            log.debug(f"An ssl error occurred while requesting {e.request.url!r}: {e}")
+            log.debug(f"An ssl error occurred while requesting {e}")
         except anyio.EndOfStream as e:
-            log.debug(f"An anyio error occurred while requesting {e.request.url!r}: {e}")
+            log.debug(f"An anyio error occurred while requesting {e}")
