@@ -1,15 +1,17 @@
 [tool.poetry]
 name = "baddns"
-version = "0.0.0"
-description = "Check subdomains for for subdomain takeovers and other DNS tomfoolery"
+version = "1.0.0"
+description = "Check subdomains for subdomain takeovers and other DNS tomfoolery"
 authors = ["liquidsec <paul.mueller08@gmail.com>"]
+repository = "https://github.com/blacklanternsecurity/baddns"
+homepage = "https://github.com/blacklanternsecurity/baddns"
+documentation = "https://www.blacklanternsecurity.com/baddns/"
 license = "GPL-3.0"
 readme = "README.md"
 include = ["signatures/**/*"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-requests = "^2.31.0"
 pyyaml = "^6.0.1"
 dnspython = "^2.4.1"
 colorama = "^0.4.6"
@@ -28,10 +30,7 @@ pytest-cov = "^4.0.0"
 pytest-asyncio = "^0.21.1"
 mock = "^5.1.0"
 pytest-mock = "^3.11.1"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+poetry-dynamic-versioning = {extras = ["plugin"], version = "^1.2.0"}
 
 [tool.black]
 line-length = 119
@@ -43,3 +42,12 @@ baddns = 'baddns.cli:main'
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+metadata = true
+format = 'v1.0.{distance}'
