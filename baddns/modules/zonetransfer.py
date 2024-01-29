@@ -40,6 +40,7 @@ class BadDNS_zonetransfer(BadDNS_base):
         ns_ips = await self.target_dnsmanager.do_resolve(nameserver, "A")
         if ns_ips:
             ns_ip = ns_ips[0]
+            log.debug(f"resolved nameserver [{nameserver}] ip: [{ns_ip}]")
             try:
                 zone = await asyncio.to_thread(dns.zone.from_xfr, dns.query.xfr(ns_ip, domain, lifetime=6, timeout=6))
 

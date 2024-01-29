@@ -108,7 +108,7 @@ async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois, configu
 
 @pytest.mark.asyncio
 async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
-    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": "127.0.0.1"}}
+    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
 
     httpx_mock.add_response(

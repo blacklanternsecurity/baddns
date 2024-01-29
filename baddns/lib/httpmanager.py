@@ -14,29 +14,35 @@ class HttpManager:
             http_client_class = httpx_cache.AsyncClient
         self.http_client = http_client_class(timeout=5, verify=False)
         self.target = target
-        self.http_allowredirects_results = None
-        self.http_denyredirects_results = None
-        self.https_allowredirects_results = None
-        self.https_denyredirects_results = None
+        for attr in [
+            "http_allowredirects_results",
+            "http_denyredirects_results",
+            "https_allowredirects_results",
+            "https_denyredirects_results",
+        ]:
+            setattr(self, attr, None)
 
     async def dispatchHttp(self):
         try:
-            if self.skip_redirects == False:
-                self.http_allowredirects_results = await self.http_client.get(
-                    f"http://{self.target}/", follow_redirects=True
+            protocols = ["http", "https"]
+            for protocol in protocols:
+                base_url = f"{protocol}://{self.target}/"
+                # If redirects are not skipped by this module, perform requests that follow redirects
+                if not self.skip_redirects:
+                    setattr(
+                        self,
+                        f"{protocol}_allowredirects_results",
+                        await self.http_client.get(base_url, follow_redirects=True),
+                    )
+                # Always perform requests that do not follow redirects
+                setattr(
+                    self,
+                    f"{protocol}_denyredirects_results",
+                    await self.http_client.get(base_url, follow_redirects=False),
                 )
-                self.https_allowredirects_results = await self.http_client.get(
-                    f"https://{self.target}/", follow_redirects=True
-                )
-            self.http_denyredirects_results = await self.http_client.get(
-                f"http://{self.target}/", follow_redirects=False
-            )
-            self.https_denyredirects_results = await self.http_client.get(
-                f"https://{self.target}/", follow_redirects=False
-            )
         except (httpx.RequestError, httpx.ConnectError, httpx.TimeoutException) as e:
             log.debug(f"An httpx error occurred while requesting {e.request.url!r}: {e}")
         except ssl.SSLError as e:
-            log.debug(f"An ssl error occurred while requesting {e.request.url!r}: {e}")
+            log.debug(f"An SSL error occurred while requesting {e}")
         except anyio.EndOfStream as e:
-            log.debug(f"An anyio error occurred while requesting {e.request.url!r}: {e}")
+            log.debug(f"An anyio error occurred while requesting {e}")
