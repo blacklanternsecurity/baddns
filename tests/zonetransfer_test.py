@@ -19,7 +19,7 @@ def from_xfr(*args, **kwargs):
 asdf 600 IN A 127.0.0.1
 zzzz 600 IN AAAA dead::beef
 """
-    zone = dns.zone.from_text(zone_text, origin="blacklanternsecurity.fakedomain.")
+    zone = dns.zone.from_text(zone_text, origin="bad.dns.")
     return zone
 
 
