@@ -2,7 +2,6 @@ import ssl
 import anyio
 import httpx
 import logging
-import httpx_cache
 
 log = logging.getLogger(__name__)
 
@@ -11,7 +10,7 @@ class HttpManager:
     def __init__(self, target, http_client_class=None, skip_redirects=False):
         self.skip_redirects = skip_redirects
         if not http_client_class:
-            http_client_class = httpx_cache.AsyncClient
+            http_client_class = httpx.AsyncClient
         self.http_client = http_client_class(timeout=5, verify=False)
         self.target = target
         for attr in [
