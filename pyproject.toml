@@ -1,16 +1,17 @@
 [tool.poetry]
 name = "baddns"
 version = "1.0.0"
-description = "Check subdomains for for subdomain takeovers and other DNS tomfoolery"
+description = "Check subdomains for subdomain takeovers and other DNS tomfoolery"
 authors = ["liquidsec <paul.mueller08@gmail.com>"]
+repository = "https://github.com/blacklanternsecurity/baddns"
+homepage = "https://github.com/blacklanternsecurity/baddns"
+documentation = "https://www.blacklanternsecurity.com/baddns/"
 license = "GPL-3.0"
 readme = "README.md"
-requires-python = ">=3.9"
 include = ["signatures/**/*"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-requests = "^2.31.0"
 pyyaml = "^6.0.1"
 dnspython = "^2.4.1"
 colorama = "^0.4.6"
@@ -49,8 +50,4 @@ build-backend = "poetry_dynamic_versioning.backend"
 [tool.poetry-dynamic-versioning]
 enable = true
 metadata = true
-format = 'v0.4.{distance}'
-
-[project.urls]
-Homepage = https://github.com/blacklanternsecurity/baddns
-Issues = https://github.com/blacklanternsecurity/baddns/issues
+format = 'v1.0.{distance}'

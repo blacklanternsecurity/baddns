@@ -1,15 +1,9 @@
 import pytest
-import requests
 import functools
 from mock import patch
 
 from baddns.modules.references import BadDNS_references
 from .helpers import mock_signature_load
-
-requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
-requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
-requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
-requests.request = functools.partial(requests.request, verify=False)
 
 mock_references_http_css_cname = """
 <!DOCTYPE html>
