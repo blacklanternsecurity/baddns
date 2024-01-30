@@ -10,6 +10,7 @@ requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.H
 requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
 requests.request = functools.partial(requests.request, verify=False)
 
+
 @pytest.mark.asyncio
 async def test_ns_nosoa_signature(fs, configure_mock_resolver):
     mock_data = {"bad.dns": {"NS": ["ns1.wordpress.com."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}

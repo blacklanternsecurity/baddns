@@ -17,6 +17,7 @@ requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.H
 requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
 requests.request = functools.partial(requests.request, verify=False)
 
+
 @pytest.mark.asyncio
 async def test_cname_dnsnxdomain_azure_match(fs, mock_dispatch_whois, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
