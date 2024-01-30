@@ -1,5 +1,6 @@
 import pytest
 import datetime
+import requests
 from mock import patch
 from baddns.modules.cname import BadDNS_cname
 from .helpers import mock_signature_load
@@ -9,6 +10,12 @@ import ssl
 # Disable SSL certificate verification
 ssl._create_default_https_context = ssl._create_unverified_context
 
+import functools
+
+requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
+requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
+requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
+requests.request = functools.partial(requests.request, verify=False)
 
 @pytest.mark.asyncio
 async def test_cname_dnsnxdomain_azure_match(fs, mock_dispatch_whois, configure_mock_resolver):
