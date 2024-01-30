@@ -3,6 +3,7 @@ from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.findings import Finding
 
 import logging
+import tldextract
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class BadDNS_nsec(BadDNS_base):
 
     async def dispatch(self):
         log.debug("in dispatch")
+        target_base_domain = tldextract.extract(self.target).registered_domain
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "TXT"])
         if self.target_dnsmanager.answers["NSEC"] == None:
             log.debug("No NSEC records found, aborting")
@@ -53,8 +55,16 @@ class BadDNS_nsec(BadDNS_base):
         nsec_walk = await self.nsec_walk(self.target)
         if nsec_walk:
             self.infomsg(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
+            self.nsec_chain.remove(self.target)
+            nonmatching_results = len(
+                [host for host in self.nsec_chain if not host.endswith(f".{target_base_domain}")]
+            )
+            if len(self.nsec_chain) == nonmatching_results == 1:
+                log.debug(
+                    f"Aborting because NSEC chain contained only 1 result [{self.nsec_chain[0]}] which did not match the base domain of the target"
+                )
+                return False
             return True
-
         return False
 
     def analyze(self):

@@ -29,7 +29,7 @@ async def test_nsec_match(fs, mock_dispatch_whois, configure_mock_resolver):
         "indicator": "NSEC Records",
         "trigger": "bad.dns",
         "module": "NSEC",
-        "found_domains": ["bad.dns", "asdf.bad.dns", "zzzz.bad.dns", "xyz.bad.dns"],
+        "found_domains": ["asdf.bad.dns", "zzzz.bad.dns", "xyz.bad.dns"],
     }
     assert any(expected == finding.to_dict() for finding in findings)
 
@@ -64,7 +64,7 @@ async def test_nsec_preventloop(fs, mock_dispatch_whois, configure_mock_resolver
         "indicator": "NSEC Records",
         "trigger": "wat.bad.dns",
         "module": "NSEC",
-        "found_domains": ["wat.bad.dns", "asdf.bad.dns", "zzzz.bad.dns", "xyz.bad.dns"],
+        "found_domains": ["asdf.bad.dns", "zzzz.bad.dns", "xyz.bad.dns"],
     }
     assert any(expected == finding.to_dict() for finding in findings)
 
