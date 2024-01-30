@@ -2,6 +2,13 @@ import pytest
 
 from baddns.modules.ns import BadDNS_ns
 from .helpers import mock_signature_load
+import functools
+import requests
+
+requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
+requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
+requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
+requests.request = functools.partial(requests.request, verify=False)
 
 
 @pytest.mark.asyncio

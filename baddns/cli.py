@@ -31,7 +31,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
 def print_version():
     version = pkg_resources.get_distribution("baddns").version
-    if version == "0.0.0":
+    if version == "1.0.0":
         version = "Unknown (Running w/poetry?)"
     print(f"Version - {version}\n")
 
