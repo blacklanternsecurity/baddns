@@ -56,9 +56,13 @@ class BadDNS_nsec(BadDNS_base):
         if nsec_walk:
             self.infomsg(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
             self.nsec_chain.remove(self.target)
-            nonmatching_results = len([host for host in self.nsec_chain if not host.endswith(f".{target_base_domain}")])
+            nonmatching_results = len(
+                [host for host in self.nsec_chain if not host.endswith(f".{target_base_domain}")]
+            )
             if len(self.nsec_chain) == nonmatching_results == 1:
-                log.debug(f"Aborting because NSEC chain contained only 1 result [{self.nsec_chain[0]}] which did not match the base domain of the target")
+                log.debug(
+                    f"Aborting because NSEC chain contained only 1 result [{self.nsec_chain[0]}] which did not match the base domain of the target"
+                )
                 return False
             return True
         return False
