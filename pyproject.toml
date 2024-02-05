@@ -20,7 +20,6 @@ python-whois = "^0.8.0"
 tldextract = "^3.4.4"
 python-dateutil = "^2.8.2"
 setuptools = "^69.0.3"
-future = { git = "https://github.com/blacklanternsecurity/python-future", branch = "master" }
 
 
 [tool.poetry.group.dev.dependencies]
