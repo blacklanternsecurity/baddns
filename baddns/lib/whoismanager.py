@@ -3,9 +3,13 @@ class noop:
     def __getattr__(self, item):
         def method(*args, **kwargs):
             pass  # Method does nothing
+
         return method
+
+
 import sys
-sys.modules['imp'] = noop()
+
+sys.modules["imp"] = noop()
 
 
 import whois
