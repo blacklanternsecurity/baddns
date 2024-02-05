@@ -1,3 +1,13 @@
+# Temporary workaround for: https://github.com/blacklanternsecurity/baddns/issues/402
+class noop:
+    def __getattr__(self, item):
+        def method(*args, **kwargs):
+            pass  # Method does nothing
+        return method
+import sys
+sys.modules['imp'] = noop()
+
+
 import whois
 import logging
 import asyncio
