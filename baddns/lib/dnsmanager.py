@@ -1,5 +1,6 @@
 import re
 import logging
+import asyncio
 import dns.asyncresolver
 
 log = logging.getLogger(__name__)
@@ -122,11 +123,16 @@ class DNSManager:
     async def dispatchDNS(self, omit_types=[]):
         log.debug(f"attempting to resolve {self.target}")
         log.debug(f"dispatching DNS with the following nameservers: {' '.join(self.dns_client.nameservers)}")
+
+        tasks = []
         for rdatatype in self.dns_record_types:
             if rdatatype in omit_types:
                 continue
+            tasks.append(asyncio.create_task(self.do_resolve(self.target, rdatatype)))
+
+        for task in tasks:
             try:
-                self.answers[rdatatype] = await self.do_resolve(self.target, rdatatype)
+                self.answers[rdatatype] = await task
             except dns.resolver.LifetimeTimeout:
                 log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
                 self.answers[rdatatype] = None
