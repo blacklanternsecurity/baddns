@@ -71,7 +71,9 @@ class DnsWalk:
 
     async def ns_recursive_solve(self, nameserver_ips, target, depth=0):
         if depth > self.max_depth:
-            log.error(f"Reached max depth {str(self.max_depth)} attempting to resolve NS records (infinite loop)")
+            log.debug(
+                f"Reached max depth {str(self.max_depth)} attempting to resolve NS records (infinite loop) on target [{target}]"
+            )
             return []
         final_results = set()
         log.debug(
@@ -110,6 +112,11 @@ class DnsWalk:
                         log.debug("None of the servers provded in the authority section resolved")
                         log.debug(f"Submitting [{' '.join(final_results)}] as final result")
                         return list(final_results)
+
+                    # If the next set of nameservers is the same as the set we currently had, continuing would cause an infinite loop. Return an empty list indicating no additional results.
+                    if set(nameserver_ips) == set(next_nameservers):
+                        log.debug("Got same set of nameservers - preventing infinite loop by returning now")
+                        return []
 
                     # If we had an authority section, and at least one resolved, we need to recurse again
                     log.debug("Resolvable authority results were found. Recursing deeper")

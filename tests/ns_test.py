@@ -30,7 +30,7 @@ async def test_ns_nosoa_signature(fs, configure_mock_resolver):
         "description": "Dangling NS Records (NS records without SOA) with known impact",
         "confidence": "PROBABLE",
         "signature": "wordpress.com",
-        "indicator": "DnsWalk Analsys with signature match: ['ns1.wordpress.com']",
+        "indicator": "DnsWalk Analysis with signature match: ['ns1.wordpress.com']",
         "trigger": "ns1.wordpress.com",
         "module": "NS",
     }
