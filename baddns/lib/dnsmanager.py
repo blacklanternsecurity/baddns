@@ -128,11 +128,14 @@ class DNSManager:
         for rdatatype in self.dns_record_types:
             if rdatatype in omit_types:
                 continue
-            tasks.append(asyncio.create_task(self.do_resolve(self.target, rdatatype)))
+            # Capture the current rdatatype for each task
+            task = asyncio.create_task(self.do_resolve(self.target, rdatatype))
+            tasks.append((task, rdatatype))  # Store the task along with its rdatatype
 
-        for task in tasks:
+        for task, rdatatype in tasks:  # Unpack the task and its corresponding rdatatype
             try:
                 self.answers[rdatatype] = await task
+                log.critical(self.answers[rdatatype])
             except dns.resolver.LifetimeTimeout:
                 log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
                 self.answers[rdatatype] = None
