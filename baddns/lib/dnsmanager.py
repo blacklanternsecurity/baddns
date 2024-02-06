@@ -135,7 +135,6 @@ class DNSManager:
         for task, rdatatype in tasks:  # Unpack the task and its corresponding rdatatype
             try:
                 self.answers[rdatatype] = await task
-                log.critical(self.answers[rdatatype])
             except dns.resolver.LifetimeTimeout:
                 log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
                 self.answers[rdatatype] = None
