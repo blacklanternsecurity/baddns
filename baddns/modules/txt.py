@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 class BadDNS_txt(BadDNS_base):
     name = "TXT"
-    description = "Check TXT contents for hijackable domains"
+    description = "Check TXT record contents for hijackable domains"
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
@@ -46,7 +46,7 @@ class BadDNS_txt(BadDNS_base):
                 cname_instance_direct = BadDNS_cname(
                     host,
                     custom_nameservers=self.custom_nameservers,
-                    signatures_dir=self.signatures_dir,
+                    signatures=self.signatures,
                     direct_mode=True,
                     parent_class="txt",
                     http_client_class=self.http_client_class,
@@ -64,7 +64,7 @@ class BadDNS_txt(BadDNS_base):
                 cname_instance = BadDNS_cname(
                     host,
                     custom_nameservers=self.custom_nameservers,
-                    signatures_dir=self.signatures_dir,
+                    signatures=self.signatures,
                     direct_mode=False,
                     parent_class="txt",
                     http_client_class=self.http_client_class,

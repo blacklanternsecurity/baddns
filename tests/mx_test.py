@@ -1,7 +1,6 @@
 import pytest
 import datetime
 from mock import patch
-from .helpers import mock_signature_load
 from baddns.modules.mx import BadDNS_mx
 
 
@@ -49,10 +48,9 @@ async def test_mx_unregistered(fs, mock_dispatch_whois, configure_mock_resolver,
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"MX": ["mail2.worse.dns", "mail2.worse.dns"]}}
         mock_resolver = configure_mock_resolver(mock_data)
-        mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
         target = "bad.dns"
-        baddns_mx = BadDNS_mx(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        baddns_mx = BadDNS_mx(target, dns_client=mock_resolver)
         findings = None
         if await baddns_mx.dispatch():
             findings = baddns_mx.analyze()
@@ -76,10 +74,9 @@ async def test_mx_expired(fs, mock_dispatch_whois, configure_mock_resolver, cach
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"MX": ["mail2.worse.dns", "mail2.worse.dns"]}}
         mock_resolver = configure_mock_resolver(mock_data)
-        mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
         target = "bad.dns"
-        baddns_mx = BadDNS_mx(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        baddns_mx = BadDNS_mx(target, dns_client=mock_resolver)
         findings = None
         if await baddns_mx.dispatch():
             findings = baddns_mx.analyze()

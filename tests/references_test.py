@@ -4,6 +4,7 @@ import functools
 from mock import patch
 
 from baddns.modules.references import BadDNS_references
+from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
 
 requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
@@ -68,14 +69,15 @@ async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cac
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
         mock_resolver = configure_mock_resolver(mock_data)
         mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-
+        signatures = load_signatures("/tmp/signatures")
         httpx_mock.add_response(
             url="http://bad.dns/",
             status_code=200,
             text=mock_references_http_css_cname,
         )
         target = "bad.dns"
-        baddns_references = BadDNS_references(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        signatures = load_signatures("/tmp/signatures")
+        baddns_references = BadDNS_references(target, signatures=signatures, dns_client=mock_resolver)
         findings = None
         if await baddns_references.dispatch():
             findings = baddns_references.analyze()
@@ -99,14 +101,15 @@ async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cach
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
         mock_resolver = configure_mock_resolver(mock_data)
         mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-
+        signatures = load_signatures("/tmp/signatures")
         httpx_mock.add_response(
             url="http://bad.dns/",
             status_code=200,
             text=mock_references_http_js_cname,
         )
         target = "bad.dns"
-        baddns_references = BadDNS_references(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        signatures = load_signatures("/tmp/signatures")
+        baddns_references = BadDNS_references(target, signatures=signatures, dns_client=mock_resolver)
         findings = None
         if await baddns_references.dispatch():
             findings = baddns_references.analyze()
@@ -138,7 +141,8 @@ async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cac
             text=mock_references_http_js_direct,
         )
         target = "bad.dns"
-        baddns_references = BadDNS_references(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        signatures = load_signatures("/tmp/signatures")
+        baddns_references = BadDNS_references(target, signatures=signatures, dns_client=mock_resolver)
         findings = None
         if await baddns_references.dispatch():
             findings = baddns_references.analyze()
@@ -170,7 +174,8 @@ async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, ca
             text=mock_references_http_css_direct,
         )
         target = "bad.dns"
-        baddns_references = BadDNS_references(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        signatures = load_signatures("/tmp/signatures")
+        baddns_references = BadDNS_references(target, signatures=signatures, dns_client=mock_resolver)
         findings = None
         if await baddns_references.dispatch():
             findings = baddns_references.analyze()
