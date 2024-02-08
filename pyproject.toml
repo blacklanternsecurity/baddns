@@ -34,6 +34,11 @@ pytest-mock = "^3.11.1"
 poetry-dynamic-versioning = {extras = ["plugin"], version = "^1.2.0"}
 requests = "^2.31.0"
 
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5.3"
+mkdocs-material = "^9.5.8"
+
 [tool.black]
 line-length = 119
 
