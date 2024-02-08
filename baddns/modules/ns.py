@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 class BadDNS_ns(BadDNS_base):
     name = "NS"
-    description = "Check for dangling NS records, and interrogate them for domain takeover opportunities"
+    description = "Check for dangling NS records, and interrogate them for takeover opportunities"
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
