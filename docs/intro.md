@@ -2,7 +2,7 @@
 
 ## What is BadDNS?
 
-BadDNS is a library, supporting the detection of a a wide range of DNS related security issues. It is designed from day one to work within [BBOT](https://github.com/blacklanternsecurity/bbot), which allows you to utilize it at massive scale seamlessly as part of the domain discovery process. 
+[BadDNS](https://github.com/blacklanternsecurity/baddns) is a library, supporting the detection of a a wide range of DNS related security issues. It is designed from day one to work within [BBOT](https://github.com/blacklanternsecurity/bbot), which allows you to utilize it at massive scale seamlessly as part of the domain discovery process. 
 
 It's also a fully functional standalone command-line tool, useful for any time you want to assess a single domain.
 
