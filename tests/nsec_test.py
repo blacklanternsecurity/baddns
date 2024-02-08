@@ -1,6 +1,5 @@
 import pytest
 from baddns.modules.nsec import BadDNS_nsec
-from .helpers import mock_signature_load
 
 
 @pytest.mark.asyncio
@@ -12,9 +11,8 @@ async def test_nsec_match(fs, mock_dispatch_whois, configure_mock_resolver):
     }
     mock_resolver = configure_mock_resolver(mock_data)
     target = "bad.dns"
-    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
-    baddns_nsec = BadDNS_nsec(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
 
     findings = None
     if await baddns_nsec.dispatch():
@@ -44,9 +42,8 @@ async def test_nsec_preventloop(fs, mock_dispatch_whois, configure_mock_resolver
     }
     mock_resolver = configure_mock_resolver(mock_data)
     target = "wat.bad.dns"
-    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
-    baddns_nsec = BadDNS_nsec(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
 
     findings = None
     if await baddns_nsec.dispatch():
@@ -78,10 +75,9 @@ async def test_nsec_preventwildcard(fs, mock_dispatch_whois, configure_mock_reso
         "xyz.bad.dns": {"NSEC": ["xyz.bad.dns"]},
     }
     mock_resolver = configure_mock_resolver(mock_data)
-    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
     for target in mock_data.keys():
-        baddns_nsec = BadDNS_nsec(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
 
         findings = None
         if await baddns_nsec.dispatch():

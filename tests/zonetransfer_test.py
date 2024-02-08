@@ -1,9 +1,6 @@
 import pytest
 import dns
-
-
 from baddns.modules.zonetransfer import BadDNS_zonetransfer
-from .helpers import mock_signature_load
 
 
 def from_xfr(*args, **kwargs):
@@ -25,11 +22,10 @@ zzzz 600 IN AAAA dead::beef
 
 @pytest.mark.asyncio
 async def test_zonetransfer_discovery(fs, configure_mock_resolver, monkeypatch):
-    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
     mock_data = {"bad.dns": {"NS": ["ns1.bad.dns."]}, "ns1.bad.dns": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
     target = "bad.dns"
-    baddns_zonetransfer = BadDNS_zonetransfer(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    baddns_zonetransfer = BadDNS_zonetransfer(target, dns_client=mock_resolver)
 
     monkeypatch.setattr("dns.zone.from_xfr", from_xfr)
 
