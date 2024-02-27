@@ -66,7 +66,7 @@ class DnsWalk:
                 log.debug(f"raw_query_with_retry: An unexpected error occurred: {e}. Aborting.")
                 retries += 1
             await asyncio.sleep(12)  # Wait before retrying. We don't want to piss off the root DNS servers.
-        log.warning("raw_query_with_retry: Max retries reached. Query failed.")
+        log.debug("raw_query_with_retry: Max retries reached. Query failed.")
         return None, None
 
     async def ns_recursive_solve(self, nameserver_ips, target, depth=0):
