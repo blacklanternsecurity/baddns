@@ -88,7 +88,7 @@ class DnsWalk:
             query_msg = dns.message.make_query(target, dns.rdatatype.NS)
             response_msg, used_tcp = await self.raw_query_with_retry(query_msg, nameserver_ip)
             if response_msg != None:
-                log.debug(f"Got response message: \n{response_msg}")
+                log.debug(f"Got response message: {repr(str(response_msg))}")
                 if response_msg.authority:
                     log.debug(f"Server [{nameserver_ip}] responded with authority section")
                     for ns_rrset in response_msg.authority:
