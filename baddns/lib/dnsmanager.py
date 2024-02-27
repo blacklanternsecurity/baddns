@@ -81,7 +81,7 @@ class DNSManager:
             elif rdtype == "NSEC":
                 results.add(self._clean_dns_record(record.next))
             else:
-                log.warning(f'Unknown DNS record type "{rdtype}"')
+                log.debug(f'Unknown DNS record type "{rdtype}"')
         return list(results)
 
     async def do_resolve(self, target, rdatatype):
