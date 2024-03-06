@@ -97,6 +97,12 @@ class DNSManager:
         except dns.resolver.LifetimeTimeout as e:
             log.debug(f"Dns Timeout: {e}")
             return
+        except dns.resolver.NoNameservers:
+            log.debug(f"All nameservers failed to answer the query")
+            return
+        except Exception as e:
+            log.warning(f"Unknown error resolving DNS: [{e}]")
+            return
         if r and len(r) > 0:
             if rdatatype == "A":
                 self.ips.extend(self.get_ipv4(r))
