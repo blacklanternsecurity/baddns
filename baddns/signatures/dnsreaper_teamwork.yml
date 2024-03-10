@@ -11,7 +11,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - <title>Teamwork Projects</title>
+    - Unable to determine installationID from domain
   matchers-condition: and
 mode: http
 service_name: teamwork
