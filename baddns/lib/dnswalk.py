@@ -66,12 +66,14 @@ class DnsWalk:
                 log.debug(f"raw_query_with_retry: An unexpected error occurred: {e}. Aborting.")
                 retries += 1
             await asyncio.sleep(12)  # Wait before retrying. We don't want to piss off the root DNS servers.
-        log.warning("raw_query_with_retry: Max retries reached. Query failed.")
+        log.debug("raw_query_with_retry: Max retries reached. Query failed.")
         return None, None
 
     async def ns_recursive_solve(self, nameserver_ips, target, depth=0):
         if depth > self.max_depth:
-            log.error(f"Reached max depth {str(self.max_depth)} attempting to resolve NS records (infinite loop)")
+            log.debug(
+                f"Reached max depth {str(self.max_depth)} attempting to resolve NS records (infinite loop) on target [{target}]"
+            )
             return []
         final_results = set()
         log.debug(
@@ -86,7 +88,7 @@ class DnsWalk:
             query_msg = dns.message.make_query(target, dns.rdatatype.NS)
             response_msg, used_tcp = await self.raw_query_with_retry(query_msg, nameserver_ip)
             if response_msg != None:
-                log.debug(f"Got response message: \n{response_msg}")
+                log.debug(f"Got response message: {repr(str(response_msg))}")
                 if response_msg.authority:
                     log.debug(f"Server [{nameserver_ip}] responded with authority section")
                     for ns_rrset in response_msg.authority:
@@ -110,6 +112,11 @@ class DnsWalk:
                         log.debug("None of the servers provded in the authority section resolved")
                         log.debug(f"Submitting [{' '.join(final_results)}] as final result")
                         return list(final_results)
+
+                    # If the next set of nameservers is the same as the set we currently had, continuing would cause an infinite loop. Return an empty list indicating no additional results.
+                    if set(nameserver_ips) == set(next_nameservers):
+                        log.debug("Got same set of nameservers - preventing infinite loop by returning now")
+                        return []
 
                     # If we had an authority section, and at least one resolved, we need to recurse again
                     log.debug("Resolvable authority results were found. Recursing deeper")

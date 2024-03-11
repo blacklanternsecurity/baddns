@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 class BadDNS_references(BadDNS_base):
-    name = "REFERENCES"
+    name = "references"
     description = "Check HTML content for links or other references that contain a hijackable domain"
 
     regex_jssrc = re.compile(r'<script[^>]*src\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
@@ -68,13 +68,11 @@ class BadDNS_references(BadDNS_base):
 
         live_results = []
 
-        if self.target_httpmanager.http_denyredirects_results:
-            log.debug(f"Found live host at {self.target_httpmanager.http_denyredirects_results.url}")
-            live_results.append(self.target_httpmanager.http_denyredirects_results)
-
-        if self.target_httpmanager.https_denyredirects_results:
-            log.debug(f"Found live host at {self.target_httpmanager.https_denyredirects_results.url}")
-            live_results.append(self.target_httpmanager.https_denyredirects_results)
+        for protocol in ["http", "https"]:
+            result = getattr(self.target_httpmanager, f"{protocol}_denyredirects_results")
+            if result:
+                log.debug(f"Found live host at {result.url}")
+                live_results.append(result)
 
         self.cname_findings_direct = []
         self.cname_findings = []
@@ -91,7 +89,7 @@ class BadDNS_references(BadDNS_base):
                     cname_instance_direct = BadDNS_cname(
                         pr["domain"],
                         custom_nameservers=self.custom_nameservers,
-                        signatures_dir=self.signatures_dir,
+                        signatures=self.signatures,
                         direct_mode=True,
                         parent_class="references",
                         http_client_class=self.http_client_class,
@@ -109,7 +107,7 @@ class BadDNS_references(BadDNS_base):
                     cname_instance = BadDNS_cname(
                         pr["domain"],
                         custom_nameservers=self.custom_nameservers,
-                        signatures_dir=self.signatures_dir,
+                        signatures=self.signatures,
                         direct_mode=False,
                         parent_class="references",
                         http_client_class=self.http_client_class,

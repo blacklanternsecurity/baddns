@@ -39,6 +39,12 @@ What happens when a TXT record just happens to contain a domain/subdomain that j
 
 Behind the scenes, when a domain is found in a TXT record, the `txt` module actually sends the domain/subdomain to the `cname` module where it gets processed just like any other subdomain. If there's a hit, its emitted with the added context of the TXT record it was found in. 
 
+## mx
+
+Taking over a dangling MX record can have significant consequences. If an organization has multiple MX records and some of them are still functional, they may not notice that there is a dangling record present. An attacker who is able to gain control of a domain the dangling record is pointing to can start receiving a portion of an organization's email. Although the impact of control of an email server heavily depends on the priority settings for the various mail servers (emails may only go to lower priority servers if the higher priority servers go down), it can have a significant impact. In addition to the partial loss of email functionality, credentials or other sensitive information could be captured if they are shared in the intercepted emails.
+
+A crafty attacker might even resend messages they siphon off, so the organization never notices a problem, and then silently gain access to a portion of their emails indefinitely.
+
 ## zonetransfer
 
 Zone transfers are a legitimate function used by DNS servers to synchronize DNS record information between a primary DNS server and its secondary servers. This synchronization ensures that all servers have an up-to-date copy of the DNS records, which are crucial for routing internet traffic to the correct locations.

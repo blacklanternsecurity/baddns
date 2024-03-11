@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 class BadDNS_ns(BadDNS_base):
     name = "NS"
-    description = "Check for dangling NS records, and interrogate them for domain takeover opportunities"
+    description = "Check for dangling NS records, and interrogate them for takeover opportunities"
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
@@ -76,7 +76,7 @@ class BadDNS_ns(BadDNS_base):
                                     "description": "Dangling NS Records (NS records without SOA) with known impact",
                                     "confidence": "PROBABLE",
                                     "signature": sig.signature["service_name"],
-                                    "indicator": f"DnsWalk Analsys with signature match: {r[1]}",
+                                    "indicator": f"DnsWalk Analysis with signature match: {r[1]}",
                                     "trigger": target_nameservers,
                                     "module": type(self),
                                 }

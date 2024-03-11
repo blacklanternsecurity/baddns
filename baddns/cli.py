@@ -12,8 +12,10 @@ import pkg_resources
 
 from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 from .lib.logging import setup_logging
+from .lib.loader import load_signatures
 
 from baddns.base import get_all_modules
+
 
 from colorama import Fore, Style, init
 
@@ -31,7 +33,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
 def print_version():
     version = pkg_resources.get_distribution("baddns").version
-    if version == "0.0.0":
+    if version == "1.0.0":
         version = "Unknown (Running w/poetry?)"
     print(f"Version - {version}\n")
 
@@ -70,12 +72,10 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
     return arg_value
 
 
-async def execute_module(ModuleClass, target, custom_nameservers, signatures_dir):
+async def execute_module(ModuleClass, target, custom_nameservers, signatures):
     findings = None
     try:
-        module_instance = ModuleClass(
-            target, custom_nameservers=custom_nameservers, signatures_dir=signatures_dir, cli=True
-        )
+        module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True)
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
         raise BadDNSCLIException(f"Error loading signatures: {e}")
@@ -109,7 +109,7 @@ async def _main():
     parser.add_argument(
         "-c",
         "--custom-signatures",
-        help="Use an alternate directory for loadings signatures",
+        help="Use an alternate directory for loading signatures",
     )
 
     parser.add_argument(
@@ -154,7 +154,9 @@ async def _main():
             f"Running with all modules [{', '.join([module.name for module in modules_to_execute])}] (-m to specify)"
         )
 
+    custom_signatures = None
     if args.custom_signatures:
+        custom_signatures = args.custom_signatures
         log.info(f"Using custom signatures directory: [{args.custom_signatures}]")
 
     custom_nameservers = None
@@ -162,13 +164,10 @@ async def _main():
         custom_nameservers = args.custom_nameservers.split(",")
         log.info(f"Using custom nameservers: [{', '.join(custom_nameservers)}]")
 
+    signatures = load_signatures(signatures_dir=custom_signatures)
+
     for ModuleClass in modules_to_execute:
-        await execute_module(ModuleClass, args.target, custom_nameservers, args.custom_signatures)
-
-
-# BadDNS_base.get_all_modules()
-#   await execute_module(BadDNS_cname, args.target, custom_nameservers, args.custom_signatures)
-#   await execute_module(BadDNS_ns, args.target, custom_nameservers, args.custom_signatures)
+        await execute_module(ModuleClass, args.target, custom_nameservers, signatures)
 
 
 def main():

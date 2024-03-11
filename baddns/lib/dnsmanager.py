@@ -1,5 +1,6 @@
 import re
 import logging
+import asyncio
 import dns.asyncresolver
 
 log = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ class DNSManager:
             elif rdtype == "NSEC":
                 results.add(self._clean_dns_record(record.next))
             else:
-                log.warning(f'Unknown DNS record type "{rdtype}"')
+                log.debug(f'Unknown DNS record type "{rdtype}"')
         return list(results)
 
     async def do_resolve(self, target, rdatatype):
@@ -95,6 +96,12 @@ class DNSManager:
             return
         except dns.resolver.LifetimeTimeout as e:
             log.debug(f"Dns Timeout: {e}")
+            return
+        except dns.resolver.NoNameservers:
+            log.debug(f"All nameservers failed to answer the query")
+            return
+        except Exception as e:
+            log.warning(f"Unknown error resolving DNS: [{e}]")
             return
         if r and len(r) > 0:
             if rdatatype == "A":
@@ -122,11 +129,18 @@ class DNSManager:
     async def dispatchDNS(self, omit_types=[]):
         log.debug(f"attempting to resolve {self.target}")
         log.debug(f"dispatching DNS with the following nameservers: {' '.join(self.dns_client.nameservers)}")
+
+        tasks = []
         for rdatatype in self.dns_record_types:
             if rdatatype in omit_types:
                 continue
+            # Capture the current rdatatype for each task
+            task = asyncio.create_task(self.do_resolve(self.target, rdatatype))
+            tasks.append((task, rdatatype))  # Store the task along with its rdatatype
+
+        for task, rdatatype in tasks:  # Unpack the task and its corresponding rdatatype
             try:
-                self.answers[rdatatype] = await self.do_resolve(self.target, rdatatype)
+                self.answers[rdatatype] = await task
             except dns.resolver.LifetimeTimeout:
                 log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
                 self.answers[rdatatype] = None

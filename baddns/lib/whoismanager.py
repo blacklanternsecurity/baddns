@@ -1,9 +1,39 @@
+import sys
+
+
+# Temporary workaround for: https://github.com/blacklanternsecurity/baddns/issues/402
+class noop:
+    def __getattr__(self, item):
+        def method(*args, **kwargs):
+            pass  # Method does nothing
+
+        return method
+
+
+sys.modules["imp"] = noop()
+
+import os
+from contextlib import contextmanager
+
+
+# Another temporary workaround until https://github.com/richardpenman/whois gets updated version pushed to pypi :( :( :(
+@contextmanager
+def suppress_stdout():
+    original_stdout = sys.stdout
+    sys.stdout = open(os.devnull, "w")
+    try:
+        yield
+    finally:
+        sys.stdout = original_stdout
+
+
 import whois
 import logging
 import asyncio
 import tldextract
 from datetime import date, datetime, timedelta
 from dateutil import parser as date_parser
+
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +48,8 @@ class WhoisManager:
         log.debug(f"Extracted base domain [{ext.registered_domain}] from [{self.target}]")
         log.debug(f"Submitting WHOIS query for {ext.registered_domain}")
         try:
-            w = await asyncio.to_thread(whois.whois, ext.registered_domain)
+            with suppress_stdout():
+                w = await asyncio.to_thread(whois.whois, ext.registered_domain)
             log.debug(f"Got response to whois request for {ext.registered_domain}")
             self.whois_result = {"type": "response", "data": w}
         except whois.parser.PywhoisError as e:
