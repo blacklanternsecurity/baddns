@@ -77,7 +77,7 @@ class Matcher:
         self.response = response
         matchers_condition = self.rules.get("matchers-condition", "and")
         results = []
-        matcher_rule = self.rules.get("matcher_rule", [])
+        matcher_rule = self.rules.get("matcher_rule", {})
         for matcher in matcher_rule.get("matchers", []):
             match_type = matcher["type"]
             match_func = getattr(self, f"_{match_type}", None)
