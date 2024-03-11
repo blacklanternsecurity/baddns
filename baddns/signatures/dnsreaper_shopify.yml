@@ -2,8 +2,7 @@ identifiers:
   cnames:
   - type: word
     value: shops.myshopify.com
-  ips:
-  - 23.227.38.65
+  ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
