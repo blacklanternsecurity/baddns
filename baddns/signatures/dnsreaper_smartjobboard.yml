@@ -1,8 +1,7 @@
 identifiers:
-  cnames:
-  - type: word
-    value: smartjobboard.com
-  ips: []
+  cnames: []
+  ips:
+  - 52.16.160.97
   nameservers: []
   not_cnames: []
 matcher_rule:
@@ -11,7 +10,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - 404 Not Found
+    - job board website is either expired or its domain name is invalid.
   matchers-condition: and
 mode: http
 service_name: smartjobboard.com
