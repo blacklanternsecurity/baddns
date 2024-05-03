@@ -1,0 +1,21 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - <html><body>You are being <a href="https://uptime.betterstack.com">redirected</a>.</body></html>
+  - status: 302
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Uptime Takeover Detection
+source: nucleitemplates
