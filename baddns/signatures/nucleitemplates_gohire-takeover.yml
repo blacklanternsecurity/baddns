@@ -12,8 +12,11 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Project doesnt exist... yet!
+    - You may have followed an invalid link or the job you are looking for has been
+      archived
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
-service_name: Readme.io Takeover Detection
+service_name: GoHire Takeover Detection
 source: nucleitemplates

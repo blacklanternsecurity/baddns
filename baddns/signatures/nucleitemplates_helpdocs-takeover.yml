@@ -12,8 +12,8 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Project doesnt exist... yet!
+    - You've tried to access an account/page that does not exist
   matchers-condition: and
 mode: http
-service_name: Readme.io Takeover Detection
+service_name: HelpDocs Takeover Detection
 source: nucleitemplates

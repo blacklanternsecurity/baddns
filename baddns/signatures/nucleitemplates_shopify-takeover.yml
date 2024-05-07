@@ -1,0 +1,36 @@
+identifiers:
+  cnames:
+  - type: word
+    value: myshopify.com
+  - type: word
+    value: shopify.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: or
+    part: body
+    type: word
+    words:
+    - To finish setting up your new web address, go to your domain settings, click
+      "Connect existing domain"
+    - Sorry, this shop is currently unavailable.
+    - Sorry, this store is currently unavailable.
+  - condition: and
+    part: body
+    type: word
+    words:
+    - shop-not-found
+  - condition: and
+    dsl:
+    - '!contains(host,"myshopify.com")'
+    - '!contains(host,"shopify.com")'
+    type: dsl
+  matchers-condition: and
+mode: http
+service_name: shopify takeover detection
+source: nucleitemplates

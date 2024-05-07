@@ -12,8 +12,11 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Project doesnt exist... yet!
+    - "There doesn\u2019t seem to be an active status page associated with this URL."
+    - Please check the URL and try again.
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
-service_name: Readme.io Takeover Detection
+service_name: Squadcast Takeover Detection
 source: nucleitemplates
