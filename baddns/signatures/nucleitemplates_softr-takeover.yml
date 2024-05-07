@@ -12,8 +12,11 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Project doesnt exist... yet!
+    - The application you were looking for was built on Softr
+    - Get started with Softr
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
-service_name: Readme.io Takeover Detection
+service_name: Softr.io Takeover Detection
 source: nucleitemplates

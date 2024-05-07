@@ -60,7 +60,7 @@ class BadDNS_zonetransfer(BadDNS_base):
                 log.debug("dns.exception.FormError attempting zone transfer")
                 return False
             except Exception as e:
-                log.warning(f"Unknown error trying to perform zone transfer: [{e}]")
+                log.debug(f"Unknown error trying to perform zone transfer: [{e}]")
                 return False
             self.zone_nameservers.append(nameserver)
             self.parse_zone(zone)
