@@ -11,6 +11,8 @@ Check subdomains for subdomain takeovers and other DNS tomfoolery
 
 BadDNS is a standalone tool and [BBOT](https://github.com/blacklanternsecurity/bbot) module for detecting domain/subdomain takeovers of all kinds, including other DNS issues like NSEC walks and Subdomain Takeovers. 
 
+Check out the [introductory blog](https://blog.blacklanternsecurity.com/p/introducing-baddns) on the BLS substack!
+
 ## Installation
 
 We have a [pypi](https://pypi.org/project/baddns/) package, so you can just do `pip install baddns` to make use of the library.
