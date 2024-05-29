@@ -1,39 +1,9 @@
-import sys
-
-
-# Temporary workaround for: https://github.com/blacklanternsecurity/baddns/issues/402
-class noop:
-    def __getattr__(self, item):
-        def method(*args, **kwargs):
-            pass  # Method does nothing
-
-        return method
-
-
-sys.modules["imp"] = noop()
-
-import os
-from contextlib import contextmanager
-
-
-# Another temporary workaround until https://github.com/richardpenman/whois gets updated version pushed to pypi :( :( :(
-@contextmanager
-def suppress_stdout():
-    original_stdout = sys.stdout
-    sys.stdout = open(os.devnull, "w")
-    try:
-        yield
-    finally:
-        sys.stdout = original_stdout
-
-
 import whois
 import logging
 import asyncio
 import tldextract
-from datetime import date, datetime, timedelta
+from datetime import datetime, timezone, timedelta, date
 from dateutil import parser as date_parser
-
 
 log = logging.getLogger(__name__)
 
@@ -48,8 +18,7 @@ class WhoisManager:
         log.debug(f"Extracted base domain [{ext.registered_domain}] from [{self.target}]")
         log.debug(f"Submitting WHOIS query for {ext.registered_domain}")
         try:
-            with suppress_stdout():
-                w = await asyncio.to_thread(whois.whois, ext.registered_domain)
+            w = await asyncio.to_thread(whois.whois, ext.registered_domain)
             log.debug(f"Got response to whois request for {ext.registered_domain}")
             self.whois_result = {"type": "response", "data": w}
         except whois.parser.PywhoisError as e:
@@ -72,11 +41,17 @@ class WhoisManager:
                     log.debug("Expiration data:")
                     log.debug(expiration_data)
                     log.debug("Got multiple expiration dates. Falling back to the latest...")
-                    expiration_date = max(expiration_data)
-                else:
-                    expiration_date = expiration_data
 
-                expiration_date = self.date_parse(expiration_date)
+                    normalized_dates = [
+                        self.normalize_date(self.date_parse(date)) for date in expiration_data if self.date_parse(date)
+                    ]
+                    expiration_date = max(normalized_dates) if normalized_dates else None
+
+                else:
+                    expiration_date = self.date_parse(expiration_data)
+                    if expiration_date:
+                        expiration_date = self.normalize_date(expiration_date)
+
                 if expiration_date:
                     current_date = date.today()
                     expiration_plus_one = expiration_date.date() + timedelta(days=1)
@@ -109,3 +84,10 @@ class WhoisManager:
 
         log.debug(f"Unsupported date object type: {type(unknown_date)}. Value: {unknown_date}")
         return None
+
+    @staticmethod
+    def normalize_date(date):
+        if date.tzinfo is None:
+            return date.replace(tzinfo=timezone.utc)
+        else:
+            return date.astimezone(timezone.utc)
