@@ -25,7 +25,7 @@ class WhoisManager:
             log.debug(f"Got PywhoisError for whois request for {ext.registered_domain}")
             self.whois_result = {"type": "error", "data": str(e)}
         except Exception as e:
-            log.debug(f"Got unknown error from whois: {e}")
+            log.debug(f"Got unknown error from whois: {str(e)}")
             self.whois_result = {"type": "error", "data": str(e)}
 
     def analyzeWHOIS(self):
