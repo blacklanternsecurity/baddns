@@ -8,10 +8,11 @@ matcher_rule:
   - dsl:
     - Host != ip
     type: dsl
-  - condition: and
+  - condition: or
     part: header
     type: word
     words:
+    - error.ghost.org
     - offline.ghost.org
   - status: 302
     type: status
