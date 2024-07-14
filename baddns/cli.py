@@ -23,6 +23,8 @@ init(autoreset=True)  # Automatically reset the color to default after each prin
 
 modules = get_all_modules()
 
+global silent_flag
+
 
 class CustomArgumentParser(argparse.ArgumentParser):
     def error(self, message):
@@ -84,9 +86,15 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures):
     if await module_instance.dispatch():
         findings = module_instance.analyze()
         if findings:
-            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
+            if not silent_flag:
+                print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
-                print(finding.to_dict())
+                finding_dict = finding.to_dict()
+                if not silent_flag:
+                    print(finding_dict)
+                else:
+                    print(f"{finding_dict.target} {finding_dict.signature}\n")
+
     return findings
 
 
@@ -96,8 +104,7 @@ async def _main():
     log = logging.getLogger("baddns")
 
     parser = CustomArgumentParser(description="Check subdomains for subdomain takeovers and other DNS tomfoolery")
-    print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
-    print_version()
+
 
     parser.add_argument(
         "-n",
@@ -117,6 +124,10 @@ async def _main():
     )
 
     parser.add_argument(
+        "-s", "--silent", action="store_true", help="Show only vulnerable targets"
+    )
+
+    parser.add_argument(
         "-m",
         "--modules",
         type=validate_modules,
@@ -127,6 +138,14 @@ async def _main():
 
     parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
+
+    silent_flag = bool(args.silent)
+    if silent_flag:
+        log.setLevel(logging.ERROR)
+
+    if not silent_flag:
+        print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
+        print_version()
 
     if not args.target and not args.list_modules:
         parser.error("the following arguments are required: target")
