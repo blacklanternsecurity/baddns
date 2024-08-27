@@ -19,7 +19,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - There isn't a GitHub Pages site here
+    - '<title>Site not found '
   matchers-condition: and
 mode: http
 service_name: Github Pages

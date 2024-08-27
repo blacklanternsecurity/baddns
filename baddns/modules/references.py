@@ -89,7 +89,7 @@ class BadDNS_references(BadDNS_base):
                     cname_instance_direct = BadDNS_cname(
                         pr["domain"],
                         custom_nameservers=self.custom_nameservers,
-                        signatures_dir=self.signatures_dir,
+                        signatures=self.signatures,
                         direct_mode=True,
                         parent_class="references",
                         http_client_class=self.http_client_class,
@@ -107,7 +107,7 @@ class BadDNS_references(BadDNS_base):
                     cname_instance = BadDNS_cname(
                         pr["domain"],
                         custom_nameservers=self.custom_nameservers,
-                        signatures_dir=self.signatures_dir,
+                        signatures=self.signatures,
                         direct_mode=False,
                         parent_class="references",
                         http_client_class=self.http_client_class,

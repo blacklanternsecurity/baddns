@@ -12,11 +12,11 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Domain not configured
-    - flexbe.com
+    - The application you were looking for was built on Softr
+    - Get started with Softr
   - status: 404
     type: status
   matchers-condition: and
 mode: http
-service_name: Flexbe Subdomain Takeover
+service_name: Softr.io Takeover Detection
 source: nucleitemplates

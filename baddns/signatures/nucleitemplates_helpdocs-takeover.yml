@@ -12,11 +12,8 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Domain not configured
-    - flexbe.com
-  - status: 404
-    type: status
+    - You've tried to access an account/page that does not exist
   matchers-condition: and
 mode: http
-service_name: Flexbe Subdomain Takeover
+service_name: HelpDocs Takeover Detection
 source: nucleitemplates

@@ -81,7 +81,7 @@ class DNSManager:
             elif rdtype == "NSEC":
                 results.add(self._clean_dns_record(record.next))
             else:
-                log.warning(f'Unknown DNS record type "{rdtype}"')
+                log.debug(f'Unknown DNS record type "{rdtype}"')
         return list(results)
 
     async def do_resolve(self, target, rdatatype):
@@ -96,6 +96,12 @@ class DNSManager:
             return
         except dns.resolver.LifetimeTimeout as e:
             log.debug(f"Dns Timeout: {e}")
+            return
+        except dns.resolver.NoNameservers:
+            log.debug(f"All nameservers failed to answer the query")
+            return
+        except Exception as e:
+            log.warning(f"Unknown error resolving DNS: [{e}]")
             return
         if r and len(r) > 0:
             if rdatatype == "A":
@@ -114,7 +120,7 @@ class DNSManager:
                         r = self.process_answer(await self.dns_client.resolve(target, "CNAME"), "CNAME")
                         if len(r) == 0:
                             break
-                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
+                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers) as e:
                         log.debug(f"Error resolving cname chain: {e}")
                         break
                 return cname_chain

@@ -1,6 +1,7 @@
 import pytest
 
 from baddns.modules.ns import BadDNS_ns
+from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
 import functools
 import requests
@@ -18,8 +19,8 @@ async def test_ns_nosoa_signature(fs, configure_mock_resolver):
 
     target = "bad.dns"
     mock_signature_load(fs, "dnsreaper_wordpress_com_ns.yml")
-
-    baddns_ns = BadDNS_ns(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_ns = BadDNS_ns(target, signatures=signatures, dns_client=mock_resolver)
     findings = None
     if await baddns_ns.dispatch():
         findings = baddns_ns.analyze()
@@ -44,8 +45,8 @@ async def test_ns_nosoa_generic(fs, configure_mock_resolver):
 
     target = "bad.dns"
     mock_signature_load(fs, "dnsreaper_wordpress_com_ns.yml")
-
-    baddns_ns = BadDNS_ns(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_ns = BadDNS_ns(target, signatures=signatures, dns_client=mock_resolver)
 
     findings = None
     if await baddns_ns.dispatch():

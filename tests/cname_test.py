@@ -3,6 +3,7 @@ import datetime
 import requests
 from mock import patch
 from baddns.modules.cname import BadDNS_cname
+from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
 
 import ssl
@@ -26,7 +27,8 @@ async def test_cname_dnsnxdomain_azure_match(fs, mock_dispatch_whois, configure_
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
 
     findings = None
     if await baddns_cname.dispatch():
@@ -53,7 +55,8 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
 
     findings = None
     if await baddns_cname.dispatch():
@@ -79,8 +82,8 @@ async def test_cname_dnsnxdomain_generic_negative(fs, mock_dispatch_whois, confi
 
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
 
     findings = None
     if await baddns_cname.dispatch():
@@ -96,8 +99,8 @@ async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois, configu
 
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
 
     findings = None
     if await baddns_cname.dispatch():
@@ -119,8 +122,8 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, httpx_mock, c
 
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_bigcartel-takeover.yml")
-
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
     findings = None
 
     if await baddns_cname.dispatch():
@@ -146,8 +149,8 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
 
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_bigcartel-takeover.yml")
-
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
     findings = None
     if await baddns_cname.dispatch():
         findings = baddns_cname.analyze()
@@ -175,8 +178,8 @@ async def test_cname_chainedcname_nxdomain(fs, mock_dispatch_whois, httpx_mock, 
 
     target = "chain.bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
 
     findings = None
     if await baddns_cname.dispatch():
@@ -239,7 +242,8 @@ async def test_cname_whois_expired(fs, mock_dispatch_whois, httpx_mock, configur
     target = "bad.dns"
 
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
     findings = None
     if await baddns_cname.dispatch():
         findings = baddns_cname.analyze()
@@ -271,7 +275,8 @@ async def test_cname_whois_unregistered_match(fs, mock_dispatch_whois, httpx_moc
 
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-    baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
     findings = None
     if await baddns_cname.dispatch():
         findings = baddns_cname.analyze()
@@ -331,7 +336,8 @@ async def test_cname_whois_unregistered_baddata(fs, mock_dispatch_whois, httpx_m
 
         target = "bad.dns"
         mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-        baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        signatures = load_signatures("/tmp/signatures")
+        baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
         findings = None
         if await baddns_cname.dispatch():
             findings = baddns_cname.analyze()
@@ -380,7 +386,8 @@ async def test_cname_whois_unregistered_missingdata(fs, mock_dispatch_whois, htt
 
         target = "bad.dns"
         mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-        baddns_cname = BadDNS_cname(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+        signatures = load_signatures("/tmp/signatures")
+        baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
         findings = None
         if await baddns_cname.dispatch():
             findings = baddns_cname.analyze()

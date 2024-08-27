@@ -12,11 +12,10 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Domain not configured
-    - flexbe.com
-  - status: 404
+    - <html><body>You are being <a href="https://uptime.betterstack.com">redirected</a>.</body></html>
+  - status: 302
     type: status
   matchers-condition: and
 mode: http
-service_name: Flexbe Subdomain Takeover
+service_name: Uptime Takeover Detection
 source: nucleitemplates

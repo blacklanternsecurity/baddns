@@ -1,5 +1,6 @@
 import pytest
 from baddns.modules.txt import BadDNS_txt
+from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
 
 
@@ -9,8 +10,8 @@ async def test_txt_match(fs, mock_dispatch_whois, configure_mock_resolver):
     mock_resolver = configure_mock_resolver(mock_data)
     target = "bad.dns"
     mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
-
-    baddns_txt = BadDNS_txt(target, signatures_dir="/tmp/signatures", dns_client=mock_resolver)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_txt = BadDNS_txt(target, signatures=signatures, dns_client=mock_resolver)
 
     findings = None
     if await baddns_txt.dispatch():
