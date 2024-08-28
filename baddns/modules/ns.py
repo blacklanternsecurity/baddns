@@ -16,9 +16,7 @@ class BadDNS_ns(BadDNS_base):
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
 
-        self.raw_query_max_retries = kwargs.get("raw_query_max_retries", 6)
-        self.raw_query_timeout = kwargs.get("raw_query_timeout", 6.0)
-        self.raw_query_retry_wait = kwargs.get("raw_query_retry_wait", 3)
+        self._dnswalk_kwargs = kwargs
 
         self.target_dnsmanager = DNSManager(
             target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
@@ -40,9 +38,9 @@ class BadDNS_ns(BadDNS_base):
 
         dnswalk = DnsWalk(
             self.target_dnsmanager,
-            raw_query_max_retries=self.raw_query_max_retries,
-            raw_query_timeout=self.raw_query_timeout,
-            raw_query_retry_wait=self.raw_query_retry_wait,
+            raw_query_max_retries=self._dnswalk_kwargs.get("raw_query_max_retries", 6),
+            raw_query_timeout=self._dnswalk_kwargs.get("raw_query_timeout", 6.0),
+            raw_query_retry_wait=self._dnswalk_kwargs.get("raw_query_retry_wait", 3),
         )
         self.target_dnsmanager.answers["NS"] = await dnswalk.ns_trace(self.target)
         return True
