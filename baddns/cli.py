@@ -72,7 +72,7 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
     return arg_value
 
 
-async def execute_module(ModuleClass, target, custom_nameservers, signatures):
+async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False):
     findings = None
     try:
         module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True)
@@ -84,9 +84,11 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures):
     if await module_instance.dispatch():
         findings = module_instance.analyze()
         if findings:
-            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
+            if not silent:
+                print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
                 print(finding.to_dict())
+
     return findings
 
 
@@ -96,8 +98,6 @@ async def _main():
     log = logging.getLogger("baddns")
 
     parser = CustomArgumentParser(description="Check subdomains for subdomain takeovers and other DNS tomfoolery")
-    print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
-    print_version()
 
     parser.add_argument(
         "-n",
@@ -116,6 +116,8 @@ async def _main():
         "-l", "--list-modules", action="store_true", help="List available modules and their descriptions."
     )
 
+    parser.add_argument("-s", "--silent", action="store_true", help="Only show results, no other output (JSON format)")
+
     parser.add_argument(
         "-m",
         "--modules",
@@ -127,6 +129,14 @@ async def _main():
 
     parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
+
+    silent = bool(args.silent)
+
+    if silent:
+        log.setLevel(logging.ERROR)
+    else:
+        print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
+        print_version()
 
     if not args.target and not args.list_modules:
         parser.error("the following arguments are required: target")
@@ -167,7 +177,7 @@ async def _main():
     signatures = load_signatures(signatures_dir=custom_signatures)
 
     for ModuleClass in modules_to_execute:
-        await execute_module(ModuleClass, args.target, custom_nameservers, signatures)
+        await execute_module(ModuleClass, args.target, custom_nameservers, signatures, silent=silent)
 
 
 def main():
@@ -185,9 +195,9 @@ def main():
 
 ascii_art_banner = """
   __ )              |      |              
-  __ \    _` |   _` |   _` |  __ \    __| 
-  |   |  (   |  (   |  (   |  |   | \__ \ 
- ____/  \__,_| \__,_| \__,_| _|  _| ____/ 
+  __ \\    _` |   _` |   _` |  __ \\    __| 
+  |   |  (   |  (   |  (   |  |   | \\__ \\ 
+ ____/  \\__,_| \\__,_| \\__,_| _|  _| ____/ 
                                           
 """
 
