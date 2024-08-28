@@ -23,8 +23,6 @@ init(autoreset=True)  # Automatically reset the color to default after each prin
 
 modules = get_all_modules()
 
-global silent_flag
-
 
 class CustomArgumentParser(argparse.ArgumentParser):
     def error(self, message):
@@ -74,7 +72,7 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
     return arg_value
 
 
-async def execute_module(ModuleClass, target, custom_nameservers, signatures):
+async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False):
     findings = None
     try:
         module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True)
@@ -86,14 +84,10 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures):
     if await module_instance.dispatch():
         findings = module_instance.analyze()
         if findings:
-            if not silent_flag:
+            if not silent:
                 print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
-                finding_dict = finding.to_dict()
-                if not silent_flag:
-                    print(finding_dict)
-                else:
-                    print(f"{finding_dict.target} {finding_dict.signature}\n")
+                print(finding.to_dict())
 
     return findings
 
@@ -104,7 +98,6 @@ async def _main():
     log = logging.getLogger("baddns")
 
     parser = CustomArgumentParser(description="Check subdomains for subdomain takeovers and other DNS tomfoolery")
-
 
     parser.add_argument(
         "-n",
@@ -123,9 +116,7 @@ async def _main():
         "-l", "--list-modules", action="store_true", help="List available modules and their descriptions."
     )
 
-    parser.add_argument(
-        "-s", "--silent", action="store_true", help="Show only vulnerable targets"
-    )
+    parser.add_argument("-s", "--silent", action="store_true", help="Only show results, no other output (JSON format)")
 
     parser.add_argument(
         "-m",
@@ -139,11 +130,11 @@ async def _main():
     parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
 
-    silent_flag = bool(args.silent)
-    if silent_flag:
-        log.setLevel(logging.ERROR)
+    silent = bool(args.silent)
 
-    if not silent_flag:
+    if silent:
+        log.setLevel(logging.ERROR)
+    else:
         print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
         print_version()
 
@@ -186,7 +177,7 @@ async def _main():
     signatures = load_signatures(signatures_dir=custom_signatures)
 
     for ModuleClass in modules_to_execute:
-        await execute_module(ModuleClass, args.target, custom_nameservers, signatures)
+        await execute_module(ModuleClass, args.target, custom_nameservers, signatures, silent=silent)
 
 
 def main():
@@ -204,9 +195,9 @@ def main():
 
 ascii_art_banner = """
   __ )              |      |              
-  __ \    _` |   _` |   _` |  __ \    __| 
-  |   |  (   |  (   |  (   |  |   | \__ \ 
- ____/  \__,_| \__,_| \__,_| _|  _| ____/ 
+  __ \\    _` |   _` |   _` |  __ \\    __| 
+  |   |  (   |  (   |  (   |  |   | \\__ \\ 
+ ____/  \\__,_| \\__,_| \\__,_| _|  _| ____/ 
                                           
 """
 
