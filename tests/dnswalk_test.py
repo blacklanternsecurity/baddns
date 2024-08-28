@@ -1,8 +1,12 @@
 import pytest
 
+from unittest.mock import Mock
 from baddns.lib.dnswalk import DnsWalk
 
 # Test for normal typical normal behavior
+
+# Mock DNS Manager
+mock_dns_manager = Mock()
 
 mock_data = {
     "ns_records": [
@@ -18,7 +22,7 @@ mock_data = {
 @pytest.mark.asyncio
 @pytest.mark.parametrize("dnswalk_harness", [mock_data], indirect=True)
 async def test_dnswalk_normal(dnswalk_harness):
-    dnswalk = DnsWalk()
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
     ns_trace_results = await dnswalk.ns_trace("bad.dns")
     assert sorted(ns_trace_results) == ["ns1.bad.dns", "ns2.bad.dns"]
 
@@ -33,7 +37,7 @@ mock_data = {
 @pytest.mark.asyncio
 @pytest.mark.parametrize("dnswalk_harness", [mock_data], indirect=True)
 async def test_dnswalk_nameserversdontresolve(dnswalk_harness):
-    dnswalk = DnsWalk()
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
     ns_trace_results = await dnswalk.ns_trace("bad.dns")
     print(ns_trace_results)
     assert sorted(ns_trace_results) == ["ns1.noresolve.dns", "ns2.noresolve.dns"]
@@ -53,7 +57,7 @@ async def test_dnswalk_nameserversdontresolve(dnswalk_harness):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("dnswalk_harness", [mock_data], indirect=True)
 async def test_dnswalk_resolvewithnoanswers(dnswalk_harness):
-    dnswalk = DnsWalk()
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
     ns_trace_results = await dnswalk.ns_trace("bad.dns")
     print(ns_trace_results)
     assert sorted(ns_trace_results) == ["ns1.noresolve.dns", "ns2.noresolve.dns"]
@@ -79,7 +83,7 @@ mock_data = {
 @pytest.mark.asyncio
 @pytest.mark.parametrize("dnswalk_harness", [mock_data], indirect=True)
 async def test_dnswalk_answeratendofnschain(dnswalk_harness):
-    dnswalk = DnsWalk()
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
     ns_trace_results = await dnswalk.ns_trace("bad.dns")
     print(ns_trace_results)
     assert sorted(ns_trace_results) == ["ns1.bad.dns", "ns2.bad.dns"]
@@ -99,7 +103,7 @@ mock_data = {
 @pytest.mark.asyncio
 @pytest.mark.parametrize("dnswalk_harness", [mock_data], indirect=True)
 async def test_dnswalk_badauthority(dnswalk_harness):
-    dnswalk = DnsWalk()
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
     ns_trace_results = await dnswalk.ns_trace("sub.bad.dns")
     print(ns_trace_results)
     assert ns_trace_results
@@ -133,7 +137,7 @@ mock_data = {
 @pytest.mark.asyncio
 @pytest.mark.parametrize("dnswalk_harness", [mock_data], indirect=True)
 async def test_dnswalk_subdomainnons(dnswalk_harness):
-    dnswalk = DnsWalk()
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
     ns_trace_results = await dnswalk.ns_trace("sub.bad.dns")
     print(ns_trace_results)
     assert sorted(ns_trace_results) == []
@@ -165,7 +169,7 @@ mock_data = {
 @pytest.mark.asyncio
 @pytest.mark.parametrize("dnswalk_harness", [mock_data], indirect=True)
 async def test_dnswalk_subdomainfindns(dnswalk_harness):
-    dnswalk = DnsWalk()
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
     ns_trace_results = await dnswalk.ns_trace("sub.bad.dns")
     print(ns_trace_results)
     assert ns_trace_results

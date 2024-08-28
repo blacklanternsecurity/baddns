@@ -75,7 +75,7 @@ class BadDNS_zonetransfer(BadDNS_base):
                 r = await self.zone_transfer(ns, self.target_dnsmanager.target)
                 if r:
                     zone_transfer_detected = True
-                    log.info(
+                    self.infomsg(
                         f"Successful Zone Transfer against NS [{ns}] for target [{self.target_dnsmanager.target}]"
                     )
         return zone_transfer_detected
