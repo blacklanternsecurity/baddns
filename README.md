@@ -17,12 +17,16 @@ Check out the [introductory blog](https://blog.blacklanternsecurity.com/p/introd
 
 We have a [pypi](https://pypi.org/project/baddns/) package, so you can just do `pip install baddns` to make use of the library.
 
+Or use pipx: `pipx install git+https://github.com/blacklanternsecurity/baddns`
+
 ## Usage 
 
 After installing with pip, you can just run `baddns` from the command line.
 
 ```
-baddns [-h] [-n CUSTOM_NAMESERVERS] [-c CUSTOM_SIGNATURES] [-l] [-m MODULES] [-d] [target]
+usage: baddns [-h] [-n CUSTOM_NAMESERVERS] [-c CUSTOM_SIGNATURES] [-l] [-s] [-m MODULES] [-d] [target]
+
+Check subdomains for subdomain takeovers and other DNS tomfoolery
 
 positional arguments:
   target                subdomain to analyze
@@ -34,6 +38,7 @@ options:
   -c CUSTOM_SIGNATURES, --custom-signatures CUSTOM_SIGNATURES
                         Use an alternate directory for loading signatures
   -l, --list-modules    List available modules and their descriptions.
+  -s, --silent          Show only vulnerable targets
   -m MODULES, --modules MODULES
                         Comma separated list of module names to use. Ex: module1,module2,module3
   -d, --debug           Enable debug logging
