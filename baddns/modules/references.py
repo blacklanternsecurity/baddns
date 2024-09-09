@@ -18,6 +18,8 @@ class BadDNS_references(BadDNS_base):
 
     regex_jssrc = re.compile(r'<script[^>]*src\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
     regex_csssrc = re.compile(r'<link[^>]*href\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
+    regex_csp = re.compile(r"content-security-policy: (.+);", re.IGNORECASE)
+    regex_domain = re.compile("(?:\w(?:[\w-]{0,100}\w)?\.)+(?:[xX][nN]--)?[^\W_]{1,63}\.?", re.IGNORECASE)
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
@@ -31,6 +33,32 @@ class BadDNS_references(BadDNS_base):
         self.cname_findings = None
         self.cname_findings_direct = None
         self.reference_data = {}
+
+    def parse_headers(self, headers):
+        results = []
+        headers_str = "; ".join(f"{key}: {value}" for key, value in headers.items())
+        match_csp = self.regex_csp.search(headers_str)
+        if match_csp:
+            log.debug("Found CSP, parsing for domains...")
+            csp_string = match_csp.group(1)
+            domain_matches = re.finditer(self.regex_domain, csp_string)
+            if domain_matches:
+                extracted_domains = []
+                for dm in domain_matches:
+                    csp_domain = dm.group(0)
+                    if csp_domain in extracted_domains:
+                        continue
+                    extracted_domains.append(csp_domain)
+                    log.debug(f"Extracted domain [{csp_domain}] from CSP, queuing for CNAME analysis")
+                    results.append(
+                        {
+                            "url": csp_domain,
+                            "domain": csp_domain,
+                            "description": "Hijackable reference, CSP domain",
+                            "trigger": f"CSP Header : [{csp_domain}]",
+                        }
+                    )
+        return results
 
     def parse_body(self, body):
         results = []
@@ -78,7 +106,11 @@ class BadDNS_references(BadDNS_base):
         self.cname_findings = []
 
         for r in live_results:
-            parsed_results = self.parse_body(r.text)
+
+            parsed_headers = self.parse_headers(r.headers)
+            parsed_body = self.parse_body(r.text)
+            parsed_results = parsed_headers + parsed_body
+
             if parsed_results:
                 for pr in parsed_results:
                     if pr["domain"] == self.target:
