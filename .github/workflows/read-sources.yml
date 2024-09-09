@@ -189,14 +189,14 @@ jobs:
 
 
     - name: Upload readsources.py log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: readsources.py-log
         path: readsources.log
 
     - name: Upload read-sources action log
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: read-sources-action-log
