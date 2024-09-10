@@ -45,7 +45,6 @@ class BadDNS_references(BadDNS_base):
         if match:
             log.debug(f"Found {header_name} header, extracting domains...")
             header_string = match.group(1)
-            log.warning(header_string)
             log.debug(f"Extracted {header_name} content: {header_string}")
 
             extracted_domains = []
