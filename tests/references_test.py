@@ -42,7 +42,7 @@ mock_references_http_js_cname = """
 </head>
 <body>
     <h1>Hello, World!</h1>
-    <script src="http://css.baddnscdn.com/script.js"></script>
+    <script src="http://js.baddnscdn.com/script.js"></script>
 </body>
 </html>
 """
@@ -104,7 +104,7 @@ async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cac
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, CSS Include. Original Event: [CNAME unregistered]",
+            "description": "Hijackable reference, CSS Include [css.baddnscdn.com]. Original Event: [CNAME unregistered]",
             "confidence": "CONFIRMED",
             "signature": "N/A",
             "indicator": "Whois Data",
@@ -136,11 +136,11 @@ async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cach
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, JS Include. Original Event: [CNAME unregistered]",
+            "description": "Hijackable reference, JS Include [js.baddnscdn.com]. Original Event: [CNAME unregistered]",
             "confidence": "CONFIRMED",
             "signature": "N/A",
             "indicator": "Whois Data",
-            "trigger": "Javascript Source: [http://css.baddnscdn.com/script.js]",
+            "trigger": "Javascript Source: [http://js.baddnscdn.com/script.js]",
             "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
@@ -168,7 +168,7 @@ async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cac
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, JS Include. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
+            "description": "Hijackable reference, JS Include [direct.azurewebsites.net]. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
             "confidence": "PROBABLE",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
@@ -200,7 +200,7 @@ async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, ca
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, CSS Include. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
+            "description": "Hijackable reference, CSS Include [direct.azurewebsites.net]. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
             "confidence": "PROBABLE",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
