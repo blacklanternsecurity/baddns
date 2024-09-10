@@ -18,9 +18,11 @@ class BadDNS_references(BadDNS_base):
 
     regex_jssrc = re.compile(r'<script[^>]*src\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
     regex_csssrc = re.compile(r'<link[^>]*href\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
-    regex_csp = re.compile(r"content-security-policy: (.+);", re.IGNORECASE)
-    regex_cors = re.compile(r"Access-Control-Allow-Origin: (.+);", re.IGNORECASE)
-    regex_domain = re.compile(r"(?:\w(?:[\w-]{0,100}\w)?\.)+(?:[xX][nN]--)?[^\W_]{1,63}\.?", re.IGNORECASE)
+    regex_csp = re.compile(r"Content-Security-Policy: (.+?)\|", re.IGNORECASE)
+    regex_cors = re.compile(r"Access-Control-Allow-Origin: (.+?)\|", re.IGNORECASE)
+    regex_domain_url = re.compile(
+        r"(?:((?:https?:\/\/)?(?:\w(?:[\w-]{0,100}\w)?\.)+(?:[xX][nN]--)?[^\W_]{0,63}\.?))(?!(\/|\?))", re.IGNORECASE
+    )
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
@@ -35,7 +37,7 @@ class BadDNS_references(BadDNS_base):
         self.cname_findings_direct = None
         self.reference_data = {}
 
-    def extract_domains_from_headers(self, header_name, regex, headers_str, description):
+    def extract_domains_headers(self, header_name, regex, headers_str, description):
         log.debug(f"Searching for {header_name} in headers...")
 
         results = []
@@ -43,26 +45,36 @@ class BadDNS_references(BadDNS_base):
         if match:
             log.debug(f"Found {header_name} header, extracting domains...")
             header_string = match.group(1)
+            log.warning(header_string)
             log.debug(f"Extracted {header_name} content: {header_string}")
 
-            domain_matches = re.finditer(self.regex_domain, header_string)
             extracted_domains = []
-            for dm in domain_matches:
-                domain = dm.group(0)
-                if domain:
+            domain_url_matches = re.finditer(self.regex_domain_url, header_string)
+
+            for domain_url in domain_url_matches:
+                domain_or_url = domain_url.group(1)
+                if domain_or_url:
+                    if not domain_or_url.startswith(("http://", "https://")):
+                        url = f"https://{domain_or_url}"
+                    else:
+                        url = domain_or_url
+                    parsed_url = urlparse(url)
+                    domain = parsed_url.netloc
                     if domain not in extracted_domains:
                         log.debug(f"Extracted domain: {domain}")
                         extracted_domains.append(domain)
                         results.append(
                             {
-                                "url": domain,
+                                "url": domain_or_url,
                                 "domain": domain,
-                                "description": f"Hijackable reference, {description}",
-                                "trigger": f"{header_name} Header : [{domain}]",
+                                "description": f"Hijackable reference, {description} [{domain}]",
+                                "trigger": f"{header_name} Header: [{domain_or_url}]",
                             }
                         )
                     else:
                         log.debug(f"Duplicate domain {domain} ignored.")
+                else:
+                    log.debug("Failed to extract domain properly from header")
             log.debug(
                 f"Finished extracting domains from {header_name}. Found {len(extracted_domains)} unique domain(s)."
             )
@@ -73,17 +85,22 @@ class BadDNS_references(BadDNS_base):
 
     def parse_headers(self, headers):
         log.debug("Starting to parse headers")
-        headers_str = "; ".join(f"{key}: {value}" for key, value in headers.items())
+        headers_str = "|".join(f"{key}: {value}" for key, value in headers.items())
         log.debug(f"Formatted headers string: {headers_str}")
 
         results = []
-        # Extract domains from CSP and CORS headers using extract_domains_from_headers
-        results.extend(self.extract_domains_from_headers("CSP", self.regex_csp, headers_str, "CSP domain"))
-        results.extend(self.extract_domains_from_headers("CORS", self.regex_cors, headers_str, "CORS header domain"))
+        results.extend(
+            self.extract_domains_headers("Content-Security-Policy", self.regex_csp, headers_str, "CSP domain")
+        )
+        results.extend(
+            self.extract_domains_headers(
+                "Access-Control-Allow-Origin", self.regex_cors, headers_str, "CORS header domain"
+            )
+        )
         log.debug(f"Completed parsing headers. Total results: {len(results)}")
         return results
 
-    def extract_domains_from_body(self, body, regex, description, source):
+    def extract_domains_body(self, body, regex, description, source):
         results = []
         for match in regex.finditer(body):
             url = match.group(1)
@@ -93,7 +110,7 @@ class BadDNS_references(BadDNS_base):
                 {
                     "url": url,
                     "domain": domain,
-                    "description": f"Hijackable reference, {description}",
+                    "description": f"Hijackable reference, {description} [{domain}]",
                     "trigger": f"{source}: [{url}]",
                 }
             )
@@ -105,14 +122,14 @@ class BadDNS_references(BadDNS_base):
 
         # Extract domains from JS sources
         log.debug("Looking for JS includes...")
-        js_results = self.extract_domains_from_body(body, self.regex_jssrc, "JS Include", "Javascript Source")
+        js_results = self.extract_domains_body(body, self.regex_jssrc, "JS Include", "Javascript Source")
         if js_results:
             log.debug(f"Found {len(js_results)} domain(s) in JS includes.")
         results.extend(js_results)
 
         # Extract domains from CSS sources
         log.debug("Looking for CSS includes...")
-        css_results = self.extract_domains_from_body(body, self.regex_csssrc, "CSS Include", "CSS Source")
+        css_results = self.extract_domains_body(body, self.regex_csssrc, "CSS Include", "CSS Source")
         if css_results:
             log.debug(f"Found {len(css_results)} domain(s) in CSS includes.")
         results.extend(css_results)
