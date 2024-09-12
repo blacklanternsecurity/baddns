@@ -72,10 +72,12 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
     return arg_value
 
 
-async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False):
+async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False, direct_mode=False):
     findings = None
     try:
-        module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True)
+        module_instance = ModuleClass(
+            target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True, direct_mode=direct_mode
+        )
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
         raise BadDNSCLIException(f"Error loading signatures: {e}")
@@ -126,6 +128,7 @@ async def _main():
     )
 
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument("-D", "--direct", action="store_true", help="Enable direct mode")
 
     parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
@@ -154,15 +157,26 @@ async def _main():
     # Get all available modules
     all_modules = get_all_modules()
 
-    # If the user provided the -m or --modules argument, filter the modules accordingly
-    if args.modules:
-        included_module_names = [name.strip().upper() for name in args.modules.split(",")]
-        modules_to_execute = [module for module in all_modules if module.name.upper() in included_module_names]
-    else:
-        modules_to_execute = all_modules  # Default to all modules if -m is not provided
-        log.info(
-            f"Running with all modules [{', '.join([module.name for module in modules_to_execute])}] (-m to specify)"
+    direct_mode = False
+
+    # if direct mode was specified, only the CNAME module will run
+    if args.direct:
+        log.warning(
+            "Direct mode specified. Only the CNAME module is enabled. Positive results may not be immediately exploitable without corresponding DNS records pointing to it (e.g., CNAME), or some other external resource which may try to interact with it"
         )
+        modules_to_execute = [module for module in all_modules if module.name.upper() == "CNAME"]
+        direct_mode = True
+
+    else:
+        # If the user provided the -m or --modules argument, filter the modules accordingly
+        if args.modules:
+            included_module_names = [name.strip().upper() for name in args.modules.split(",")]
+            modules_to_execute = [module for module in all_modules if module.name.upper() in included_module_names]
+        else:
+            modules_to_execute = all_modules  # Default to all modules if -m is not provided
+            log.info(
+                f"Running with all modules [{', '.join([module.name for module in modules_to_execute])}] (-m to specify)"
+            )
 
     custom_signatures = None
     if args.custom_signatures:
@@ -177,7 +191,9 @@ async def _main():
     signatures = load_signatures(signatures_dir=custom_signatures)
 
     for ModuleClass in modules_to_execute:
-        await execute_module(ModuleClass, args.target, custom_nameservers, signatures, silent=silent)
+        await execute_module(
+            ModuleClass, args.target, custom_nameservers, signatures, silent=silent, direct_mode=direct_mode
+        )
 
 
 def main():

@@ -64,7 +64,7 @@ def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_
             "bad.dns",
         ],
     )
-    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": "127.0.0.1"}}
+    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
     mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
 
@@ -78,3 +78,29 @@ def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_
     captured = capsys.readouterr()
     assert "Vulnerable!" in captured.out
     assert "Bigcartel Takeover Detection" in captured.out
+
+
+def test_cli_direct(monkeypatch, capsys, mocker, httpx_mock, configure_mock_resolver):
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "python",
+            "--direct",
+            "bad.dns",
+        ],
+    )
+    mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+
+    httpx_mock.add_response(
+        url="http://bad.dns/",
+        status_code=200,
+        text="The specified bucket does not exist",
+    )
+
+    cli.main()
+    captured = capsys.readouterr()
+    assert "Direct mode specified. Only the CNAME module is enabled" in captured.err
+    assert "Vulnerable!" in captured.out
+    assert "AWS Bucket Takeover Detection" in captured.out
