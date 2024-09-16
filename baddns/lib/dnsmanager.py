@@ -116,6 +116,7 @@ class DNSManager:
                     result_cname = r[0]
                     cname_chain.append(result_cname)
                     target = result_cname
+
                     try:
                         r = self.process_answer(await self.dns_client.resolve(target, "CNAME"), "CNAME")
                         if len(r) == 0:

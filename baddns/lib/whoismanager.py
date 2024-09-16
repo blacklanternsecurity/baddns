@@ -15,17 +15,21 @@ class WhoisManager:
 
     async def dispatchWHOIS(self):
         ext = tldextract.extract(self.target)
-        log.debug(f"Extracted base domain [{ext.registered_domain}] from [{self.target}]")
-        log.debug(f"Submitting WHOIS query for {ext.registered_domain}")
+        if ext.registered_domain == "" or ext.registered_domain == None:
+            registered_domain = self.target
+        else:
+            registered_domain = ext.registered_domain
+        log.debug(f"Extracted base domain [{registered_domain}] from [{self.target}]")
+        log.debug(f"Submitting WHOIS query for {registered_domain}")
         try:
-            w = await asyncio.to_thread(whois.whois, ext.registered_domain, quiet=True)
-            log.debug(f"Got response to whois request for {ext.registered_domain}")
+            w = await asyncio.to_thread(whois.whois, registered_domain, quiet=True)
+            log.debug(f"Got response to whois request for {registered_domain}")
             self.whois_result = {"type": "response", "data": w}
         except whois.parser.PywhoisError as e:
-            log.debug(f"Got PywhoisError for whois request for {ext.registered_domain}")
+            log.debug(f"Got PywhoisError for whois request for {registered_domain}")
             self.whois_result = {"type": "error", "data": str(e)}
         except Exception as e:
-            log.warning(f"Got unknown error from whois: {str(e)}")
+            log.debug(f"Got unknown error from whois: {str(e)}")
             self.whois_result = {"type": "error", "data": str(e)}
 
     def analyzeWHOIS(self):

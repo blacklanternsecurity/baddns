@@ -1,8 +1,7 @@
 identifiers:
-  cnames:
-  - type: word
-    value: surveysparrow.com
-  ips: []
+  cnames: []
+  ips:
+  - 23.236.62.147
   nameservers: []
   not_cnames: []
 matcher_rule:
@@ -11,8 +10,8 @@ matcher_rule:
     part: body
     type: word
     words:
-    - '<title>DNS resolution error '
+    - ConnectYourDomain
   matchers-condition: and
 mode: http
-service_name: survey sparrow
+service_name: Wix
 source: dnsreaper
