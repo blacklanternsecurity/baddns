@@ -163,6 +163,7 @@ class BadDNS_references(BadDNS_base):
                         "finding": cname_instance.analyze(),
                         "description": pr["description"],
                         "trigger": pr["trigger"],
+                        "direct_mode": direct_mode,
                     }
                     cname_findings.append(finding)
         return cname_findings
@@ -200,7 +201,7 @@ class BadDNS_references(BadDNS_base):
                             "confidence": finding_dict["confidence"],
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
-                            "trigger": finding_set["trigger"],
+                            "trigger": f'{finding_set["trigger"]}, Original Trigger: [{finding_dict["trigger"]}] Direct Mode: [{str(finding_set["direct_mode"])}]',
                             "module": type(self),
                         }
                     )
