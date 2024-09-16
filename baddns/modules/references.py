@@ -104,6 +104,10 @@ class BadDNS_references(BadDNS_base):
         for match in regex.finditer(body):
             url = match.group(1)
             parsed_url = urlparse(url)
+            # this was a relative link, and therefore not relevant for us
+            if parsed_url.scheme == "" and parsed_url.netloc == "":
+                log.debug(f"URL was relative, ignoring: [{url}]")
+                continue
             domain = parsed_url.netloc
             results.append(
                 {

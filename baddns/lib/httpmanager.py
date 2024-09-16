@@ -26,6 +26,7 @@ class HttpManager:
             protocols = ["http", "https"]
             for protocol in protocols:
                 base_url = f"{protocol}://{self.target}/"
+                log.debug(f"ready to make requests to URL: {base_url}")
                 # If redirects are not skipped by this module, perform requests that follow redirects
                 if not self.skip_redirects:
                     setattr(
