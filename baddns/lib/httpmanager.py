@@ -47,7 +47,7 @@ class HttpManager:
             # Handle the allow_redirects case
             if not self.skip_redirects:
                 result = results[idx]
-                url = tasks_with_urls[idx][1]  # Get the URL associated with this task
+                url = tasks[idx][1]  # Get the URL associated with this task
                 if isinstance(result, Exception):
                     log.debug(f"Error occurred while fetching {url} (allow redirects): {result}")
                     setattr(self, f"{protocol}_allowredirects_results", None)
@@ -57,7 +57,7 @@ class HttpManager:
 
             # Handle the deny_redirects case
             result = results[idx]
-            url = tasks_with_urls[idx][1]  # Get the URL associated with this task
+            url = tasks[idx][1]  # Get the URL associated with this task
             if isinstance(result, Exception):
                 log.debug(f"Error occurred while fetching {url} (deny redirects): {result}")
                 setattr(self, f"{protocol}_denyredirects_results", None)
