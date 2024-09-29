@@ -25,7 +25,7 @@ class HttpManager:
         ]:
             setattr(self, attr, None)
 
-    async def dispatchHttp(self):
+    async def dispatch_http(self):
         protocols = ["http", "https"]
         tasks = []
 
@@ -33,15 +33,13 @@ class HttpManager:
             base_url = f"{protocol}://{self.target}/"
             log.debug(f"ready to make request to URL: {base_url}")
 
-            if not self.skip_redirects:
-                tasks.append((self.http_client.get(base_url, follow_redirects=True), base_url))
+            follow_redirects_options = [True, False] if not self.skip_redirects else [False]
 
-            tasks.append((self.http_client.get(base_url, follow_redirects=False), base_url))
-
-        tasks_with_urls = [(task, url) for task, url in tasks]
+            for follow_redirects in follow_redirects_options:
+                tasks.append((self.http_client.get(base_url, follow_redirects=follow_redirects), base_url))
 
         # Execute all requests concurrently, and ensure that exceptions don't derail the entire run
-        results = await asyncio.gather(*(task for task, _ in tasks_with_urls), return_exceptions=True)
+        results = await asyncio.gather(*(task for task, _ in tasks), return_exceptions=True)
 
         # Store the results back into the object, handling any exceptions
         idx = 0
