@@ -25,7 +25,7 @@ class HttpManager:
         ]:
             setattr(self, attr, None)
 
-    async def dispatch_http(self):
+    async def dispatchHttp(self):
         protocols = ["http", "https"]
         tasks = []
 
