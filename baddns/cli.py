@@ -91,6 +91,7 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures, si
             for finding in findings:
                 print(finding.to_dict())
 
+    await module_instance.cleanup()
     return findings
 
 

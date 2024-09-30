@@ -32,6 +32,9 @@ class BadDNS_base:
         else:
             log.debug(msg)
 
+    async def cleanup(self):
+        pass
+
 
 def get_all_modules(*args, **kwargs):
     return [m for m in BadDNS_base.__subclasses__()]

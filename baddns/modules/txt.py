@@ -110,3 +110,8 @@ class BadDNS_txt(BadDNS_base):
         if self.cname_findings:
             findings.extend(self._convert_findings(self.cname_findings))
         return findings
+
+    async def cleanup(self):
+        if self.target_httpmanager:
+            await self.target_httpmanager.close()
+            log.debug("HTTP Manager cleaned up successfully.")

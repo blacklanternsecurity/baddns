@@ -64,3 +64,8 @@ class HttpManager:
             else:
                 setattr(self, f"{protocol}_denyredirects_results", result)
             idx += 1
+
+    async def close(self):
+        """Clean up the http_client when done."""
+        await self.http_client.aclose()
+        log.debug("HTTP client closed successfully.")

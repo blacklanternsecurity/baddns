@@ -214,3 +214,8 @@ class BadDNS_references(BadDNS_base):
         if self.cname_findings_direct:
             findings.extend(self._convert_findings(self.cname_findings_direct))
         return findings
+
+    async def cleanup(self):
+        if self.target_httpmanager:
+            await self.target_httpmanager.close()
+            log.debug("HTTP Manager cleaned up successfully.")
