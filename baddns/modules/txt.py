@@ -60,6 +60,7 @@ class BadDNS_txt(BadDNS_base):
                             "trigger": self.target_dnsmanager.target,
                         }
                     )
+                await cname_instance_direct.cleanup()
 
                 cname_instance = BadDNS_cname(
                     host,
@@ -78,6 +79,7 @@ class BadDNS_txt(BadDNS_base):
                             "trigger": self.target_dnsmanager.target,
                         }
                     )
+                await cname_instance.cleanup()
 
         return True
 
@@ -110,3 +112,8 @@ class BadDNS_txt(BadDNS_base):
         if self.cname_findings:
             findings.extend(self._convert_findings(self.cname_findings))
         return findings
+
+    async def cleanup(self):
+        if self.target_httpmanager:
+            await self.target_httpmanager.close()
+            log.debug("HTTP Manager cleaned up successfully.")
