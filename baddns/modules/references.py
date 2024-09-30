@@ -166,7 +166,7 @@ class BadDNS_references(BadDNS_base):
                         "direct_mode": direct_mode,
                     }
                     cname_findings.append(finding)
-                cname_instance.cleanup()
+                await cname_instance.cleanup()
         return cname_findings
 
     async def dispatch(self):
