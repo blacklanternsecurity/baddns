@@ -53,7 +53,7 @@ class HttpManager:
                     "url": base_url,
                 })
 
-        # Use asyncio.as_completed to handle each task as it completes
+        # Use as_completed to handle each task as it completes
         async for completed_task in as_completed([task_dict["task"] for task_dict in tasks]):
             task_dict = next((item for item in tasks if item["task"] == completed_task), None)
 
