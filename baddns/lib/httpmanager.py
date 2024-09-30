@@ -5,6 +5,15 @@ import asyncio
 log = logging.getLogger(__name__)
 
 
+async def as_completed(coros):
+    tasks = {coro if isinstance(coro, asyncio.Task) else asyncio.create_task(coro): coro for coro in coros}
+    while tasks:
+        done, _ = await asyncio.wait(tasks.keys(), return_when=asyncio.FIRST_COMPLETED)
+        for task in done:
+            tasks.pop(task)
+            yield task
+
+
 class HttpManager:
     def __init__(self, target, http_client_class=None, skip_redirects=False):
         self.skip_redirects = skip_redirects
@@ -29,38 +38,40 @@ class HttpManager:
         protocols = ["http", "https"]
         tasks = []
 
+        # Create tasks for both protocols (http and https) and both follow_redirects options
         for protocol in protocols:
             base_url = f"{protocol}://{self.target}/"
-            log.debug(f"ready to make request to URL: {base_url}")
+            log.debug(f"Ready to make request to URL: {base_url}")
 
             follow_redirects_options = [True, False] if not self.skip_redirects else [False]
-
             for follow_redirects in follow_redirects_options:
-                tasks.append((self.http_client.get(base_url, follow_redirects=follow_redirects), base_url))
+                task = asyncio.create_task(self.http_client.get(base_url, follow_redirects=follow_redirects))
+                tasks.append({
+                    "task": task,
+                    "protocol": protocol,
+                    "follow_redirects": follow_redirects,
+                    "url": base_url,
+                })
 
-        # Execute all requests concurrently, and ensure that exceptions don't derail the entire run
-        results = await asyncio.gather(*(task for task, _ in tasks), return_exceptions=True)
+        # Use asyncio.as_completed to handle each task as it completes
+        async for completed_task in as_completed([task_dict["task"] for task_dict in tasks]):
+            task_dict = next((item for item in tasks if item["task"] == completed_task), None)
 
-        # Store the results back into the object, handling any exceptions
-        idx = 0
-        for protocol in protocols:
-            # Handle the allow_redirects case
-            if not self.skip_redirects:
-                result = results[idx]
-                url = tasks[idx][1]  # Get the URL associated with this task
-                if isinstance(result, Exception):
-                    log.debug(f"Error occurred while fetching {url} (allow redirects): {result}")
-                    setattr(self, f"{protocol}_allowredirects_results", None)
-                else:
-                    setattr(self, f"{protocol}_allowredirects_results", result)
-                idx += 1
+            protocol = task_dict["protocol"]
+            follow_redirects = task_dict["follow_redirects"]
+            url = task_dict["url"]
 
-            # Handle the deny_redirects case
-            result = results[idx]
-            url = tasks[idx][1]  # Get the URL associated with this task
-            if isinstance(result, Exception):
-                log.debug(f"Error occurred while fetching {url} (deny redirects): {result}")
-                setattr(self, f"{protocol}_denyredirects_results", None)
-            else:
-                setattr(self, f"{protocol}_denyredirects_results", result)
-            idx += 1
+            attr_suffix = "allowredirects_results" if follow_redirects else "denyredirects_results"
+            attr_name = f"{protocol}_{attr_suffix}"
+
+            try:
+                response = await completed_task
+                setattr(self, attr_name, response)
+            except Exception as e:
+                log.debug(f"Error occurred while fetching {url} (follow_redirects={follow_redirects}): {e}")
+                setattr(self, attr_name, None)
+
+    async def close(self):
+        """Clean up the http_client when done."""
+        await self.http_client.aclose()
+        log.debug("HTTP client closed successfully.")
