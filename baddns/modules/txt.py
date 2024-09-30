@@ -60,6 +60,7 @@ class BadDNS_txt(BadDNS_base):
                             "trigger": self.target_dnsmanager.target,
                         }
                     )
+                cname_instance_direct.cleanup()
 
                 cname_instance = BadDNS_cname(
                     host,
@@ -78,6 +79,7 @@ class BadDNS_txt(BadDNS_base):
                             "trigger": self.target_dnsmanager.target,
                         }
                     )
+                cname_instance.cleanup()
 
         return True
 
