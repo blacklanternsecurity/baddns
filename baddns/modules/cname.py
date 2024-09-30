@@ -196,8 +196,6 @@ class BadDNS_cname(BadDNS_base):
         return findings
 
     async def cleanup(self):
-        """Implementation of the abstract cleanup method to handle resource cleanup."""
-
         if self.target_httpmanager:
             await self.target_httpmanager.close()
             log.debug("HTTP Manager cleaned up successfully.")
