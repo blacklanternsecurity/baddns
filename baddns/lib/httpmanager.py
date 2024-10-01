@@ -36,7 +36,7 @@ class HttpManager:
 
     async def dispatchHttp(self):
         protocols = ["http", "https"]
-        tasks = []
+        tasks = {}
 
         # Create tasks for both protocols (http and https) and both follow_redirects options
         for protocol in protocols:
@@ -46,22 +46,11 @@ class HttpManager:
             follow_redirects_options = [True, False] if not self.skip_redirects else [False]
             for follow_redirects in follow_redirects_options:
                 task = asyncio.create_task(self.http_client.get(base_url, follow_redirects=follow_redirects))
-                tasks.append(
-                    {
-                        "task": task,
-                        "protocol": protocol,
-                        "follow_redirects": follow_redirects,
-                        "url": base_url,
-                    }
-                )
+                tasks[task] = (protocol, follow_redirects, base_url)
 
         # Use as_completed to handle each task as it completes
-        async for completed_task in as_completed([task_dict["task"] for task_dict in tasks]):
-            task_dict = next((item for item in tasks if item["task"] == completed_task), None)
-
-            protocol = task_dict["protocol"]
-            follow_redirects = task_dict["follow_redirects"]
-            url = task_dict["url"]
+        async for completed_task in as_completed(tasks):
+            protocol, follow_redirects, base_url = tasks[completed_task]
 
             attr_suffix = "allowredirects_results" if follow_redirects else "denyredirects_results"
             attr_name = f"{protocol}_{attr_suffix}"
