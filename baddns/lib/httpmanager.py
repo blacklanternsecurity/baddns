@@ -59,7 +59,7 @@ class HttpManager:
                 response = await completed_task
                 setattr(self, attr_name, response)
             except Exception as e:
-                log.debug(f"Error occurred while fetching {url} (follow_redirects={follow_redirects}): {e}")
+                log.debug(f"Error occurred while fetching {base_url} (follow_redirects={follow_redirects}): {e}")
                 setattr(self, attr_name, None)
 
     async def close(self):
