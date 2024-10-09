@@ -108,7 +108,7 @@ async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cac
             "confidence": "CONFIRMED",
             "signature": "N/A",
             "indicator": "Whois Data",
-            "trigger": "CSS Source: [http://css.baddnscdn.com/style.css]",
+            "trigger": "CSS Source: [http://css.baddnscdn.com/style.css], Original Trigger: [css.baddnscdn.com] Direct Mode: [True]",
             "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
@@ -140,9 +140,10 @@ async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cach
             "confidence": "CONFIRMED",
             "signature": "N/A",
             "indicator": "Whois Data",
-            "trigger": "Javascript Source: [http://js.baddnscdn.com/script.js]",
+            "trigger": "Javascript Source: [http://js.baddnscdn.com/script.js], Original Trigger: [js.baddnscdn.com] Direct Mode: [True]",
             "module": "references",
         }
+
         assert any(expected == finding.to_dict() for finding in findings)
 
 
@@ -172,7 +173,7 @@ async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cac
             "confidence": "PROBABLE",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
-            "trigger": "Javascript Source: [http://direct.azurewebsites.net/script.js]",
+            "trigger": "Javascript Source: [http://direct.azurewebsites.net/script.js], Original Trigger: [self] Direct Mode: [True]",
             "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
@@ -204,9 +205,10 @@ async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, ca
             "confidence": "PROBABLE",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
-            "trigger": "CSS Source: [http://direct.azurewebsites.net/style.css]",
+            "trigger": "CSS Source: [http://direct.azurewebsites.net/style.css], Original Trigger: [self] Direct Mode: [True]",
             "module": "references",
         }
+
         assert any(expected == finding.to_dict() for finding in findings)
 
 
@@ -240,7 +242,7 @@ async def test_references_direct_csp(fs, httpx_mock, configure_mock_resolver, ca
             "confidence": "PROBABLE",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
-            "trigger": "Content-Security-Policy Header: [direct.azurewebsites.net]",
+            "trigger": "Content-Security-Policy Header: [direct.azurewebsites.net], Original Trigger: [self] Direct Mode: [True]",
             "module": "references",
         }
         expected_2 = {
@@ -249,7 +251,7 @@ async def test_references_direct_csp(fs, httpx_mock, configure_mock_resolver, ca
             "confidence": "PROBABLE",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
-            "trigger": "Content-Security-Policy Header: [http://direct2.azurewebsites.net]",
+            "trigger": "Content-Security-Policy Header: [http://direct2.azurewebsites.net], Original Trigger: [self] Direct Mode: [True]",
             "module": "references",
         }
 
@@ -287,7 +289,8 @@ async def test_references_direct_cors(fs, httpx_mock, configure_mock_resolver, c
             "confidence": "PROBABLE",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
-            "trigger": "Access-Control-Allow-Origin Header: [https://direct.azurewebsites.net]",
+            "trigger": "Access-Control-Allow-Origin Header: [https://direct.azurewebsites.net], Original Trigger: [self] Direct Mode: [True]",
             "module": "references",
         }
+
         assert any(expected == finding.to_dict() for finding in findings)

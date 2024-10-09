@@ -104,6 +104,10 @@ class BadDNS_references(BadDNS_base):
         for match in regex.finditer(body):
             url = match.group(1)
             parsed_url = urlparse(url)
+            # this was a relative link, and therefore not relevant for us
+            if parsed_url.scheme == "" and parsed_url.netloc == "":
+                log.debug(f"URL was relative, ignoring: [{url}]")
+                continue
             domain = parsed_url.netloc
             results.append(
                 {
@@ -159,8 +163,10 @@ class BadDNS_references(BadDNS_base):
                         "finding": cname_instance.analyze(),
                         "description": pr["description"],
                         "trigger": pr["trigger"],
+                        "direct_mode": direct_mode,
                     }
                     cname_findings.append(finding)
+                await cname_instance.cleanup()
         return cname_findings
 
     async def dispatch(self):
@@ -196,7 +202,7 @@ class BadDNS_references(BadDNS_base):
                             "confidence": finding_dict["confidence"],
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
-                            "trigger": finding_set["trigger"],
+                            "trigger": f'{finding_set["trigger"]}, Original Trigger: [{finding_dict["trigger"]}] Direct Mode: [{str(finding_set["direct_mode"])}]',
                             "module": type(self),
                         }
                     )
@@ -209,3 +215,8 @@ class BadDNS_references(BadDNS_base):
         if self.cname_findings_direct:
             findings.extend(self._convert_findings(self.cname_findings_direct))
         return findings
+
+    async def cleanup(self):
+        if self.target_httpmanager:
+            await self.target_httpmanager.close()
+            log.debug("HTTP Manager cleaned up successfully.")
