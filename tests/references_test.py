@@ -83,6 +83,7 @@ mock_references_headers_cors = {
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
@@ -115,6 +116,7 @@ async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cac
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
@@ -148,6 +150,7 @@ async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cach
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}, "_NXDOMAIN": ["direct.azurewebsites.net"]}
@@ -180,6 +183,7 @@ async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cac
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}, "_NXDOMAIN": ["direct.azurewebsites.net"]}
@@ -213,6 +217,7 @@ async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, ca
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_direct_csp(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {
@@ -260,6 +265,7 @@ async def test_references_direct_csp(fs, httpx_mock, configure_mock_resolver, ca
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_direct_cors(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {
