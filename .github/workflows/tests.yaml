@@ -88,8 +88,7 @@ jobs:
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
-      - name: Check for major or minor version change
-        id: check_major_minor_version
+      - name: Retrieve and strip "v" prefix if present
         run: |
           # Retrieve and strip "v" prefix if present
           CURRENT_VERSION="${{ env.VERSION }}"
@@ -101,10 +100,16 @@ jobs:
           CURRENT_MAJOR_MINOR=$(echo "$CURRENT_VERSION" | cut -d '.' -f 1-2)
           LATEST_MAJOR_MINOR=$(echo "$LATEST_VERSION" | cut -d '.' -f 1-2)
           
+          # Compare versions
           if [ "$CURRENT_MAJOR_MINOR" == "$LATEST_MAJOR_MINOR" ]; then
             echo "VERSION_CHANGE=false" >> $GITHUB_ENV
           else
             echo "VERSION_CHANGE=true" >> $GITHUB_ENV
+          fi
+        shell: bash
+        env:
+          VERSION: ${{ env.VERSION }}  # dynamically passed VERSION variable
+          LATEST_TAG: ${{ env.LATEST_TAG }}  # dynamically passed LATEST_TAG variable
 
       - name: Build PyPi package
         if: github.ref == 'refs/heads/main' && env.VERSION_CHANGE == 'true'
