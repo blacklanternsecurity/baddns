@@ -91,9 +91,11 @@ jobs:
       - name: Check for major or minor version change
         id: check_major_minor_version
         run: |
-          # Remove "v" prefix if present
-          CURRENT_VERSION="${{ env.VERSION#v }}"
-          LATEST_VERSION="${{ env.LATEST_TAG#v }}"
+          # Retrieve and strip "v" prefix if present
+          CURRENT_VERSION="${{ env.VERSION }}"
+          LATEST_VERSION="${{ env.LATEST_TAG }}"
+          CURRENT_VERSION="${CURRENT_VERSION#v}"
+          LATEST_VERSION="${LATEST_VERSION#v}"
           
           # Extract major.minor for comparison
           CURRENT_MAJOR_MINOR=$(echo "$CURRENT_VERSION" | cut -d '.' -f 1-2)
