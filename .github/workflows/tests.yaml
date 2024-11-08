@@ -78,22 +78,27 @@ jobs:
 
       - name: Get current version from Poetry
         id: get_version
-        run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
-      
+        run: |
+          VERSION=$(poetry version --short)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Fetch latest tag
         run: |
           git fetch --tags
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "LATEST_TAG=${LATEST_TAG}" >> $GITHUB_ENV
-      
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
       - name: Check for major or minor version change
         id: check_major_minor_version
         run: |
-          CURRENT_VERSION=${{ env.VERSION }}
-          LATEST_VERSION=${{ env.LATEST_TAG }}
+          # Remove "v" prefix if present
+          CURRENT_VERSION="${{ env.VERSION#v }}"
+          LATEST_VERSION="${{ env.LATEST_TAG#v }}"
+          
           # Extract major.minor for comparison
-          CURRENT_MAJOR_MINOR=$(echo $CURRENT_VERSION | cut -d '.' -f 1-2)
-          LATEST_MAJOR_MINOR=$(echo $LATEST_VERSION | cut -d '.' -f 1-2)
+          CURRENT_MAJOR_MINOR=$(echo "$CURRENT_VERSION" | cut -d '.' -f 1-2)
+          LATEST_MAJOR_MINOR=$(echo "$LATEST_VERSION" | cut -d '.' -f 1-2)
+          
           if [ "$CURRENT_MAJOR_MINOR" == "$LATEST_MAJOR_MINOR" ]; then
             echo "VERSION_CHANGE=false" >> $GITHUB_ENV
           else
