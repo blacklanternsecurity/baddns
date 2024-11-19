@@ -32,7 +32,7 @@ pytest-mock = "^3.11.1"
 poetry-dynamic-versioning = {extras = ["plugin"], version = "^1.2.0"}
 requests = "^2.31.0"
 pytest = "^8.3.3"
-pytest-httpx = "^0.33.0"
+pytest-httpx = ">=0.33,<0.35"
 
 
 [tool.poetry.group.docs.dependencies]
