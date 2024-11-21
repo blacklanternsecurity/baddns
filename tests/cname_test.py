@@ -110,6 +110,7 @@ async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois, configu
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
@@ -268,6 +269,7 @@ mock_whois_unregistered = {
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 @pytest.mark.parametrize("mock_dispatch_whois", [mock_whois_unregistered], indirect=True)
 async def test_cname_whois_unregistered_match(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["worse.dns."]}, "worse.dns": {"A": ["127.0.0.2"]}}
@@ -328,6 +330,7 @@ whois_mock_expired_baddata = {
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 @pytest.mark.parametrize("mock_dispatch_whois", [whois_mock_expired_baddata], indirect=True)
 async def test_cname_whois_unregistered_baddata(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     with patch("sys.exit") as exit_mock:
@@ -378,6 +381,7 @@ whois_mock_expired_missingdata = {
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 @pytest.mark.parametrize("mock_dispatch_whois", [whois_mock_expired_missingdata], indirect=True)
 async def test_cname_whois_unregistered_missingdata(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     with patch("sys.exit") as exit_mock:

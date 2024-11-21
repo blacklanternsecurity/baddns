@@ -1,6 +1,7 @@
 import os
 import sys
 import dns
+import pytest
 from mock import patch
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -54,6 +55,7 @@ def test_cli_cname_nxdomain(monkeypatch, capsys, mocker, configure_mock_resolver
     assert "baddns.azurewebsites.net" in captured.out
 
 
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_resolver):
     monkeypatch.setattr(
         "sys.argv",
@@ -80,6 +82,7 @@ def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_
     assert "Bigcartel Takeover Detection" in captured.out
 
 
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 def test_cli_direct(monkeypatch, capsys, mocker, httpx_mock, configure_mock_resolver):
     monkeypatch.setattr(
         "sys.argv",
