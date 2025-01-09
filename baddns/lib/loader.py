@@ -1,7 +1,7 @@
 import os
 import yaml
 import logging
-import pkg_resources
+from importlib import resources
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +15,8 @@ def load_signatures(signatures_dir=None):
         if not os.path.exists(signatures_dir):
             raise BadDNSSignatureException(f"Signatures directory [{signatures_dir}] does not exist")
     else:
-        signatures_dir = pkg_resources.resource_filename("baddns", "signatures")
+
+        signatures_dir = resources.files("baddns") / "signatures"
 
     log.debug(f"attempting to load signatures from: {signatures_dir}")
 

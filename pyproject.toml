@@ -18,7 +18,6 @@ colorama = "^0.4.6"
 python-whois = "^0.9.5"
 tldextract = "^5.1.1"
 python-dateutil = "2.9.0.post0"
-setuptools = ">=70,<76"
 httpx = "^0.27.2"
 
 
