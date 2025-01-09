@@ -56,4 +56,4 @@ build-backend = "poetry_dynamic_versioning.backend"
 [tool.poetry-dynamic-versioning]
 enable = true
 metadata = true
-format = 'v1.4.{distance}'
+format = 'v1.5.{distance}'
