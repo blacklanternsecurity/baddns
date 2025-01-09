@@ -807,13 +807,13 @@ trio = ["async_generator", "trio"]
 
 [[package]]
 name = "jinja2"
-version = "3.1.4"
+version = "3.1.5"
 description = "A very fast and expressive template engine."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "jinja2-3.1.4-py3-none-any.whl", hash = "sha256:bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d"},
-    {file = "jinja2-3.1.4.tar.gz", hash = "sha256:4a3aee7acbbe7303aede8e9648d13b8bf88a429282aa6122a993f0ac800cb369"},
+    {file = "jinja2-3.1.5-py3-none-any.whl", hash = "sha256:aba0f4dc9ed8013c424088f68a5c226f7d6097ed89b246d7749c2ec4175c6adb"},
+    {file = "jinja2-3.1.5.tar.gz", hash = "sha256:8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb"},
 ]
 
 [package.dependencies]
@@ -1278,23 +1278,23 @@ files = [
 
 [[package]]
 name = "poetry-dynamic-versioning"
-version = "1.4.1"
+version = "1.5.0"
 description = "Plugin for Poetry to enable dynamic versioning based on VCS tags"
 optional = false
 python-versions = "<4.0,>=3.7"
 files = [
-    {file = "poetry_dynamic_versioning-1.4.1-py3-none-any.whl", hash = "sha256:44866ccbf869849d32baed4fc5fadf97f786180d8efa1719c88bf17a471bd663"},
-    {file = "poetry_dynamic_versioning-1.4.1.tar.gz", hash = "sha256:21584d21ca405aa7d83d23d38372e3c11da664a8742995bdd517577e8676d0e1"},
+    {file = "poetry_dynamic_versioning-1.5.0-py3-none-any.whl", hash = "sha256:d111952266a5a6963bf3a44b757ff034810e09ff1580098022964e78a097765b"},
+    {file = "poetry_dynamic_versioning-1.5.0.tar.gz", hash = "sha256:68b25c26407cf0d13d51d5dc7fc45667bc041032fda42ce89401c4ce82917837"},
 ]
 
 [package.dependencies]
 dunamai = ">=1.21.0,<2.0.0"
 jinja2 = ">=2.11.1,<4"
-poetry = {version = ">=1.2.0,<2.0.0", optional = true, markers = "extra == \"plugin\""}
+poetry = {version = ">=1.2.0", optional = true, markers = "extra == \"plugin\""}
 tomlkit = ">=0.4"
 
 [package.extras]
-plugin = ["poetry (>=1.2.0,<2.0.0)"]
+plugin = ["poetry (>=1.2.0)"]
 
 [[package]]
 name = "poetry-plugin-export"
