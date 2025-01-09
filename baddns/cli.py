@@ -5,10 +5,11 @@
 
 import re
 import sys
+import json
 import asyncio
 import argparse
 import logging
-import pkg_resources
+from pathlib import Path
 
 from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 from .lib.logging import setup_logging
@@ -32,10 +33,13 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
 
 def print_version():
-    version = pkg_resources.get_distribution("baddns").version
-    if version == "1.0.0":
-        version = "Unknown (Running w/poetry?)"
-    print(f"Version - {version}\n")
+    try:
+        base = Path(__file__).parent.parent
+        dist_info = next(base.glob("baddns-*.dist-info"))
+        version_str = dist_info.name.replace(".dist-info", "").split("-", 1)[1]
+    except:
+        version_str = "Unknown (Running w/poetry?)"
+    print(f"Version - {version_str}\n")
 
 
 def validate_target(
