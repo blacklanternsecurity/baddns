@@ -88,13 +88,10 @@ jobs:
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
-      - name: Retrieve and strip "v" prefix if present
+      - name: Check for Version Update
         run: |
-          # Retrieve and strip "v" prefix if present
           CURRENT_VERSION="${{ env.VERSION }}"
           LATEST_VERSION="${{ env.LATEST_TAG }}"
-          CURRENT_VERSION="${CURRENT_VERSION#v}"
-          LATEST_VERSION="${LATEST_VERSION#v}"
           
           # Extract major.minor for comparison
           CURRENT_MAJOR_MINOR=$(echo "$CURRENT_VERSION" | cut -d '.' -f 1-2)
