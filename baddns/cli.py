@@ -36,7 +36,7 @@ def print_version():
         base = Path(__file__).parent.parent
         dist_info = next(base.glob("baddns-*.dist-info"))
         version_str = dist_info.name.replace(".dist-info", "").split("-", 1)[1]
-    except StopIteration as e:
+    except StopIteration:
         version_str = "Unknown (Running w/poetry?)"
     print(f"Version - {version_str}\n")
 
