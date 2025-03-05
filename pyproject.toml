@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "baddns"
-version = "1.7.0"
+version = "1.8.0"
 description = "Check subdomains for subdomain takeovers and other DNS tomfoolery"
 authors = ["liquidsec <paul.mueller08@gmail.com>"]
 repository = "https://github.com/blacklanternsecurity/baddns"
@@ -56,4 +56,4 @@ build-backend = "poetry_dynamic_versioning.backend"
 [tool.poetry-dynamic-versioning]
 enable = true
 metadata = true
-format = '1.7.{distance}'
+format = '1.8.{distance}'
