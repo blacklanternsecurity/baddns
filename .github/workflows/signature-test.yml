@@ -4,10 +4,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-permissions:
-  pull-requests: write
-  contents: read
-
 jobs:
   signature-test:
     runs-on: ubuntu-latest
@@ -19,10 +15,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies securely
+      - name: Install dependencies
         run: |
           pip install poetry
-          poetry install --no-root --no-interaction
+          poetry install
 
       - name: Check for specific string in PR title and creator
         run: |
@@ -44,7 +40,7 @@ jobs:
         if: env.IS_NEW_SIGNATURE_PR == 'true'
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          FILE=$(gh pr diff $PR_NUMBER --name-only | grep -E '^valid/path/.*\.txt$' || true)
+          FILE=$(gh pr diff "$PR_NUMBER" --name-only | grep -v "signature_history.txt" || true)
 
           if [[ -z "$FILE" ]]; then
             echo "No valid files to process." >> signaturetest.log
@@ -60,9 +56,9 @@ jobs:
           SIGNATURE_PASS=$(echo "$OUTPUT" | jq -r '.signature_pass')
 
           if [[ "$SIGNATURE_PASS" == "true" ]]; then
-            gh pr edit $PR_NUMBER --remove-label "tests-failed" --add-label "tests-passed"
+            gh pr edit "$PR_NUMBER" --remove-label "tests-failed" --add-label "tests-passed"
           else
-            gh pr edit $PR_NUMBER --remove-label "tests-passed" --add-label "tests-failed"
+            gh pr edit "$PR_NUMBER" --remove-label "tests-passed" --add-label "tests-failed"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -87,6 +83,7 @@ jobs:
 
           if [[ "$match_table" != "{}" ]]; then
               comment+=$'\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |'
+              
               while IFS="|" read -r domain match; do
                   comment+=$'\n| '"$domain"' | '"$match"' |'
               done < <(echo "$match_table" | jq -r 'to_entries[] | "\(.key)|\(.value)"')
@@ -96,7 +93,6 @@ jobs:
               comment+="
               Error: **$error**"
           fi
-
           echo "Attempting to add comment to PR..." >> signaturetest.log
           gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
         env:
