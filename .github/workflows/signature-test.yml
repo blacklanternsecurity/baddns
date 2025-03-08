@@ -26,7 +26,7 @@ jobs:
 
       - name: Check for specific string in PR title and creator
         run: |
-          pr_title="${{ github.event.pull_request.title }}"
+          pr_title=$(printf '%q' "${{ github.event.pull_request.title }}")
           pr_creator="${{ github.event.pull_request.user.login }}"
           echo "Pull Request title: $pr_title" > signaturetest.log
           echo "Pull Request creator: $pr_creator" >> signaturetest.log
