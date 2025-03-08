@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   signature-test:
     runs-on: ubuntu-latest
@@ -15,62 +19,61 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install dependencies securely
         run: |
           pip install poetry
-          poetry install
+          poetry install --no-root --no-interaction
 
       - name: Check for specific string in PR title and creator
-        id: check_conditions
         run: |
           pr_title="${{ github.event.pull_request.title }}"
           pr_creator="${{ github.event.pull_request.user.login }}"
           echo "Pull Request title: $pr_title" > signaturetest.log
           echo "Pull Request creator: $pr_creator" >> signaturetest.log
           if [[ "$pr_title" == "[SignatureBot]"* ]]; then
-            echo "::set-output name=is_new_signature_pr::true"
+            echo "IS_NEW_SIGNATURE_PR=true" >> "$GITHUB_ENV"
             echo "PR $pr_title Qualified" >> signaturetest.log
           else
-            echo "::set-output name=is_new_signature_pr::false"
+            echo "IS_NEW_SIGNATURE_PR=false" >> "$GITHUB_ENV"
             echo "PR $pr_title NOT Qualified" >> signaturetest.log
           fi
         env:
           GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
 
       - name: Run signature test
-        if: steps.check_conditions.outputs.is_new_signature_pr == 'true'
-        id: signature_test
+        if: env.IS_NEW_SIGNATURE_PR == 'true'
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          FILE=$(gh pr diff $PR_NUMBER --name-only | grep -v "signature_history.txt")
+          FILE=$(gh pr diff $PR_NUMBER --name-only | grep -E '^valid/path/.*\.txt$' || true)
+
+          if [[ -z "$FILE" ]]; then
+            echo "No valid files to process." >> signaturetest.log
+            exit 1
+          fi
+
           echo "Running signature test against: $FILE" >> signaturetest.log
-          OUTPUT=$(poetry run python3 baddns/scripts/signaturetest.py $FILE)
+          OUTPUT=$(poetry run python3 baddns/scripts/signaturetest.py "$FILE" | jq .)
           echo "$OUTPUT" > output.json
           echo "Run finished with this output: $OUTPUT" >> signaturetest.log
-          echo "::set-output name=result::$OUTPUT"
+          echo "SIGNATURE_TEST_RESULT=$OUTPUT" >> "$GITHUB_ENV"
+
           SIGNATURE_PASS=$(echo "$OUTPUT" | jq -r '.signature_pass')
 
-          if [ "$SIGNATURE_PASS" == "true" ]
-          then
-            echo "Signature test passed, adding 'tests-passed' label to PR..." >> signaturetest.log
-            gh pr edit $PR_NUMBER --remove-label "tests-failed"
-            gh pr edit $PR_NUMBER --add-label "tests-passed"
-
+          if [[ "$SIGNATURE_PASS" == "true" ]]; then
+            gh pr edit $PR_NUMBER --remove-label "tests-failed" --add-label "tests-passed"
           else
-            echo "Signature test failed, adding 'tests-failed' label to PR..." >> signaturetest.log
-            gh pr edit $PR_NUMBER --remove-label "tests-passed"
-            gh pr edit $PR_NUMBER --add-label "tests-failed"
+            gh pr edit $PR_NUMBER --remove-label "tests-passed" --add-label "tests-failed"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Post result comment
-        if: always() && steps.check_conditions.outputs.is_new_signature_pr == 'true'
+        if: always() && env.IS_NEW_SIGNATURE_PR == 'true'
         run: |
           output=$(cat output.json)
-          signature_pass=$(echo $output | jq -r '.signature_pass')
-          match_table=$(echo $output | jq -r '.match_table')
-          error=$(echo $output | jq -r '.error')
+          signature_pass=$(echo "$output" | jq -r '.signature_pass')
+          match_table=$(echo "$output" | jq -r '.match_table')
+          error=$(echo "$output" | jq -r '.error')
 
           if [[ "$signature_pass" == "true" ]]; then
             emoji=":heavy_check_mark:"
@@ -84,7 +87,6 @@ jobs:
 
           if [[ "$match_table" != "{}" ]]; then
               comment+=$'\n\nMatch Table:\n\n| Domain | Match |\n| --- | --- |'
-              
               while IFS="|" read -r domain match; do
                   comment+=$'\n| '"$domain"' | '"$match"' |'
               done < <(echo "$match_table" | jq -r 'to_entries[] | "\(.key)|\(.value)"')
@@ -93,13 +95,12 @@ jobs:
           if [[ "$signature_pass" == "false" ]]; then
               comment+="
               Error: **$error**"
-
           fi
+
           echo "Attempting to add comment to PR..." >> signaturetest.log
           gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
         env:
           GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
-
 
       - name: Upload Signature Test Log
         uses: actions/upload-artifact@v4
