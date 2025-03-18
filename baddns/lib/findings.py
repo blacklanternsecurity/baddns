@@ -1,6 +1,7 @@
 from baddns.base import BadDNS_base
 from .errors import BadDNSFindingException
 import logging
+import json
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +60,9 @@ class Finding:
 
     def to_dict(self):
         return self.finding_dict
+
+    def to_json(self):
+        return json.dumps(self.finding_dict)
 
     def __str__(self):
         return str(self.finding_dict)
