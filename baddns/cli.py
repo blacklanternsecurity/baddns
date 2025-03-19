@@ -92,7 +92,7 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures, si
             if not silent:
                 print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
-                print(finding.to_dict())
+                print(finding.to_json())
 
     await module_instance.cleanup()
     return findings
