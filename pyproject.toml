@@ -18,7 +18,7 @@ colorama = "^0.4.6"
 python-whois = "^0.9.5"
 tldextract = "^5.1.1"
 python-dateutil = "2.9.0.post0"
-httpx = "^0.27.2"
+httpx = "^0.28.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -31,7 +31,7 @@ pytest-mock = "^3.11.1"
 poetry-dynamic-versioning = {extras = ["plugin"], version = "^1.5.0"}
 requests = "^2.31.0"
 pytest = "^8.3.3"
-pytest-httpx = ">=0.33,<0.35"
+pytest-httpx = ">=0.33,<0.36"
 
 
 [tool.poetry.group.docs.dependencies]
