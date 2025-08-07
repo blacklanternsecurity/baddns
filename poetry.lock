@@ -39,6 +39,19 @@ files = [
 dev = ["backports.zoneinfo ; python_version < \"3.9\"", "freezegun (>=1.0,<2.0)", "jinja2 (>=3.0)", "pytest (>=6.0)", "pytest-cov", "pytz", "setuptools", "tzdata ; sys_platform == \"win32\""]
 
 [[package]]
+name = "backports-asyncio-runner"
+version = "1.2.0"
+description = "Backport of asyncio.Runner, a context manager that controls event loop life cycle."
+optional = false
+python-versions = "<3.11,>=3.8"
+groups = ["dev"]
+markers = "python_version < \"3.11\""
+files = [
+    {file = "backports_asyncio_runner-1.2.0-py3-none-any.whl", hash = "sha256:0da0a936a8aeb554eccb426dc55af3ba63bcdc69fa1a600b5bb305413a4477b5"},
+    {file = "backports_asyncio_runner-1.2.0.tar.gz", hash = "sha256:a5aa7b2b7d8f8bfcaa2b57313f70792df84e32a2a746f585213373f900b42162"},
+]
+
+[[package]]
 name = "backports-tarfile"
 version = "1.2.0"
 description = "Backport of CPython tarfile module"
@@ -604,14 +617,14 @@ pgp = ["gpg"]
 
 [[package]]
 name = "dunamai"
-version = "1.23.0"
+version = "1.25.0"
 description = "Dynamic version generation"
 optional = false
 python-versions = ">=3.5"
 groups = ["dev"]
 files = [
-    {file = "dunamai-1.23.0-py3-none-any.whl", hash = "sha256:a0906d876e92441793c6a423e16a4802752e723e9c9a5aabdc5535df02dbe041"},
-    {file = "dunamai-1.23.0.tar.gz", hash = "sha256:a163746de7ea5acb6dacdab3a6ad621ebc612ed1e528aaa8beedb8887fccd2c4"},
+    {file = "dunamai-1.25.0-py3-none-any.whl", hash = "sha256:7f9dc687dd3256e613b6cc978d9daabfd2bb5deb8adc541fc135ee423ffa98ab"},
+    {file = "dunamai-1.25.0.tar.gz", hash = "sha256:a7f8360ea286d3dbaf0b6a1473f9253280ac93d619836ad4514facb70c0719d1"},
 ]
 
 [package.dependencies]
@@ -1101,21 +1114,21 @@ pyyaml = ">=5.1"
 
 [[package]]
 name = "mkdocs-material"
-version = "9.6.9"
+version = "9.6.16"
 description = "Documentation that simply works"
 optional = false
 python-versions = ">=3.8"
 groups = ["docs"]
 files = [
-    {file = "mkdocs_material-9.6.9-py3-none-any.whl", hash = "sha256:6e61b7fb623ce2aa4622056592b155a9eea56ff3487d0835075360be45a4c8d1"},
-    {file = "mkdocs_material-9.6.9.tar.gz", hash = "sha256:a4872139715a1f27b2aa3f3dc31a9794b7bbf36333c0ba4607cf04786c94f89c"},
+    {file = "mkdocs_material-9.6.16-py3-none-any.whl", hash = "sha256:8d1a1282b892fe1fdf77bfeb08c485ba3909dd743c9ba69a19a40f637c6ec18c"},
+    {file = "mkdocs_material-9.6.16.tar.gz", hash = "sha256:d07011df4a5c02ee0877496d9f1bfc986cfb93d964799b032dd99fe34c0e9d19"},
 ]
 
 [package.dependencies]
 babel = ">=2.10,<3.0"
 backrefs = ">=5.7.post1,<6.0"
 colorama = ">=0.4,<1.0"
-jinja2 = ">=3.0,<4.0"
+jinja2 = ">=3.1,<4.0"
 markdown = ">=3.2,<4.0"
 mkdocs = ">=1.6,<2.0"
 mkdocs-material-extensions = ">=1.3,<2.0"
@@ -1404,18 +1417,18 @@ files = [
 
 [[package]]
 name = "poetry-dynamic-versioning"
-version = "1.7.1"
+version = "1.9.1"
 description = "Plugin for Poetry to enable dynamic versioning based on VCS tags"
 optional = false
 python-versions = "<4.0,>=3.7"
 groups = ["dev"]
 files = [
-    {file = "poetry_dynamic_versioning-1.7.1-py3-none-any.whl", hash = "sha256:70a4a54bee89aef276e3f2f8841f10a6f140b19c5aeb371a1a6095f84fcbe7b1"},
-    {file = "poetry_dynamic_versioning-1.7.1.tar.gz", hash = "sha256:7304b8459af7b7114cd83429827c4d3d8b7d29df4129dde8dff61c76f93faaa3"},
+    {file = "poetry_dynamic_versioning-1.9.1-py3-none-any.whl", hash = "sha256:65a0c814e6d30d4807734a3c34edf261fd7cc3b340dbd23b6a33ee41f7d0b547"},
+    {file = "poetry_dynamic_versioning-1.9.1.tar.gz", hash = "sha256:d6e7b9df817aa2ca4946cd695c6c89e1379d2e6c640f008a9b6170d081a9da48"},
 ]
 
 [package.dependencies]
-dunamai = ">=1.21.0,<2.0.0"
+dunamai = ">=1.25.0,<2.0.0"
 jinja2 = ">=2.11.1,<4"
 poetry = {version = ">=1.2.0", optional = true, markers = "extra == \"plugin\""}
 tomlkit = ">=0.4"
@@ -1438,14 +1451,14 @@ files = [
 
 [[package]]
 name = "pyfakefs"
-version = "5.8.0"
-description = "pyfakefs implements a fake file system that mocks the Python file system modules."
+version = "5.9.2"
+description = "Implements a fake file system that mocks the Python file system modules."
 optional = false
 python-versions = ">=3.7"
 groups = ["dev"]
 files = [
-    {file = "pyfakefs-5.8.0-py3-none-any.whl", hash = "sha256:4bd0fc8def7d0582139922447758632ff34a327b460a7e83feb6edbd841061dd"},
-    {file = "pyfakefs-5.8.0.tar.gz", hash = "sha256:7e5457ee3cc67069d3cef6e278227ecfc80bfb61e925bc0a4d3b0af32d1c99ce"},
+    {file = "pyfakefs-5.9.2-py3-none-any.whl", hash = "sha256:8fcea36051d5b8827d49f5e2d242e91a51c5af6b78eeffa8e7adb899a6763e99"},
+    {file = "pyfakefs-5.9.2.tar.gz", hash = "sha256:66c5c6ccd4097b484f8782f9a5078fee0533d465e0d9caf594c9157d54382553"},
 ]
 
 [[package]]
@@ -1454,7 +1467,7 @@ version = "2.19.1"
 description = "Pygments is a syntax highlighting package written in Python."
 optional = false
 python-versions = ">=3.8"
-groups = ["docs"]
+groups = ["dev", "docs"]
 files = [
     {file = "pygments-2.19.1-py3-none-any.whl", hash = "sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c"},
     {file = "pygments-2.19.1.tar.gz", hash = "sha256:61c16d2a8576dc0649d9f39e089b5f02bcd27fba10d8fb4dcc28173f7a45151f"},
@@ -1496,41 +1509,44 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "8.3.5"
+version = "8.4.1"
 description = "pytest: simple powerful testing with Python"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "pytest-8.3.5-py3-none-any.whl", hash = "sha256:c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820"},
-    {file = "pytest-8.3.5.tar.gz", hash = "sha256:f4efe70cc14e511565ac476b57c279e12a855b11f48f212af1080ef2263d3845"},
+    {file = "pytest-8.4.1-py3-none-any.whl", hash = "sha256:539c70ba6fcead8e78eebbf1115e8b589e7565830d7d006a8723f19ac8a0afb7"},
+    {file = "pytest-8.4.1.tar.gz", hash = "sha256:7c67fd69174877359ed9371ec3af8a3d2b04741818c51e5e99cc1742251fa93c"},
 ]
 
 [package.dependencies]
-colorama = {version = "*", markers = "sys_platform == \"win32\""}
-exceptiongroup = {version = ">=1.0.0rc8", markers = "python_version < \"3.11\""}
-iniconfig = "*"
-packaging = "*"
+colorama = {version = ">=0.4", markers = "sys_platform == \"win32\""}
+exceptiongroup = {version = ">=1", markers = "python_version < \"3.11\""}
+iniconfig = ">=1"
+packaging = ">=20"
 pluggy = ">=1.5,<2"
+pygments = ">=2.7.2"
 tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 
 [package.extras]
-dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
+dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests", "setuptools", "xmlschema"]
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.25.3"
+version = "1.1.0"
 description = "Pytest support for asyncio"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "pytest_asyncio-0.25.3-py3-none-any.whl", hash = "sha256:9e89518e0f9bd08928f97a3482fdc4e244df17529460bc038291ccaf8f85c7c3"},
-    {file = "pytest_asyncio-0.25.3.tar.gz", hash = "sha256:fc1da2cf9f125ada7e710b4ddad05518d4cee187ae9412e9ac9271003497f07a"},
+    {file = "pytest_asyncio-1.1.0-py3-none-any.whl", hash = "sha256:5fe2d69607b0bd75c656d1211f969cadba035030156745ee09e7d71740e58ecf"},
+    {file = "pytest_asyncio-1.1.0.tar.gz", hash = "sha256:796aa822981e01b68c12e4827b8697108f7205020f24b5793b3c41555dab68ea"},
 ]
 
 [package.dependencies]
+backports-asyncio-runner = {version = ">=1.1,<2", markers = "python_version < \"3.11\""}
 pytest = ">=8.2,<9"
+typing-extensions = {version = ">=4.12", markers = "python_version < \"3.10\""}
 
 [package.extras]
 docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
@@ -1538,19 +1554,20 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
 name = "pytest-cov"
-version = "6.0.0"
+version = "6.2.1"
 description = "Pytest plugin for measuring coverage."
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "pytest-cov-6.0.0.tar.gz", hash = "sha256:fde0b595ca248bb8e2d76f020b465f3b107c9632e6a1d1705f17834c89dcadc0"},
-    {file = "pytest_cov-6.0.0-py3-none-any.whl", hash = "sha256:eee6f1b9e61008bd34975a4d5bab25801eb31898b032dd55addc93e96fcaaa35"},
+    {file = "pytest_cov-6.2.1-py3-none-any.whl", hash = "sha256:f5bc4c23f42f1cdd23c70b1dab1bbaef4fc505ba950d53e0081d0730dd7e86d5"},
+    {file = "pytest_cov-6.2.1.tar.gz", hash = "sha256:25cc6cc0a5358204b8108ecedc51a9b57b34cc6b8c967cc2c01a4e00d8a67da2"},
 ]
 
 [package.dependencies]
 coverage = {version = ">=7.5", extras = ["toml"]}
-pytest = ">=4.6"
+pluggy = ">=1.2"
+pytest = ">=6.2.5"
 
 [package.extras]
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
@@ -1576,14 +1593,14 @@ testing = ["pytest-asyncio (==0.24.*)", "pytest-cov (==6.*)"]
 
 [[package]]
 name = "pytest-mock"
-version = "3.14.0"
+version = "3.14.1"
 description = "Thin-wrapper around the mock package for easier use with pytest"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "pytest-mock-3.14.0.tar.gz", hash = "sha256:2719255a1efeceadbc056d6bf3df3d1c5015530fb40cf347c0f9afac88410bd0"},
-    {file = "pytest_mock-3.14.0-py3-none-any.whl", hash = "sha256:0b72c38033392a5f4621342fe11e9219ac11ec9d375f8e2a0c164539e0d70f6f"},
+    {file = "pytest_mock-3.14.1-py3-none-any.whl", hash = "sha256:178aefcd11307d874b4cd3100344e7e2d888d9791a6a1d9bfe90fbc1b74fd1d0"},
+    {file = "pytest_mock-3.14.1.tar.gz", hash = "sha256:159e9edac4c451ce77a5cdb9fc5d1100708d2dd4ba3c3df572f14097351af80e"},
 ]
 
 [package.dependencies]
@@ -1822,19 +1839,19 @@ all = ["numpy"]
 
 [[package]]
 name = "requests"
-version = "2.32.3"
+version = "2.32.4"
 description = "Python HTTP for Humans."
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev", "docs"]
 files = [
-    {file = "requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6"},
-    {file = "requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760"},
+    {file = "requests-2.32.4-py3-none-any.whl", hash = "sha256:27babd3cda2a6d50b30443204ee89830707d396671944c998b5975b031ac2b2c"},
+    {file = "requests-2.32.4.tar.gz", hash = "sha256:27d0316682c8a29834d3264820024b62a36942083d52caf2f14c0591336d3422"},
 ]
 
 [package.dependencies]
 certifi = ">=2017.4.17"
-charset-normalizer = ">=2,<4"
+charset_normalizer = ">=2,<4"
 idna = ">=2.5,<4"
 urllib3 = ">=1.21.1,<3"
 
@@ -1945,14 +1962,14 @@ files = [
 
 [[package]]
 name = "tldextract"
-version = "5.1.3"
+version = "5.3.0"
 description = "Accurately separates a URL's subdomain, domain, and public suffix, using the Public Suffix List (PSL). By default, this includes the public ICANN TLDs and their exceptions. You can optionally support the Public Suffix List's private domains as well."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "tldextract-5.1.3-py3-none-any.whl", hash = "sha256:78de310cc2ca018692de5ddf320f9d6bd7c5cf857d0fd4f2175f0cdf4440ea75"},
-    {file = "tldextract-5.1.3.tar.gz", hash = "sha256:d43c7284c23f5dc8a42fd0fee2abede2ff74cc622674e4cb07f514ab3330c338"},
+    {file = "tldextract-5.3.0-py3-none-any.whl", hash = "sha256:f70f31d10b55c83993f55e91ecb7c5d84532a8972f22ec578ecfbe5ea2292db2"},
+    {file = "tldextract-5.3.0.tar.gz", hash = "sha256:b3d2b70a1594a0ecfa6967d57251527d58e00bb5a91a74387baa0d87a0678609"},
 ]
 
 [package.dependencies]
@@ -2351,4 +2368,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "328c237597ccdd5c99f30479ac81c425860a180a2e33cb3531fc88ff9cc31ec2"
+content-hash = "f3adb50f96de15a4fd984d894b7c11594bac97a33db0aab8b4b9fd31598473f2"
