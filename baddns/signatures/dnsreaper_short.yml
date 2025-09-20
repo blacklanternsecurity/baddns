@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: short.io
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - This domain is not configured on Short.io.
+  matchers-condition: and
+mode: http
+service_name: short
+source: dnsreaper
