@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 17 * * *'
+
+permissions:
+  contents: write  # Allows committing & pushing changes to repo
+  pull-requests: write  # Allows creating PRs via `gh pr create`
+
 jobs:
   readsources:
     runs-on: ubuntu-latest

@@ -21,7 +21,8 @@ class BadDNS_references(BadDNS_base):
     regex_csp = re.compile(r"Content-Security-Policy: (.+?)\|", re.IGNORECASE)
     regex_cors = re.compile(r"Access-Control-Allow-Origin: (.+?)\|", re.IGNORECASE)
     regex_domain_url = re.compile(
-        r"(?:((?:https?:\/\/)?(?:\w(?:[\w-]{0,100}\w)?\.)+(?:[xX][nN]--)?[^\W_]{0,63}\.?))(?!(\/|\?))", re.IGNORECASE
+        r"\b((?:https?:\/\/)?(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:[xX][nN]--)?[a-zA-Z0-9-]{2,63})\b",
+        re.IGNORECASE,
     )
 
     def __init__(self, target, **kwargs):

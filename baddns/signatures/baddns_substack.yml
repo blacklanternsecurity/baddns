@@ -1,0 +1,20 @@
+identifiers:
+  cnames:
+  - type: word
+    value: target.substack-custom-domains.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - status: 409
+    type: status
+  - condition: and
+    part: body
+    type: word
+    words:
+    - something is wrong with this site's configuration
+  matchers-condition: and
+mode: http
+service_name: Substack Takeover Detection
+source: self

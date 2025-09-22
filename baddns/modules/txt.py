@@ -5,6 +5,7 @@ from baddns.modules.cname import BadDNS_cname
 from baddns.lib.findings import Finding
 
 import logging
+import ipaddress
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +42,14 @@ class BadDNS_txt(BadDNS_base):
             for match in DNSManager.dns_name_regex.finditer(txt_record):
                 start, end = match.span()
                 host = txt_record[start:end]
+
+                try:
+                    # Check if the host is an IP address
+                    ipaddress.ip_address(host)
+                    continue  # Skip this match if it's a valid IP address
+                except ValueError:
+                    pass
+
                 self.infomsg(f"Found host [{host}] in TXT record [{txt_record}] and analyzing with CNAME module")
 
                 cname_instance_direct = BadDNS_cname(
@@ -56,7 +65,7 @@ class BadDNS_txt(BadDNS_base):
                     self.cname_findings_direct.append(
                         {
                             "finding": cname_instance_direct.analyze(),
-                            "description": "Vulnerable Host in TXT Record",
+                            "description": f"Vulnerable Host [{host}] in TXT Record",
                             "trigger": self.target_dnsmanager.target,
                         }
                     )
