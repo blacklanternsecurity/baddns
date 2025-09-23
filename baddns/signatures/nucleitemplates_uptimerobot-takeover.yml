@@ -8,14 +8,18 @@ matcher_rule:
   - dsl:
     - Host != ip
     type: dsl
+  - regex:
+    - ^page not found$
+    type: regex
   - case-insensitive: true
-    condition: or
-    part: body
+    condition: and
+    part: header
     type: word
     words:
-    - this help centre no longer exists
-    - Help Centre Closed
+    - 'Server: Caddy'
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
-service_name: Zendesk Takeover Detection
+service_name: uptimerobot takeover detection
 source: nucleitemplates
