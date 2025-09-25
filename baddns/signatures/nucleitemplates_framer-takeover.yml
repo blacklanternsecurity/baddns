@@ -8,14 +8,12 @@ matcher_rule:
   - dsl:
     - Host != ip
     type: dsl
-  - case-insensitive: true
-    condition: or
+  - condition: and
     part: body
     type: word
     words:
-    - this help centre no longer exists
-    - Help Centre Closed
+    - Site Not Found | Framer
   matchers-condition: and
 mode: http
-service_name: Zendesk Takeover Detection
+service_name: Framer Takeover Detection
 source: nucleitemplates
