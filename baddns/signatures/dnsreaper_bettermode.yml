@@ -1,0 +1,15 @@
+identifiers:
+  cnames:
+  - type: word
+    value: domains.bettermode.io
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - status: 409
+    type: status
+  matchers-condition: and
+mode: http
+service_name: bettermode.com
+source: dnsreaper
