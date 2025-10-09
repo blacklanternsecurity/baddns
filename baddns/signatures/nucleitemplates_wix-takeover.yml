@@ -1,5 +1,7 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: wix.com
   ips: []
   nameservers: []
   not_cnames: []
@@ -16,6 +18,9 @@ matcher_rule:
     - wixErrorPagesApp
   - status: 404
     type: status
+  - dsl:
+    - '!contains(host,"wix.com")'
+    type: dsl
   matchers-condition: and
 mode: http
 service_name: Wix Takeover Detection
