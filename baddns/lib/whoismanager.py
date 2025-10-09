@@ -25,7 +25,7 @@ class WhoisManager:
             w = await asyncio.to_thread(whois.whois, registered_domain, quiet=True)
             log.debug(f"Got response to whois request for {registered_domain}")
             self.whois_result = {"type": "response", "data": w}
-        except whois.parser.PywhoisError as e:
+        except whois.exceptions.PywhoisError as e:
             log.debug(f"Got PywhoisError for whois request for {registered_domain}")
             self.whois_result = {"type": "error", "data": str(e)}
         except Exception as e:
