@@ -4,6 +4,7 @@ import asyncio
 import tldextract
 from datetime import datetime, timezone, timedelta, date
 from dateutil import parser as date_parser
+from whois.exceptions import PywhoisError
 
 log = logging.getLogger(__name__)
 
@@ -19,13 +20,19 @@ class WhoisManager:
             registered_domain = self.target
         else:
             registered_domain = ext.registered_domain
+
+        # Guard against empty/invalid domains
+        if not registered_domain or "." not in registered_domain:
+            log.debug(f"Skipping WHOIS for invalid domain [{registered_domain}] from [{self.target}]")
+            self.whois_result = {"type": "error", "data": "Invalid domain for WHOIS"}
+            return
         log.debug(f"Extracted base domain [{registered_domain}] from [{self.target}]")
         log.debug(f"Submitting WHOIS query for {registered_domain}")
         try:
             w = await asyncio.to_thread(whois.whois, registered_domain, quiet=True)
             log.debug(f"Got response to whois request for {registered_domain}")
             self.whois_result = {"type": "response", "data": w}
-        except whois.parser.PywhoisError as e:
+        except PywhoisError as e:
             log.debug(f"Got PywhoisError for whois request for {registered_domain}")
             self.whois_result = {"type": "error", "data": str(e)}
         except Exception as e:
