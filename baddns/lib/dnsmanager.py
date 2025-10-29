@@ -67,19 +67,29 @@ class DNSManager:
 
             rdtype = str(record.rdtype.name).upper()
             if rdtype in ("A", "AAAA", "NS", "CNAME", "PTR"):
-                results.add(self._clean_dns_record(record))
+                cleaned = self._clean_dns_record(record)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "SOA":
-                results.add(self._clean_dns_record(record.mname))
+                cleaned = self._clean_dns_record(record.mname)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "MX":
-                results.add(self._clean_dns_record(record.exchange))
+                cleaned = self._clean_dns_record(record.exchange)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "SRV":
-                results.add(self._clean_dns_record(record.target))
+                cleaned = self._clean_dns_record(record.target)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "TXT":
                 for s in record.strings:
                     s = s.decode()
                     results.add(s)
             elif rdtype == "NSEC":
-                results.add(self._clean_dns_record(record.next))
+                cleaned = self._clean_dns_record(record.next)
+                if cleaned:
+                    results.add(cleaned)
             else:
                 log.debug(f'Unknown DNS record type "{rdtype}"')
         return list(results)
