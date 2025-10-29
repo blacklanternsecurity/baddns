@@ -1,18 +1,15 @@
 identifiers:
   cnames:
   - type: word
-    value: teamwork.com
+    value: domains.bettermode.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: or
-    part: body
-    type: word
-    words:
-    - The request could not be satisfied.
+  - status: 409
+    type: status
   matchers-condition: and
 mode: http
-service_name: teamwork
+service_name: bettermode.com
 source: dnsreaper
