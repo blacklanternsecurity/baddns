@@ -102,7 +102,7 @@ class NucleiTemplatesTransformer(Transformer):
                     if matcher["type"] == "word":
                         matcher["part"] = matcher.get("part", "body")
 
-                        if matcher["part"] == "host":
+                        if matcher["part"] in ("host", "cname"):
                             negative = matcher.get("negative", False)
 
                             for w in matcher["words"]:
