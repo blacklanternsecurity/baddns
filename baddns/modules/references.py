@@ -201,6 +201,7 @@ class BadDNS_references(BadDNS_base):
                             "target": self.target,
                             "description": f"{finding_set['description']}. Original Event: [{finding_dict['description']}]",
                             "confidence": finding_dict["confidence"],
+                            "severity": finding_dict["severity"],
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
                             "trigger": f"{finding_set['trigger']}, Original Trigger: [{finding_dict['trigger']}] Direct Mode: [{str(finding_set['direct_mode'])}]",

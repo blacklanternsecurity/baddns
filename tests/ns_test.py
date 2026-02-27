@@ -29,7 +29,8 @@ async def test_ns_nosoa_signature(fs, configure_mock_resolver):
     expected = {
         "target": "bad.dns",
         "description": "Dangling NS Records (NS records without SOA) with known impact",
-        "confidence": "PROBABLE",
+        "confidence": "HIGH",
+        "severity": "MEDIUM",
         "signature": "wordpress.com",
         "indicator": "DnsWalk Analysis with signature match: ['ns1.wordpress.com']",
         "trigger": "ns1.wordpress.com",
@@ -56,7 +57,8 @@ async def test_ns_nosoa_generic(fs, configure_mock_resolver):
     expected = {
         "target": "bad.dns",
         "description": "Dangling NS Records (NS records without SOA)",
-        "confidence": "POSSIBLE",
+        "confidence": "MODERATE",
+        "severity": "MEDIUM",
         "signature": "N/A",
         "indicator": "DNSWalk Analysis",
         "trigger": "ns1.somerandomthing.com",

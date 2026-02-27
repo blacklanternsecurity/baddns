@@ -82,7 +82,8 @@ class BadDNS_ns(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": "Dangling NS Records (NS records without SOA) with known impact",
-                                    "confidence": "PROBABLE",
+                                    "confidence": "HIGH",
+                                    "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": f"DnsWalk Analysis with signature match: {r[1]}",
                                     "trigger": target_nameservers,
@@ -102,7 +103,8 @@ class BadDNS_ns(BadDNS_base):
                     {
                         "target": self.target_dnsmanager.target,
                         "description": "Dangling NS Records (NS records without SOA)",
-                        "confidence": "POSSIBLE",
+                        "confidence": "MODERATE",
+                        "severity": "MEDIUM",
                         "signature": "N/A",
                         "indicator": "DNSWalk Analysis",
                         "trigger": target_nameservers,

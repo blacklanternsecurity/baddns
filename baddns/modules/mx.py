@@ -48,6 +48,7 @@ class BadDNS_mx(BadDNS_base):
                             "target": self.target_dnsmanager.target,
                             "description": f"MX {whois_finding}",
                             "confidence": "CONFIRMED",
+                            "severity": "MEDIUM",
                             "signature": "N/A",
                             "indicator": "Whois Data",
                             "trigger": whois_domain,

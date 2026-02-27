@@ -89,6 +89,7 @@ class BadDNS_zonetransfer(BadDNS_base):
                         "target": self.target_dnsmanager.target,
                         "description": "Successful Zone Transfer",
                         "confidence": "CONFIRMED",
+                        "severity": "INFORMATIONAL",
                         "signature": "N/A",
                         "indicator": "Successful XFR Request",
                         "trigger": self.zone_nameservers,
