@@ -85,7 +85,11 @@ class Matcher:
             if match_func:
                 result = match_func(matcher)
                 results.append(result)
+            else:
+                log.warning(f"Unsupported matcher type: {match_type}, skipping")
 
+        if not results:
+            return False
         if matchers_condition == "and":
             return all(results)
         elif matchers_condition == "or":
