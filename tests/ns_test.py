@@ -65,3 +65,20 @@ async def test_ns_nosoa_generic(fs, configure_mock_resolver):
         "module": "NS",
     }
     assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+async def test_ns_label_too_long(fs, configure_mock_resolver):
+    mock_data = {}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "a" * 64 + ".bad.dns"
+    mock_signature_load(fs, "dnsreaper_wordpress_com_ns.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_ns = BadDNS_ns(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_ns.dispatch():
+        findings = baddns_ns.analyze()
+
+    assert not findings
