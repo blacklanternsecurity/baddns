@@ -1,13 +1,13 @@
 identifiers:
   cnames:
   - type: word
-    value: host.launchrock.com
+    value: launchrock.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - status: 0
+  - status: 404
     type: status
   matchers-condition: and
 mode: http
