@@ -9,7 +9,7 @@ from .errors import BadDNSSignatureException
 from .signature import BadDNSSignature
 
 
-def load_signatures(signatures_dir=None):
+def load_signatures(signatures_dir=None, signature_filter=None):
     signatures = []
     if signatures_dir:
         if not os.path.exists(signatures_dir):
@@ -22,6 +22,9 @@ def load_signatures(signatures_dir=None):
 
     for filename in os.listdir(signatures_dir):
         if filename.endswith(".yml"):
+            sig_name = filename[:-4]  # strip .yml
+            if signature_filter and sig_name not in signature_filter:
+                continue
             file_path = os.path.join(signatures_dir, filename)
 
             # Open each file and load the YAML contents
@@ -34,6 +37,10 @@ def load_signatures(signatures_dir=None):
             except BadDNSSignatureException as e:
                 log.error(f"Error loading signature from {filename}: {e}")
     if len(signatures) == 0:
+        if signature_filter:
+            raise BadDNSSignatureException(
+                f"No signatures matched the provided filter: {', '.join(signature_filter)}"
+            )
         raise BadDNSSignatureException(f"No signatures were successfuly loaded from [{signatures_dir}]")
     else:
         log.debug(f"Loaded [{str(len(signatures))}] signatures from [{signatures_dir}]")

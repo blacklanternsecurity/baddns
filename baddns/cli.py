@@ -122,7 +122,15 @@ async def _main():
         "-l", "--list-modules", action="store_true", help="List available modules and their descriptions."
     )
 
+    parser.add_argument("-L", "--list-signatures", action="store_true", help="List available signatures.")
+
     parser.add_argument("-s", "--silent", action="store_true", help="Only show results, no other output (JSON format)")
+
+    parser.add_argument(
+        "-S",
+        "--signatures",
+        help="Comma separated list of signature names to use. Ex: dnsreaper_agilecrm,baddns_aws-bucket-website",
+    )
 
     parser.add_argument(
         "-m",
@@ -145,8 +153,18 @@ async def _main():
         print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
         print_version()
 
-    if not args.target and not args.list_modules:
+    if not args.target and not args.list_modules and not args.list_signatures:
         parser.error("the following arguments are required: target")
+
+    if args.list_signatures:
+        from importlib import resources as importlib_resources
+
+        sig_dir = Path(args.custom_signatures) if args.custom_signatures else Path(str(importlib_resources.files("baddns") / "signatures"))
+        sig_names = sorted(f.stem for f in sig_dir.glob("*.yml"))
+        print("Available Signatures:")
+        for name in sig_names:
+            print(f"  {name}")
+        sys.exit(0)
 
     if args.list_modules:
         r = get_all_modules()
@@ -192,7 +210,11 @@ async def _main():
         custom_nameservers = args.custom_nameservers.split(",")
         log.info(f"Using custom nameservers: [{', '.join(custom_nameservers)}]")
 
-    signatures = load_signatures(signatures_dir=custom_signatures)
+    signature_filter = None
+    if args.signatures:
+        signature_filter = set(s.strip() for s in args.signatures.split(","))
+
+    signatures = load_signatures(signatures_dir=custom_signatures, signature_filter=signature_filter)
 
     for ModuleClass in modules_to_execute:
         await execute_module(
