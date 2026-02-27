@@ -1,7 +1,7 @@
 import pytest
 import requests
 import functools
-from mock import patch
+from unittest.mock import patch
 
 from baddns.modules.references import BadDNS_references
 from baddns.lib.loader import load_signatures
@@ -42,7 +42,7 @@ mock_references_http_js_cname = """
 </head>
 <body>
     <h1>Hello, World!</h1>
-    <script src="http://css.baddnscdn.com/script.js"></script>
+    <script src="http://js.baddnscdn.com/script.js"></script>
 </body>
 </html>
 """
@@ -62,8 +62,28 @@ mock_references_http_js_direct = """
 </html>
 """
 
+mock_references_headers_csp = {
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "script-src 'self' direct.azurewebsites.net http://direct2.azurewebsites.net; "
+        "img-src 'self' direct.azurewebsites.net http://direct2.azurewebsites.net; "
+        "connect-src 'self' direct.azurewebsites.net http://direct2.azurewebsites.net;"
+    ),
+    "Content-Type": "text/html; charset=UTF-8",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+}
+
+mock_references_headers_cors = {
+    "Server": "Apache/2.4.52 (Ubuntu)",
+    "Access-Control-Allow-Origin": "https://direct.azurewebsites.net",
+    "Content-Length": "2",
+}
+
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
@@ -85,17 +105,19 @@ async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cac
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, CSS Include. Original Event: [CNAME unregistered]",
+            "description": "Hijackable reference, CSS Include [css.baddnscdn.com]. Original Event: [CNAME unregistered]",
             "confidence": "CONFIRMED",
+            "severity": "MEDIUM",
             "signature": "N/A",
             "indicator": "Whois Data",
-            "trigger": "CSS Source: [http://css.baddnscdn.com/style.css]",
+            "trigger": "CSS Source: [http://css.baddnscdn.com/style.css], Original Trigger: [css.baddnscdn.com] Direct Mode: [True]",
             "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
@@ -117,21 +139,23 @@ async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cach
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, JS Include. Original Event: [CNAME unregistered]",
+            "description": "Hijackable reference, JS Include [js.baddnscdn.com]. Original Event: [CNAME unregistered]",
             "confidence": "CONFIRMED",
+            "severity": "MEDIUM",
             "signature": "N/A",
             "indicator": "Whois Data",
-            "trigger": "Javascript Source: [http://css.baddnscdn.com/script.js]",
+            "trigger": "Javascript Source: [http://js.baddnscdn.com/script.js], Original Trigger: [js.baddnscdn.com] Direct Mode: [True]",
             "module": "references",
         }
+
         assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}, "_NXDOMAIN": ["direct.azurewebsites.net"]}
-
         mock_resolver = configure_mock_resolver(mock_data)
         mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
@@ -150,21 +174,22 @@ async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cac
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, JS Include. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
-            "confidence": "PROBABLE",
+            "description": "Hijackable reference, JS Include [direct.azurewebsites.net]. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
+            "confidence": "HIGH",
+            "severity": "MEDIUM",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
-            "trigger": "Javascript Source: [http://direct.azurewebsites.net/script.js]",
+            "trigger": "Javascript Source: [http://direct.azurewebsites.net/script.js], Original Trigger: [self] Direct Mode: [True]",
             "module": "references",
         }
         assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}, "_NXDOMAIN": ["direct.azurewebsites.net"]}
-
         mock_resolver = configure_mock_resolver(mock_data)
         mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
 
@@ -183,11 +208,102 @@ async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, ca
 
         expected = {
             "target": "bad.dns",
-            "description": "Hijackable reference, CSS Include. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
-            "confidence": "PROBABLE",
+            "description": "Hijackable reference, CSS Include [direct.azurewebsites.net]. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
+            "confidence": "HIGH",
+            "severity": "MEDIUM",
             "signature": "Microsoft Azure Takeover Detection",
             "indicator": "azurewebsites.net",
-            "trigger": "CSS Source: [http://direct.azurewebsites.net/style.css]",
+            "trigger": "CSS Source: [http://direct.azurewebsites.net/style.css], Original Trigger: [self] Direct Mode: [True]",
             "module": "references",
         }
+
+        assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_references_direct_csp(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+    with patch("sys.exit") as exit_mock:
+        mock_data = {
+            "bad.dns": {"A": ["127.0.0.1"]},
+            "_NXDOMAIN": ["direct.azurewebsites.net", "direct2.azurewebsites.net"],
+        }
+        mock_resolver = configure_mock_resolver(mock_data)
+        mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+        httpx_mock.add_response(
+            url="http://bad.dns/",
+            status_code=200,
+            text="OK",
+            headers=mock_references_headers_csp,
+        )
+        target = "bad.dns"
+        signatures = load_signatures("/tmp/signatures")
+        baddns_references = BadDNS_references(target, signatures=signatures, dns_client=mock_resolver)
+        findings = None
+        if await baddns_references.dispatch():
+            findings = baddns_references.analyze()
+        assert not exit_mock.called
+
+        expected_1 = {
+            "target": "bad.dns",
+            "description": "Hijackable reference, CSP domain [direct.azurewebsites.net]. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
+            "confidence": "HIGH",
+            "severity": "MEDIUM",
+            "signature": "Microsoft Azure Takeover Detection",
+            "indicator": "azurewebsites.net",
+            "trigger": "Content-Security-Policy Header: [direct.azurewebsites.net], Original Trigger: [self] Direct Mode: [True]",
+            "module": "references",
+        }
+        expected_2 = {
+            "target": "bad.dns",
+            "description": "Hijackable reference, CSP domain [direct2.azurewebsites.net]. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
+            "confidence": "HIGH",
+            "severity": "MEDIUM",
+            "signature": "Microsoft Azure Takeover Detection",
+            "indicator": "azurewebsites.net",
+            "trigger": "Content-Security-Policy Header: [http://direct2.azurewebsites.net], Original Trigger: [self] Direct Mode: [True]",
+            "module": "references",
+        }
+
+        assert any(expected_1 == finding.to_dict() for finding in findings)
+        assert any(expected_2 == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_references_direct_cors(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+    with patch("sys.exit") as exit_mock:
+        mock_data = {
+            "bad.dns": {"A": ["127.0.0.1"]},
+            "_NXDOMAIN": ["direct.azurewebsites.net", "direct2.azurewebsites.net"],
+        }
+        mock_resolver = configure_mock_resolver(mock_data)
+        mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+        httpx_mock.add_response(
+            url="http://bad.dns/",
+            status_code=200,
+            text="OK",
+            headers=mock_references_headers_cors,
+        )
+        target = "bad.dns"
+        signatures = load_signatures("/tmp/signatures")
+        baddns_references = BadDNS_references(target, signatures=signatures, dns_client=mock_resolver)
+        findings = None
+        if await baddns_references.dispatch():
+            findings = baddns_references.analyze()
+        assert not exit_mock.called
+
+        expected = {
+            "target": "bad.dns",
+            "description": "Hijackable reference, CORS header domain [direct.azurewebsites.net]. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
+            "confidence": "HIGH",
+            "severity": "MEDIUM",
+            "signature": "Microsoft Azure Takeover Detection",
+            "indicator": "azurewebsites.net",
+            "trigger": "Access-Control-Allow-Origin Header: [https://direct.azurewebsites.net], Original Trigger: [self] Direct Mode: [True]",
+            "module": "references",
+        }
+
         assert any(expected == finding.to_dict() for finding in findings)

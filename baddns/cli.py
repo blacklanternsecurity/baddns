@@ -8,7 +8,7 @@ import sys
 import asyncio
 import argparse
 import logging
-import pkg_resources
+from pathlib import Path
 
 from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 from .lib.logging import setup_logging
@@ -32,10 +32,13 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
 
 def print_version():
-    version = pkg_resources.get_distribution("baddns").version
-    if version == "1.0.0":
-        version = "Unknown (Running w/poetry?)"
-    print(f"Version - {version}\n")
+    try:
+        base = Path(__file__).parent.parent
+        dist_info = next(base.glob("baddns-*.dist-info"))
+        version_str = dist_info.name.replace(".dist-info", "").split("-", 1)[1]
+    except StopIteration:
+        version_str = "Unknown (Running w/poetry?)"
+    print(f"Version - {version_str}\n")
 
 
 def validate_target(
@@ -72,10 +75,12 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
     return arg_value
 
 
-async def execute_module(ModuleClass, target, custom_nameservers, signatures):
+async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False, direct_mode=False):
     findings = None
     try:
-        module_instance = ModuleClass(target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True)
+        module_instance = ModuleClass(
+            target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True, direct_mode=direct_mode
+        )
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
         raise BadDNSCLIException(f"Error loading signatures: {e}")
@@ -84,9 +89,12 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures):
     if await module_instance.dispatch():
         findings = module_instance.analyze()
         if findings:
-            print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
+            if not silent:
+                print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
             for finding in findings:
-                print(finding.to_dict())
+                print(finding.to_json())
+
+    await module_instance.cleanup()
     return findings
 
 
@@ -96,8 +104,6 @@ async def _main():
     log = logging.getLogger("baddns")
 
     parser = CustomArgumentParser(description="Check subdomains for subdomain takeovers and other DNS tomfoolery")
-    print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
-    print_version()
 
     parser.add_argument(
         "-n",
@@ -116,6 +122,8 @@ async def _main():
         "-l", "--list-modules", action="store_true", help="List available modules and their descriptions."
     )
 
+    parser.add_argument("-s", "--silent", action="store_true", help="Only show results, no other output (JSON format)")
+
     parser.add_argument(
         "-m",
         "--modules",
@@ -124,9 +132,18 @@ async def _main():
     )
 
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument("-D", "--direct", action="store_true", help="Enable direct mode")
 
     parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
+
+    silent = bool(args.silent)
+
+    if silent:
+        log.setLevel(logging.ERROR)
+    else:
+        print(f"{Fore.GREEN}{ascii_art_banner}{Style.RESET_ALL}")
+        print_version()
 
     if not args.target and not args.list_modules:
         parser.error("the following arguments are required: target")
@@ -144,15 +161,26 @@ async def _main():
     # Get all available modules
     all_modules = get_all_modules()
 
-    # If the user provided the -m or --modules argument, filter the modules accordingly
-    if args.modules:
-        included_module_names = [name.strip().upper() for name in args.modules.split(",")]
-        modules_to_execute = [module for module in all_modules if module.name.upper() in included_module_names]
-    else:
-        modules_to_execute = all_modules  # Default to all modules if -m is not provided
-        log.info(
-            f"Running with all modules [{', '.join([module.name for module in modules_to_execute])}] (-m to specify)"
+    direct_mode = False
+
+    # if direct mode was specified, only the CNAME module will run
+    if args.direct:
+        log.warning(
+            "Direct mode specified. Only the CNAME module is enabled. Positive results may not be immediately exploitable without corresponding DNS records pointing to it (e.g., CNAME), or some other external resource which may try to interact with it"
         )
+        modules_to_execute = [module for module in all_modules if module.name.upper() == "CNAME"]
+        direct_mode = True
+
+    else:
+        # If the user provided the -m or --modules argument, filter the modules accordingly
+        if args.modules:
+            included_module_names = [name.strip().upper() for name in args.modules.split(",")]
+            modules_to_execute = [module for module in all_modules if module.name.upper() in included_module_names]
+        else:
+            modules_to_execute = all_modules  # Default to all modules if -m is not provided
+            log.info(
+                f"Running with all modules [{', '.join([module.name for module in modules_to_execute])}] (-m to specify)"
+            )
 
     custom_signatures = None
     if args.custom_signatures:
@@ -167,7 +195,9 @@ async def _main():
     signatures = load_signatures(signatures_dir=custom_signatures)
 
     for ModuleClass in modules_to_execute:
-        await execute_module(ModuleClass, args.target, custom_nameservers, signatures)
+        await execute_module(
+            ModuleClass, args.target, custom_nameservers, signatures, silent=silent, direct_mode=direct_mode
+        )
 
 
 def main():
@@ -185,9 +215,9 @@ def main():
 
 ascii_art_banner = """
   __ )              |      |              
-  __ \    _` |   _` |   _` |  __ \    __| 
-  |   |  (   |  (   |  (   |  |   | \__ \ 
- ____/  \__,_| \__,_| \__,_| _|  _| ____/ 
+  __ \\    _` |   _` |   _` |  __ \\    __| 
+  |   |  (   |  (   |  (   |  |   | \\__ \\ 
+ ____/  \\__,_| \\__,_| \\__,_| _|  _| ____/ 
                                           
 """
 

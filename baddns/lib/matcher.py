@@ -44,7 +44,7 @@ class Matcher:
             text = self.response.text
 
         # we can ignore this because are already adding these entries into the identifiers
-        elif part == "host":
+        elif part in ("host", "cname"):
             return True
         else:
             raise ValueError(f"Unknown part: {part}")
@@ -86,6 +86,8 @@ class Matcher:
                 result = match_func(matcher)
                 results.append(result)
 
+        if not results:
+            return False
         if matchers_condition == "and":
             return all(results)
         elif matchers_condition == "or":

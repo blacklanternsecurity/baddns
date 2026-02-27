@@ -1,0 +1,22 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "There doesn\u2019t seem to be an active status page associated with this URL."
+    - Please check the URL and try again.
+  - status: 404
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Squadcast Takeover Detection
+source: nucleitemplates

@@ -123,7 +123,7 @@ def test_matcher_4(httpx_mock):
       - Host != ip
       type: dsl
     - regex:
-      - 'regex_matcher_test_\d{1,4}'
+      - 'regex_matcher_test_\\d{1,4}'
       type: regex
     matchers-condition: and
   mode: http

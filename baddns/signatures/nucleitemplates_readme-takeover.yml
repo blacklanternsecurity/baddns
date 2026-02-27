@@ -15,5 +15,5 @@ matcher_rule:
     - Project doesnt exist... yet!
   matchers-condition: and
 mode: http
-service_name: Readme Takeover Detection
+service_name: Readme.io Takeover Detection
 source: nucleitemplates

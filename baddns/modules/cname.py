@@ -75,6 +75,12 @@ class BadDNS_cname(BadDNS_base):
             for sig in self.signatures:
                 if sig.signature["mode"] == "dns_nxdomain":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
+                    if any(
+                        self.cname_dnsmanager.target.endswith(nc["value"])
+                        for nc in sig.signature["identifiers"]["not_cnames"]
+                    ):
+                        log.debug(f"not_cnames exclusion matched, skipping {sig.signature['service_name']}")
+                        continue
                     sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
                     for sig_cname in sig_cnames:
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
@@ -87,7 +93,8 @@ class BadDNS_cname(BadDNS_base):
                                     {
                                         "target": self.target_dnsmanager.target,
                                         "description": f"Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
-                                        "confidence": "PROBABLE",
+                                        "confidence": "HIGH",
+                                        "severity": "MEDIUM",
                                         "signature": sig.signature["service_name"],
                                         "indicator": indicator,
                                         "trigger": trigger,
@@ -107,7 +114,8 @@ class BadDNS_cname(BadDNS_base):
                         {
                             "target": self.target_dnsmanager.target,
                             "description": f"Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-                            "confidence": "POSSIBLE",
+                            "confidence": "MODERATE",
+                            "severity": "MEDIUM",
                             "signature": "GENERIC",
                             "indicator": "Generic Dangling CNAME",
                             "trigger": trigger,
@@ -157,6 +165,14 @@ class BadDNS_cname(BadDNS_base):
                             continue
                         log.debug("passed IPS")
 
+                    if len(sig.signature["identifiers"]["not_cnames"]) > 0:
+                        if any(
+                            not_cname_dict["value"] in self.subject
+                            for not_cname_dict in sig.signature["identifiers"]["not_cnames"]
+                        ):
+                            log.debug(f"not_cnames exclusion matched for {self.subject}, skipping")
+                            continue
+
                     m = Matcher(sig.signature)
                     log.debug("Checking for HTTP matches")
                     if any(m.is_match(hr) for hr in http_results if hr is not None):
@@ -167,7 +183,8 @@ class BadDNS_cname(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": f"Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-                                    "confidence": "PROBABLE",
+                                    "confidence": "HIGH",
+                                    "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": sig.summarize_matcher_rule(),
                                     "trigger": trigger,
@@ -185,6 +202,7 @@ class BadDNS_cname(BadDNS_base):
                             "target": self.target_dnsmanager.target,
                             "description": f"CNAME {whois_finding}",
                             "confidence": "CONFIRMED",
+                            "severity": "MEDIUM",
                             "signature": "N/A",
                             "indicator": "Whois Data",
                             "trigger": self.subject,
@@ -194,3 +212,8 @@ class BadDNS_cname(BadDNS_base):
                 )
 
         return findings
+
+    async def cleanup(self):
+        if self.target_httpmanager:
+            await self.target_httpmanager.close()
+            log.debug("HTTP Manager cleaned up successfully.")

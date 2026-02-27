@@ -1,0 +1,19 @@
+identifiers:
+  cnames:
+  - type: word
+    value: redirect.pizza
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Your DNS is pointing to redirect.pizza but no redirect can be found for this
+      domain.
+  matchers-condition: and
+mode: http
+service_name: Redirect.pizza Subdomain Takeover Detection
+source: nucleitemplates

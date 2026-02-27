@@ -1,60 +1,56 @@
-import sys
-
-
-# Temporary workaround for: https://github.com/blacklanternsecurity/baddns/issues/402
-class noop:
-    def __getattr__(self, item):
-        def method(*args, **kwargs):
-            pass  # Method does nothing
-
-        return method
-
-
-sys.modules["imp"] = noop()
-
-import os
-from contextlib import contextmanager
-
-
-# Another temporary workaround until https://github.com/richardpenman/whois gets updated version pushed to pypi :( :( :(
-@contextmanager
-def suppress_stdout():
-    original_stdout = sys.stdout
-    sys.stdout = open(os.devnull, "w")
-    try:
-        yield
-    finally:
-        sys.stdout = original_stdout
-
-
 import whois
 import logging
 import asyncio
 import tldextract
-from datetime import date, datetime, timedelta
+from datetime import datetime, timezone, timedelta, date
 from dateutil import parser as date_parser
-
+from whois.exceptions import PywhoisError
 
 log = logging.getLogger(__name__)
 
 
 class WhoisManager:
+    _cache = {}
+
     def __init__(self, target):
         self.target = target
         self.whois_result = None
 
+    @classmethod
+    def clear_cache(cls):
+        cls._cache.clear()
+
     async def dispatchWHOIS(self):
         ext = tldextract.extract(self.target)
-        log.debug(f"Extracted base domain [{ext.registered_domain}] from [{self.target}]")
-        log.debug(f"Submitting WHOIS query for {ext.registered_domain}")
+        if ext.registered_domain == "" or ext.registered_domain == None:
+            registered_domain = self.target
+        else:
+            registered_domain = ext.registered_domain
+
+        # Guard against empty/invalid domains
+        if not registered_domain or "." not in registered_domain:
+            log.debug(f"Skipping WHOIS for invalid domain [{registered_domain}] from [{self.target}]")
+            self.whois_result = {"type": "error", "data": "Invalid domain for WHOIS"}
+            return
+
+        if registered_domain in self._cache:
+            log.debug(f"Using cached WHOIS result for {registered_domain}")
+            self.whois_result = self._cache[registered_domain]
+            return
+
+        log.debug(f"Extracted base domain [{registered_domain}] from [{self.target}]")
+        log.debug(f"Submitting WHOIS query for {registered_domain}")
         try:
-            with suppress_stdout():
-                w = await asyncio.to_thread(whois.whois, ext.registered_domain)
-            log.debug(f"Got response to whois request for {ext.registered_domain}")
+            w = await asyncio.to_thread(whois.whois, registered_domain, quiet=True)
+            log.debug(f"Got response to whois request for {registered_domain}")
             self.whois_result = {"type": "response", "data": w}
-        except whois.parser.PywhoisError as e:
-            log.debug(f"Got PywhoisError for whois request for {ext.registered_domain}")
+        except PywhoisError as e:
+            log.debug(f"Got PywhoisError for whois request for {registered_domain}")
             self.whois_result = {"type": "error", "data": str(e)}
+        except Exception as e:
+            log.debug(f"Got unknown error from whois: {str(e)}")
+            self.whois_result = {"type": "error", "data": str(e)}
+        self._cache[registered_domain] = self.whois_result
 
     def analyzeWHOIS(self):
         if self.whois_result:
@@ -72,11 +68,17 @@ class WhoisManager:
                     log.debug("Expiration data:")
                     log.debug(expiration_data)
                     log.debug("Got multiple expiration dates. Falling back to the latest...")
-                    expiration_date = max(expiration_data)
-                else:
-                    expiration_date = expiration_data
 
-                expiration_date = self.date_parse(expiration_date)
+                    normalized_dates = [
+                        self.normalize_date(self.date_parse(date)) for date in expiration_data if self.date_parse(date)
+                    ]
+                    expiration_date = max(normalized_dates) if normalized_dates else None
+
+                else:
+                    expiration_date = self.date_parse(expiration_data)
+                    if expiration_date:
+                        expiration_date = self.normalize_date(expiration_date)
+
                 if expiration_date:
                     current_date = date.today()
                     expiration_plus_one = expiration_date.date() + timedelta(days=1)
@@ -109,3 +111,10 @@ class WhoisManager:
 
         log.debug(f"Unsupported date object type: {type(unknown_date)}. Value: {unknown_date}")
         return None
+
+    @staticmethod
+    def normalize_date(date):
+        if date.tzinfo is None:
+            return date.replace(tzinfo=timezone.utc)
+        else:
+            return date.astimezone(timezone.utc)

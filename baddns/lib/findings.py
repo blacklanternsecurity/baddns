@@ -1,6 +1,7 @@
 from baddns.base import BadDNS_base
 from .errors import BadDNSFindingException
 import logging
+import json
 
 log = logging.getLogger(__name__)
 
@@ -19,11 +20,18 @@ class Finding:
         self.finding_dict["description"] = description
 
         confidence = finding_dict.get("confidence", None)
-        if confidence == None or confidence not in ["CONFIRMED", "PROBABLE", "POSSIBLE", "UNLIKELY"]:
+        if confidence == None or confidence not in ["CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN"]:
             raise BadDNSFindingException(
-                "Confidence must be present and must be one of: CONFIRMED, PROBABLE, POSSIBLE, UNLIKELY"
+                "Confidence must be present and must be one of: CONFIRMED, HIGH, MODERATE, LOW, UNKNOWN"
             )
         self.finding_dict["confidence"] = confidence
+
+        severity = finding_dict.get("severity", None)
+        if severity == None or severity not in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL"]:
+            raise BadDNSFindingException(
+                "Severity must be present and must be one of: CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL"
+            )
+        self.finding_dict["severity"] = severity
 
         signature = finding_dict.get("signature", None)
         if not signature:
@@ -36,7 +44,7 @@ class Finding:
         self.finding_dict["indicator"] = indicator
 
         trigger = finding_dict.get("trigger", None)
-        if not indicator:
+        if not trigger:
             raise BadDNSFindingException("trigger is required in a Finding")
         if isinstance(trigger, list):
             trigger = ", ".join(trigger)
@@ -59,6 +67,9 @@ class Finding:
 
     def to_dict(self):
         return self.finding_dict
+
+    def to_json(self):
+        return json.dumps(self.finding_dict)
 
     def __str__(self):
         return str(self.finding_dict)

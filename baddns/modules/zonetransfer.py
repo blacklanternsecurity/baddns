@@ -60,7 +60,7 @@ class BadDNS_zonetransfer(BadDNS_base):
                 log.debug("dns.exception.FormError attempting zone transfer")
                 return False
             except Exception as e:
-                log.warning(f"Unknown error trying to perform zone transfer: [{e}]")
+                log.debug(f"Unknown error trying to perform zone transfer: [{e}]")
                 return False
             self.zone_nameservers.append(nameserver)
             self.parse_zone(zone)
@@ -75,7 +75,7 @@ class BadDNS_zonetransfer(BadDNS_base):
                 r = await self.zone_transfer(ns, self.target_dnsmanager.target)
                 if r:
                     zone_transfer_detected = True
-                    log.info(
+                    self.infomsg(
                         f"Successful Zone Transfer against NS [{ns}] for target [{self.target_dnsmanager.target}]"
                     )
         return zone_transfer_detected
@@ -89,6 +89,7 @@ class BadDNS_zonetransfer(BadDNS_base):
                         "target": self.target_dnsmanager.target,
                         "description": "Successful Zone Transfer",
                         "confidence": "CONFIRMED",
+                        "severity": "INFORMATIONAL",
                         "signature": "N/A",
                         "indicator": "Successful XFR Request",
                         "trigger": self.zone_nameservers,

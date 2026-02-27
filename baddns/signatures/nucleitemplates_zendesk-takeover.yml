@@ -8,12 +8,13 @@ matcher_rule:
   - dsl:
     - Host != ip
     type: dsl
-  - condition: or
+  - case-insensitive: true
+    condition: or
     part: body
     type: word
     words:
-    - this help center no longer exists
-    - Help Center Closed
+    - this help centre no longer exists
+    - Help Centre Closed
   matchers-condition: and
 mode: http
 service_name: Zendesk Takeover Detection

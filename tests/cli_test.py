@@ -1,7 +1,8 @@
 import os
 import sys
 import dns
-from mock import patch
+import pytest
+from unittest.mock import patch
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(f"{os.path.dirname(SCRIPT_DIR)}")
@@ -54,6 +55,7 @@ def test_cli_cname_nxdomain(monkeypatch, capsys, mocker, configure_mock_resolver
     assert "baddns.azurewebsites.net" in captured.out
 
 
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_resolver):
     monkeypatch.setattr(
         "sys.argv",
@@ -64,7 +66,7 @@ def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_
             "bad.dns",
         ],
     )
-    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": "127.0.0.1"}}
+    mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
     mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
 
@@ -78,3 +80,30 @@ def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_
     captured = capsys.readouterr()
     assert "Vulnerable!" in captured.out
     assert "Bigcartel Takeover Detection" in captured.out
+
+
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+def test_cli_direct(monkeypatch, capsys, mocker, httpx_mock, configure_mock_resolver):
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "python",
+            "--direct",
+            "bad.dns",
+        ],
+    )
+    mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+
+    httpx_mock.add_response(
+        url="http://bad.dns/",
+        status_code=200,
+        text="<li>BucketName: bad.dns</li>The specified bucket does not exist",
+    )
+
+    cli.main()
+    captured = capsys.readouterr()
+    assert "Direct mode specified. Only the CNAME module is enabled" in captured.err
+    assert "Vulnerable!" in captured.out
+    assert "AWS Bucket Takeover Detection" in captured.out

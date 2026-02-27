@@ -7,6 +7,10 @@ on:
       - unlabeled
       - review_requested
 
+permissions:
+  pull-requests: read
+  contents: read
+
 jobs:
   check-label:
     runs-on: ubuntu-latest

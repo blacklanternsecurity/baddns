@@ -15,6 +15,9 @@ class BadDNS_ns(BadDNS_base):
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
+
+        self._dnswalk_kwargs = kwargs
+
         self.target_dnsmanager = DNSManager(
             target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
         )
@@ -33,7 +36,12 @@ class BadDNS_ns(BadDNS_base):
 
         await self.target_dnsmanager.dispatchDNS(omit_types=["CNAME", "NS"])
 
-        dnswalk = DnsWalk(self.target_dnsmanager)
+        dnswalk = DnsWalk(
+            self.target_dnsmanager,
+            raw_query_max_retries=self._dnswalk_kwargs.get("raw_query_max_retries", 6),
+            raw_query_timeout=self._dnswalk_kwargs.get("raw_query_timeout", 6.0),
+            raw_query_retry_wait=self._dnswalk_kwargs.get("raw_query_retry_wait", 3),
+        )
         self.target_dnsmanager.answers["NS"] = await dnswalk.ns_trace(self.target)
         return True
 
@@ -74,7 +82,8 @@ class BadDNS_ns(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": "Dangling NS Records (NS records without SOA) with known impact",
-                                    "confidence": "PROBABLE",
+                                    "confidence": "HIGH",
+                                    "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": f"DnsWalk Analysis with signature match: {r[1]}",
                                     "trigger": target_nameservers,
@@ -94,7 +103,8 @@ class BadDNS_ns(BadDNS_base):
                     {
                         "target": self.target_dnsmanager.target,
                         "description": "Dangling NS Records (NS records without SOA)",
-                        "confidence": "POSSIBLE",
+                        "confidence": "MODERATE",
+                        "severity": "MEDIUM",
                         "signature": "N/A",
                         "indicator": "DNSWalk Analysis",
                         "trigger": target_nameservers,

@@ -17,6 +17,7 @@ with open(local_test_file, "r") as real_file:
 @pytest.fixture()
 def mock_dispatch_whois(request, monkeypatch):
     value = getattr(request, "param", None)
+    WhoisManager.clear_cache()
 
     async def fake_dispatch_whois(self):
         print(f"Running mock_dispatch_whois with value: [{value}]")
@@ -57,8 +58,12 @@ def dnswalk_harness(request, monkeypatch):
     mock_data = getattr(request, "param", {})
 
     def init_wrapper(mock_data):
-        def mock_init(self):
-            pass
+        def mock_init(self, dns_manager, *args, **kwargs):  # dns_manager as positional, others as kwargs
+            # Manually set the attributes that are normally initialized
+            self.dns_manager = dns_manager
+            self.raw_query_max_retries = kwargs.get("raw_query_max_retries", 6)
+            self.raw_query_timeout = kwargs.get("raw_query_timeout", 6.0)
+            self.raw_query_retry_wait = kwargs.get("raw_query_retry_wait", 3)
 
         return mock_init
 

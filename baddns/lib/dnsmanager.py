@@ -67,19 +67,29 @@ class DNSManager:
 
             rdtype = str(record.rdtype.name).upper()
             if rdtype in ("A", "AAAA", "NS", "CNAME", "PTR"):
-                results.add(self._clean_dns_record(record))
+                cleaned = self._clean_dns_record(record)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "SOA":
-                results.add(self._clean_dns_record(record.mname))
+                cleaned = self._clean_dns_record(record.mname)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "MX":
-                results.add(self._clean_dns_record(record.exchange))
+                cleaned = self._clean_dns_record(record.exchange)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "SRV":
-                results.add(self._clean_dns_record(record.target))
+                cleaned = self._clean_dns_record(record.target)
+                if cleaned:
+                    results.add(cleaned)
             elif rdtype == "TXT":
                 for s in record.strings:
                     s = s.decode()
                     results.add(s)
             elif rdtype == "NSEC":
-                results.add(self._clean_dns_record(record.next))
+                cleaned = self._clean_dns_record(record.next)
+                if cleaned:
+                    results.add(cleaned)
             else:
                 log.debug(f'Unknown DNS record type "{rdtype}"')
         return list(results)
@@ -97,9 +107,6 @@ class DNSManager:
         except dns.resolver.LifetimeTimeout as e:
             log.debug(f"Dns Timeout: {e}")
             return
-        except dns.resolver.NoNameservers:
-            log.debug(f"All nameservers failed to answer the query")
-            return
         except Exception as e:
             log.warning(f"Unknown error resolving DNS: [{e}]")
             return
@@ -116,11 +123,12 @@ class DNSManager:
                     result_cname = r[0]
                     cname_chain.append(result_cname)
                     target = result_cname
+
                     try:
                         r = self.process_answer(await self.dns_client.resolve(target, "CNAME"), "CNAME")
                         if len(r) == 0:
                             break
-                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
+                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers) as e:
                         log.debug(f"Error resolving cname chain: {e}")
                         break
                 return cname_chain
@@ -139,8 +147,4 @@ class DNSManager:
             tasks.append((task, rdatatype))  # Store the task along with its rdatatype
 
         for task, rdatatype in tasks:  # Unpack the task and its corresponding rdatatype
-            try:
-                self.answers[rdatatype] = await task
-            except dns.resolver.LifetimeTimeout:
-                log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
-                self.answers[rdatatype] = None
+            self.answers[rdatatype] = await task

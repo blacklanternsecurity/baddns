@@ -3,14 +3,14 @@ from baddns.modules.nsec import BadDNS_nsec
 
 
 @pytest.mark.asyncio
-async def test_nsec_match(fs, mock_dispatch_whois, configure_mock_resolver):
+async def test_nsec_match(mock_dispatch_whois, configure_mock_resolver):
     mock_data = {
-        "bad.dns": {"NSEC": ["asdf.bad.dns"]},
-        "asdf.bad.dns": {"NSEC": ["zzzz.bad.dns"]},
-        "zzzz.bad.dns": {"NSEC": ["xyz.bad.dns"]},
+        "bad.com": {"NSEC": ["asdf.bad.com"]},
+        "asdf.bad.com": {"NSEC": ["zzzz.bad.com"]},
+        "zzzz.bad.com": {"NSEC": ["xyz.bad.com"]},
     }
     mock_resolver = configure_mock_resolver(mock_data)
-    target = "bad.dns"
+    target = "bad.com"
 
     baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
 
@@ -20,28 +20,29 @@ async def test_nsec_match(fs, mock_dispatch_whois, configure_mock_resolver):
 
     assert findings
     expected = {
-        "target": "bad.dns",
-        "description": "DNSSEC NSEC Zone Walking Enabled for domain: [bad.dns]",
+        "target": "bad.com",
+        "description": "DNSSEC NSEC Zone Walking Enabled for domain: [bad.com]",
         "confidence": "CONFIRMED",
+        "severity": "INFORMATIONAL",
         "signature": "N/A",
         "indicator": "NSEC Records",
-        "trigger": "bad.dns",
+        "trigger": "bad.com",
         "module": "NSEC",
-        "found_domains": ["asdf.bad.dns", "zzzz.bad.dns", "xyz.bad.dns"],
+        "found_domains": ["asdf.bad.com", "zzzz.bad.com", "xyz.bad.com"],
     }
     assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
-async def test_nsec_preventloop(fs, mock_dispatch_whois, configure_mock_resolver):
+async def test_nsec_preventloop(mock_dispatch_whois, configure_mock_resolver):
     mock_data = {
-        "wat.bad.dns": {"NSEC": ["asdf.bad.dns"]},
-        "asdf.bad.dns": {"NSEC": ["zzzz.bad.dns"]},
-        "zzzz.bad.dns": {"NSEC": ["xyz.bad.dns"]},
-        "xyz.bad.dns": {"NSEC": ["wat.bad.dns"]},
+        "wat.bad.com": {"NSEC": ["asdf.bad.com"]},
+        "asdf.bad.com": {"NSEC": ["zzzz.bad.com"]},
+        "zzzz.bad.com": {"NSEC": ["xyz.bad.com"]},
+        "xyz.bad.com": {"NSEC": ["wat.bad.com"]},
     }
     mock_resolver = configure_mock_resolver(mock_data)
-    target = "wat.bad.dns"
+    target = "wat.bad.com"
 
     baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
 
@@ -54,25 +55,26 @@ async def test_nsec_preventloop(fs, mock_dispatch_whois, configure_mock_resolver
     for f in findings:
         print(f.to_dict())
     expected = {
-        "target": "wat.bad.dns",
-        "description": "DNSSEC NSEC Zone Walking Enabled for domain: [wat.bad.dns]",
+        "target": "wat.bad.com",
+        "description": "DNSSEC NSEC Zone Walking Enabled for domain: [wat.bad.com]",
         "confidence": "CONFIRMED",
+        "severity": "INFORMATIONAL",
         "signature": "N/A",
         "indicator": "NSEC Records",
-        "trigger": "wat.bad.dns",
+        "trigger": "wat.bad.com",
         "module": "NSEC",
-        "found_domains": ["asdf.bad.dns", "zzzz.bad.dns", "xyz.bad.dns"],
+        "found_domains": ["asdf.bad.com", "zzzz.bad.com", "xyz.bad.com"],
     }
     assert any(expected == finding.to_dict() for finding in findings)
 
 
 @pytest.mark.asyncio
-async def test_nsec_preventwildcard(fs, mock_dispatch_whois, configure_mock_resolver):
+async def test_nsec_preventwildcard(mock_dispatch_whois, configure_mock_resolver):
     mock_data = {
-        "wat.bad.dns": {"NSEC": ["wat.bad.dns"]},
-        "asdf.bad.dns": {"NSEC": ["asdf.bad.dns"]},
-        "zzzz.bad.dns": {"NSEC": ["zzzz.bad.dns"]},
-        "xyz.bad.dns": {"NSEC": ["xyz.bad.dns"]},
+        "wat.bad.com": {"NSEC": ["wat.bad.com"]},
+        "asdf.bad.com": {"NSEC": ["asdf.bad.com"]},
+        "zzzz.bad.com": {"NSEC": ["zzzz.bad.com"]},
+        "xyz.bad.com": {"NSEC": ["xyz.bad.com"]},
     }
     mock_resolver = configure_mock_resolver(mock_data)
 
@@ -84,3 +86,63 @@ async def test_nsec_preventwildcard(fs, mock_dispatch_whois, configure_mock_reso
             findings = baddns_nsec.analyze()
         print(findings)
         assert not findings
+
+
+@pytest.mark.asyncio
+async def test_nsec_cname_false_positive(mock_dispatch_whois, configure_mock_resolver):
+    """Target is a CNAME to a CDN. NSEC records belong to the CDN zone, not the target.
+    This should be skipped to avoid false positives."""
+    mock_data = {
+        "sub.example.com": {"CNAME": ["cdn.provider.com"]},
+        "cdn.provider.com": {"NSEC": ["cdn2.provider.com"]},
+        "cdn2.provider.com": {"NSEC": ["cdn3.provider.com"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "sub.example.com"
+
+    baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_nsec.dispatch():
+        findings = baddns_nsec.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+async def test_nsec_empty_chain(mock_dispatch_whois, configure_mock_resolver):
+    """NSEC record exists but walk discovers no new domains. Should not be a finding."""
+    mock_data = {
+        "bad.com": {"NSEC": ["\\000.bad.com"]},
+        "\\000.bad.com": {"NSEC": []},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "bad.com"
+
+    baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_nsec.dispatch():
+        findings = baddns_nsec.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+async def test_nsec_all_nonmatching(mock_dispatch_whois, configure_mock_resolver):
+    """All NSEC walk results are outside the target's base domain. Should not be a finding."""
+    mock_data = {
+        "bad.com": {"NSEC": ["foo.other.com"]},
+        "foo.other.com": {"NSEC": ["bar.other.com"]},
+        "bar.other.com": {"NSEC": ["baz.other.com"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "bad.com"
+
+    baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_nsec.dispatch():
+        findings = baddns_nsec.analyze()
+
+    assert not findings

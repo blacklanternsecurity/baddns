@@ -7,12 +7,11 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - This is a surprise. The
-    - you're looking for isn't here.
+    - The link to this Simplebooklet may have changed
   matchers-condition: and
 mode: http
 service_name: simplebooklet.com
