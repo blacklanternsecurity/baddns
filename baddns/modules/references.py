@@ -1,4 +1,5 @@
 import re
+import asyncio
 
 from baddns.base import BadDNS_base
 from baddns.lib.dnsmanager import DNSManager
@@ -141,14 +142,10 @@ class BadDNS_references(BadDNS_base):
         log.debug(f"Completed parsing body content. Total results: {len(results)}")
         return results
 
-    async def process_cname_analysis(self, parsed_results):
-        cname_findings = []
-        for pr in parsed_results:
-            if pr["domain"] == self.target:
-                log.debug(f"Found domain matches target ({self.target}), ignoring")
-                continue
+    async def _check_single_domain(self, pr, semaphore):
+        findings = []
+        async with semaphore:
             log.debug(f"Initializing cname instance for target {pr['domain']}")
-
             for direct_mode in [True, False]:
                 cname_instance = BadDNS_cname(
                     pr["domain"],
@@ -159,15 +156,32 @@ class BadDNS_references(BadDNS_base):
                     http_client_class=self.http_client_class,
                     dns_client=self.dns_client,
                 )
-                if await cname_instance.dispatch():
-                    finding = {
-                        "finding": cname_instance.analyze(),
-                        "description": pr["description"],
-                        "trigger": pr["trigger"],
-                        "direct_mode": direct_mode,
-                    }
-                    cname_findings.append(finding)
-                await cname_instance.cleanup()
+                try:
+                    if await cname_instance.dispatch():
+                        findings.append(
+                            {
+                                "finding": cname_instance.analyze(),
+                                "description": pr["description"],
+                                "trigger": pr["trigger"],
+                                "direct_mode": direct_mode,
+                            }
+                        )
+                finally:
+                    await cname_instance.cleanup()
+        return findings
+
+    async def process_cname_analysis(self, parsed_results):
+        semaphore = asyncio.Semaphore(5)
+        tasks = []
+        for pr in parsed_results:
+            if pr["domain"] == self.target:
+                log.debug(f"Found domain matches target ({self.target}), ignoring")
+                continue
+            tasks.append(self._check_single_domain(pr, semaphore))
+        results = await asyncio.gather(*tasks)
+        cname_findings = []
+        for result in results:
+            cname_findings.extend(result)
         return cname_findings
 
     async def dispatch(self):

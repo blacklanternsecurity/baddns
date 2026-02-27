@@ -10,9 +10,15 @@ log = logging.getLogger(__name__)
 
 
 class WhoisManager:
+    _cache = {}
+
     def __init__(self, target):
         self.target = target
         self.whois_result = None
+
+    @classmethod
+    def clear_cache(cls):
+        cls._cache.clear()
 
     async def dispatchWHOIS(self):
         ext = tldextract.extract(self.target)
@@ -26,6 +32,12 @@ class WhoisManager:
             log.debug(f"Skipping WHOIS for invalid domain [{registered_domain}] from [{self.target}]")
             self.whois_result = {"type": "error", "data": "Invalid domain for WHOIS"}
             return
+
+        if registered_domain in self._cache:
+            log.debug(f"Using cached WHOIS result for {registered_domain}")
+            self.whois_result = self._cache[registered_domain]
+            return
+
         log.debug(f"Extracted base domain [{registered_domain}] from [{self.target}]")
         log.debug(f"Submitting WHOIS query for {registered_domain}")
         try:
@@ -38,6 +50,7 @@ class WhoisManager:
         except Exception as e:
             log.debug(f"Got unknown error from whois: {str(e)}")
             self.whois_result = {"type": "error", "data": str(e)}
+        self._cache[registered_domain] = self.whois_result
 
     def analyzeWHOIS(self):
         if self.whois_result:
