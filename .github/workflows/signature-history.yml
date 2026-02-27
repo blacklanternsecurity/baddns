@@ -1,0 +1,53 @@
+name: Update Signature History
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [dev]
+
+permissions:
+  contents: write
+
+jobs:
+  update-history:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, '[SignatureBot]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Update signature history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Get signature files changed in the merged PR
+          CHANGED_FILES=$(gh pr diff ${{ github.event.pull_request.number }} --name-only | grep '^baddns/signatures/.*\.yml$' || true)
+
+          if [[ -z "$CHANGED_FILES" ]]; then
+            echo "No signature files changed in this PR"
+            exit 0
+          fi
+
+          for file in $CHANGED_FILES; do
+            if [[ -f "$file" ]]; then
+              filename=$(basename "$file")
+              hash=$(sha256sum "$file" | cut -d ' ' -f 1)
+
+              if ! grep -q "$hash" baddns/signatures/signature_history.txt 2>/dev/null; then
+                echo "$hash #$filename" >> baddns/signatures/signature_history.txt
+                echo "Added hash for $filename"
+              fi
+            fi
+          done
+
+          if git diff --quiet baddns/signatures/signature_history.txt 2>/dev/null; then
+            echo "No new hashes to add"
+          else
+            git add baddns/signatures/signature_history.txt
+            git commit -m "[SignatureBot] Update signature history"
+            git push origin dev
+          fi
