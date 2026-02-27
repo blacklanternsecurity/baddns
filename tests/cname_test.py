@@ -534,3 +534,62 @@ async def test_cname_nxdomain_not_cnames_no_exclusion(fs, mock_dispatch_whois, c
 
     assert findings
     assert any(f.to_dict()["signature"] == "Not-Cnames NXDOMAIN Test Service" for f in findings)
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_lovable_match(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    mock_data = {"bad.dns": {"CNAME": ["baddns.lovable.app"]}, "baddns.lovable.app": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    httpx_mock.add_response(
+        url="http://bad.dns/",
+        status_code=404,
+        text="Publish or update your Lovable project for it to appear here.",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "baddns_lovable.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    expected = {
+        "target": "bad.dns",
+        "description": "Dangling CNAME, probable subdomain takeover (HTTP String Match)",
+        "confidence": "PROBABLE",
+        "signature": "Lovable Takeover Detection",
+        "indicator": "[Words: Publish or update your Lovable project for it to appear here | Condition: and | Part: body] Matchers-Condition: and",
+        "trigger": "baddns.lovable.app",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_lovable_negative(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    """CNAME to lovable.app but response body doesn't match — no findings."""
+    mock_data = {"bad.dns": {"CNAME": ["baddns.lovable.app"]}, "baddns.lovable.app": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    httpx_mock.add_response(
+        url="http://bad.dns/",
+        status_code=200,
+        text="<h1>Welcome to my site</h1>",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "baddns_lovable.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not any(f.to_dict()["signature"] == "Lovable Takeover Detection" for f in (findings or []))
