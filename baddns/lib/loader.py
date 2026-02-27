@@ -15,7 +15,6 @@ def load_signatures(signatures_dir=None):
         if not os.path.exists(signatures_dir):
             raise BadDNSSignatureException(f"Signatures directory [{signatures_dir}] does not exist")
     else:
-
         signatures_dir = resources.files("baddns") / "signatures"
 
     log.debug(f"attempting to load signatures from: {signatures_dir}")

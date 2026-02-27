@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: mailgun.org
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - status: 404
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Mailgun Takeover Detection
+source: nucleitemplates

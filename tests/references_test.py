@@ -1,7 +1,7 @@
 import pytest
 import requests
 import functools
-from mock import patch
+from unittest.mock import patch
 
 from baddns.modules.references import BadDNS_references
 from baddns.lib.loader import load_signatures

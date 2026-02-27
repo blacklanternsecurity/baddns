@@ -1,8 +1,7 @@
 import pytest
 import datetime
-from mock import patch
+from unittest.mock import patch
 from baddns.modules.mx import BadDNS_mx
-
 
 mock_whois_unregistered = {
     "type": "error",

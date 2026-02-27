@@ -203,7 +203,7 @@ class BadDNS_references(BadDNS_base):
                             "confidence": finding_dict["confidence"],
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
-                            "trigger": f'{finding_set["trigger"]}, Original Trigger: [{finding_dict["trigger"]}] Direct Mode: [{str(finding_set["direct_mode"])}]',
+                            "trigger": f"{finding_set['trigger']}, Original Trigger: [{finding_dict['trigger']}] Direct Mode: [{str(finding_set['direct_mode'])}]",
                             "module": type(self),
                         }
                     )

@@ -34,7 +34,7 @@ class BadDNSSignature:
             raise BadDNSSignatureException(f"mode is a required attribute")
 
         if self.signature["mode"] not in self.validModes:
-            raise BadDNSSignatureException(f"Supplied mode [{self.signature.mode}] in not a valid mode")
+            raise BadDNSSignatureException(f"Supplied mode [{self.signature['mode']}] is not a valid mode")
 
         if not self.signature["source"]:
             raise BadDNSSignatureException(f"source is a required attribute")
