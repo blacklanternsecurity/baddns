@@ -197,15 +197,16 @@ class TestMatcherIsMatch:
         }
         m = Matcher(rules)
         r = httpx.get("https://test.com/")
-        # dsl type has no handler, results empty, all([]) is True
-        assert m.is_match(r)
+        # dsl type has no handler, results empty, returns False
+        assert not m.is_match(r)
 
     def test_empty_matchers(self, httpx_mock):
         httpx_mock.add_response(url="https://test.com/", status_code=200, text="hello")
         rules = {"matchers-condition": "and", "matcher_rule": {"matchers": []}}
         m = Matcher(rules)
         r = httpx.get("https://test.com/")
-        assert m.is_match(r)
+        # empty matchers produce no results, returns False
+        assert not m.is_match(r)
 
     def test_unknown_matchers_condition(self, httpx_mock):
         httpx_mock.add_response(url="https://test.com/", status_code=200, text="hello")
