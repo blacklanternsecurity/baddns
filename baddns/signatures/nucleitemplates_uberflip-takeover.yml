@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Non-hub domain, The URL you've accessed does not provide a hub.
+  matchers-condition: and
+mode: http
+service_name: Uberflip Takeover Detection
+source: nucleitemplates

@@ -1,0 +1,25 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - herokucdn.com/error-pages/no-such-app.html
+  - condition: or
+    part: body
+    type: word
+    words:
+    - <title>No such app</title>
+    - <title>Heroku | Application Error</title>
+  matchers-condition: and
+mode: http
+service_name: Heroku Takeover Detection
+source: nucleitemplates

@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - This UserVoice subdomain is currently available!
+  matchers-condition: and
+mode: http
+service_name: Uservoice Takeover Detection
+source: nucleitemplates

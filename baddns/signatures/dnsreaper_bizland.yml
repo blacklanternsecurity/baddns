@@ -1,0 +1,13 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ns1.bizland.com
+  - ns2.bizland.com
+  - clickme.click2site.com
+  - clickme2.click2site.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: bizland.com
+source: dnsreaper

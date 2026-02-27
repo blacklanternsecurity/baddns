@@ -1,0 +1,20 @@
+identifiers:
+  cnames:
+  - type: word
+    value: campaignmonitor.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - <center>csw</center>
+  - status: 301
+    type: status
+  matchers-condition: and
+mode: http
+service_name: campaignmonitor.com
+source: dnsreaper

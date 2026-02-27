@@ -11,7 +11,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - <h5>Account not found.</h5>
+    - '<title>DNS resolution error '
   matchers-condition: and
 mode: http
 service_name: survey sparrow

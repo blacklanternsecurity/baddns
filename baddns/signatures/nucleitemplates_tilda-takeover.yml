@@ -1,0 +1,25 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Please go to the site settings and put the domain name in the Domain tab.
+  - condition: and
+    negative: true
+    part: body
+    type: word
+    words:
+    - <title>Please renew your subscription</title>
+  matchers-condition: and
+mode: http
+service_name: tilda takeover detection
+source: nucleitemplates

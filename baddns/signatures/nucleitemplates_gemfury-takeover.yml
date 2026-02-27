@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: header
+    type: word
+    words:
+    - 'Location: https://gemfury.com/404'
+  matchers-condition: and
+mode: http
+service_name: Gemfury Takeover Detection
+source: nucleitemplates

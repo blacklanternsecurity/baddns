@@ -1,0 +1,10 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - .name.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: name.com
+source: dnsreaper

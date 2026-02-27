@@ -1,0 +1,21 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - case-insensitive: true
+    condition: or
+    part: body
+    type: word
+    words:
+    - this help centre no longer exists
+    - Help Centre Closed
+  matchers-condition: and
+mode: http
+service_name: Zendesk Takeover Detection
+source: nucleitemplates

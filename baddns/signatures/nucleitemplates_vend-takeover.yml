@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Looks like you've traveled too far into cyberspace.
+  matchers-condition: and
+mode: http
+service_name: vend takeover detection
+source: nucleitemplates

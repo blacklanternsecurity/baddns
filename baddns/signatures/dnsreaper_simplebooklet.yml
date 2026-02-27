@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: simplebooklet.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - The link to this Simplebooklet may have changed
+  matchers-condition: and
+mode: http
+service_name: simplebooklet.com
+source: dnsreaper
