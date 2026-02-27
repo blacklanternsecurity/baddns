@@ -20,19 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: psf/black@stable
-        with:
-          options: "--check"
       - name: Install Python 3
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - name: Install dependencies
-        run: |
-          pip install flake8
-      - name: flake8
-        run: |
-          flake8 --select F,E722 --ignore F403,F405,F541 --per-file-ignores="*/__init__.py:F401,F403"
+      - name: Install ruff
+        run: pip install ruff
+      - name: ruff format
+        run: ruff format --check .
+      - name: ruff check
+        run: ruff check .
 
   test:
     if: contains(github.event.pull_request.title, 'SignatureBot') == false
