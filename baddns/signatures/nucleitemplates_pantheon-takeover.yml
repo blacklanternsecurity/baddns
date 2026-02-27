@@ -1,0 +1,20 @@
+identifiers:
+  cnames:
+  - type: word
+    value: apigee.io
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - status: 404
+    type: status
+  - condition: and
+    part: body
+    type: word
+    words:
+    - 404 Not Found
+  matchers-condition: and
+mode: http
+service_name: Pantheon Takeover Detection
+source: nucleitemplates

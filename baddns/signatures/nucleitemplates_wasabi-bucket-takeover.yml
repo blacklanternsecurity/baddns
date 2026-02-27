@@ -1,0 +1,24 @@
+identifiers:
+  cnames:
+  - type: word
+    value: wasabisys.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    dsl:
+    - Host != ip
+    - contains(tolower(header), "wasabis3")
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - The specified bucket does not exist
+    - BucketName
+  matchers-condition: and
+mode: http
+service_name: wasabi Bucket Takeover - Detection
+source: nucleitemplates

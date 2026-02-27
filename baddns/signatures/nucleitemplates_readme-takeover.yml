@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Project doesnt exist... yet!
+  matchers-condition: and
+mode: http
+service_name: Readme.io Takeover Detection
+source: nucleitemplates

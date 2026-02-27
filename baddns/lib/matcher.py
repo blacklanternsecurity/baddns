@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 # from lib.errors import BadDNSMatcherException
 
-log = logging.getLogger("baddns.matcher")
+log = logging.getLogger(__name__)
 
 
 class Matcher:
@@ -75,12 +75,13 @@ class Matcher:
         if not isinstance(response, httpx.Response):
             raise TypeError("response must be an httpx.Response object")
         self.response = response
-
         matchers_condition = self.rules.get("matchers-condition", "and")
         results = []
-        for matcher in self.rules.get("matchers", []):
+        matcher_rule = self.rules.get("matcher_rule", {})
+        for matcher in matcher_rule.get("matchers", []):
             match_type = matcher["type"]
             match_func = getattr(self, f"_{match_type}", None)
+
             if match_func:
                 result = match_func(matcher)
                 results.append(result)

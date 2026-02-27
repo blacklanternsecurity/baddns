@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - You've tried to access an account/page that does not exist
+  matchers-condition: and
+mode: http
+service_name: HelpDocs Takeover Detection
+source: nucleitemplates

@@ -5,15 +5,12 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
   - condition: and
     part: body
     type: word
     words:
-    - <strong>Trying to access your account?</strong>
-    - or <a href="mailto:help@createsend.com
+    - Email Newsletter Software
+    - css.createsend1.com
   matchers-condition: and
 mode: http
 service_name: CampaignMonitor Takeover Detection

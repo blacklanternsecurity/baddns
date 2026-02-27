@@ -1,0 +1,20 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - Domain not found
+    - does not exist in our system
+  matchers-condition: and
+mode: http
+service_name: hubspot takeover detection
+source: nucleitemplates

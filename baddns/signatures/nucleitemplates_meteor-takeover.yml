@@ -1,0 +1,16 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - '404 Not Found: No applications registered for host '''
+  matchers-condition: and
+mode: http
+service_name: Meteor subdomain takeover
+source: nucleitemplates

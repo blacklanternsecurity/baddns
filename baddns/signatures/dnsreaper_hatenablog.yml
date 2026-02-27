@@ -11,7 +11,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - 404 Blog is not found
+    - The request could not be satisfied.
   matchers-condition: and
 mode: http
 service_name: hatenablog.com

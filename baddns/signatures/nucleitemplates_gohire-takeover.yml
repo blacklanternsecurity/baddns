@@ -1,0 +1,22 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - You may have followed an invalid link or the job you are looking for has been
+      archived
+  - status: 404
+    type: status
+  matchers-condition: and
+mode: http
+service_name: GoHire Takeover Detection
+source: nucleitemplates

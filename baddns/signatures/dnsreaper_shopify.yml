@@ -1,0 +1,18 @@
+identifiers:
+  cnames:
+  - type: word
+    value: myshopify.com
+  nameservers: []
+  not_cnames: []
+  ips: []
+matcher_rule:
+  matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - This store does not exist.
+  matchers-condition: and
+mode: http
+service_name: Shopify
+source: dnsreaper

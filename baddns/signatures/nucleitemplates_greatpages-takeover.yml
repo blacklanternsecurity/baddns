@@ -1,0 +1,19 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "P\xE1gina n\xE3o encontrada (Erro 404)"
+  matchers-condition: and
+mode: http
+service_name: GreatPages - Takeover Detection
+source: nucleitemplates

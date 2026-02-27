@@ -1,0 +1,17 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    dsl:
+    - Host != ip
+    - contains_all(body, "Unable to redirect","redirect.pizza")
+    - contains(content_type, "text/html")
+    type: dsl
+  matchers-condition: and
+mode: http
+service_name: Redirect.pizza Subdomain Takeover Detection
+source: nucleitemplates

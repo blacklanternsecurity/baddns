@@ -1,0 +1,22 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - We're sorry, you've landed on a page that is hosted by Flywheel
+    - <h1>Oops! That's not the site<br>you're looking&nbsp;for.</h1>
+  - condition: and
+    part: body
+    type: word
+    words:
+    - We are sorry, you've landed on a page that is hosted by Flywheel
+  matchers-condition: or
+mode: http
+service_name: Flywheel Subdomain Takeover
+source: nucleitemplates

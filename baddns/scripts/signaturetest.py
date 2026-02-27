@@ -105,11 +105,13 @@ def process_file(file_path):
                                 r = httpx.get(url, headers=headers, follow_redirects=follow_redirects, timeout=5)
                                 if matcher.is_match(r):
                                     match_found = True
-                            except httpx.ConnectError:
+                            except (httpx.ConnectError, httpx.ReadTimeout):
                                 pass
                     if match_found:
                         signature_pass = True
                         match_table[cname] = True
+                    else:
+                        match_table[cname] = False
                 else:
                     pass
                     # TODO: Support other types
