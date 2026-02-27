@@ -1,19 +1,17 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: sgizmo.com
+  - type: word
+    value: alchemer.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
-    part: body
-    type: word
-    words:
-    - data-html-name
+  - status: 301
+    type: status
   matchers-condition: and
 mode: http
-service_name: surveygizmo takeover detection
+service_name: SurveyGizmo/Alchemer Takeover Detection
 source: nucleitemplates
