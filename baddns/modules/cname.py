@@ -79,9 +79,7 @@ class BadDNS_cname(BadDNS_base):
                         self.cname_dnsmanager.target.endswith(nc["value"])
                         for nc in sig.signature["identifiers"]["not_cnames"]
                     ):
-                        log.debug(
-                            f"not_cnames exclusion matched, skipping {sig.signature['service_name']}"
-                        )
+                        log.debug(f"not_cnames exclusion matched, skipping {sig.signature['service_name']}")
                         continue
                     sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
                     for sig_cname in sig_cnames:

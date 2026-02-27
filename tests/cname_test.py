@@ -512,9 +512,7 @@ async def test_cname_nxdomain_not_cnames_exclusion(fs, mock_dispatch_whois, conf
         findings = baddns_cname.analyze()
 
     # Should get GENERIC finding (since it's cross-domain NXDOMAIN) but NOT the signature match
-    assert not any(
-        f.to_dict()["signature"] == "Not-Cnames NXDOMAIN Test Service" for f in (findings or [])
-    )
+    assert not any(f.to_dict()["signature"] == "Not-Cnames NXDOMAIN Test Service" for f in (findings or []))
 
 
 @pytest.mark.asyncio
