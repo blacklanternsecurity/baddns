@@ -91,8 +91,7 @@ def process_file(file_path):
         return False, {}, f"Failed Signature Validation: [{e}]"
 
     if sig.signature["mode"] == "http":
-        matcher_rule = sig.signature["matcher_rule"]
-        matcher = Matcher(matcher_rule)
+        matcher = Matcher(sig.signature)
         if len(sig.signature["identifiers"]["cnames"]) > 0:
             for cname_dict in sig.signature["identifiers"]["cnames"]:
                 if cname_dict["type"] == "word":
