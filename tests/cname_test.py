@@ -1,7 +1,7 @@
 import pytest
 import datetime
 import requests
-from mock import patch
+from unittest.mock import patch
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
