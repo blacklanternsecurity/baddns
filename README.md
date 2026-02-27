@@ -24,7 +24,9 @@ Or use pipx: `pipx install git+https://github.com/blacklanternsecurity/baddns`
 After installing with pip, you can just run `baddns` from the command line.
 
 ```
-usage: baddns [-h] [-n CUSTOM_NAMESERVERS] [-c CUSTOM_SIGNATURES] [-l] [-s] [-m MODULES] [-d] [target]
+usage: baddns [-h] [-n CUSTOM_NAMESERVERS] [-c CUSTOM_SIGNATURES] [-l] [-L]
+              [-s] [-S SIGNATURES] [-m MODULES] [-d] [-D]
+              [target]
 
 Check subdomains for subdomain takeovers and other DNS tomfoolery
 
@@ -34,14 +36,22 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -n CUSTOM_NAMESERVERS, --custom-nameservers CUSTOM_NAMESERVERS
-                        Provide a list of custom nameservers separated by comma.
+                        Provide a list of custom nameservers separated by
+                        comma.
   -c CUSTOM_SIGNATURES, --custom-signatures CUSTOM_SIGNATURES
                         Use an alternate directory for loading signatures
   -l, --list-modules    List available modules and their descriptions.
-  -s, --silent          Show only vulnerable targets
+  -L, --list-signatures
+                        List available signatures.
+  -s, --silent          Only show results, no other output (JSON format)
+  -S SIGNATURES, --signatures SIGNATURES
+                        Comma separated list of signature names to use. Ex:
+                        dnsreaper_agilecrm,baddns_aws-bucket-website
   -m MODULES, --modules MODULES
-                        Comma separated list of module names to use. Ex: module1,module2,module3
+                        Comma separated list of module names to use. Ex:
+                        module1,module2,module3
   -d, --debug           Enable debug logging
+  -D, --direct          Enable direct mode
 
 ```
 ## Modules
@@ -69,6 +79,15 @@ baddns -m CNAME,NS subdomaintocheck.example.com
 * List available Modules
 ```
 baddns -l
+```
+* List available Signatures
+```
+baddns -L
+```
+* Specify Signature(s)
+```
+baddns -S dnsreaper_agilecrm subdomaintocheck.example.com
+baddns -S dnsreaper_agilecrm,baddns_aws-bucket-website subdomaintocheck.example.com
 ```
 * Custom Nameservers
 ```
