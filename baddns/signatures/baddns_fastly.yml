@@ -1,0 +1,23 @@
+identifiers:
+  cnames:
+  - type: word
+    value: fastly.net
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: or
+    part: body
+    type: word
+    words:
+    - "Fastly error: unknown domain"
+  - status: 500
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Fastly Takeover Detection
+source: self
