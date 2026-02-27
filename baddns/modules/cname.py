@@ -75,6 +75,12 @@ class BadDNS_cname(BadDNS_base):
             for sig in self.signatures:
                 if sig.signature["mode"] == "dns_nxdomain":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
+                    if any(
+                        self.cname_dnsmanager.target.endswith(nc["value"])
+                        for nc in sig.signature["identifiers"]["not_cnames"]
+                    ):
+                        log.debug(f"not_cnames exclusion matched, skipping {sig.signature['service_name']}")
+                        continue
                     sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
                     for sig_cname in sig_cnames:
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
@@ -156,6 +162,14 @@ class BadDNS_cname(BadDNS_base):
                             )
                             continue
                         log.debug("passed IPS")
+
+                    if len(sig.signature["identifiers"]["not_cnames"]) > 0:
+                        if any(
+                            not_cname_dict["value"] in self.subject
+                            for not_cname_dict in sig.signature["identifiers"]["not_cnames"]
+                        ):
+                            log.debug(f"not_cnames exclusion matched for {self.subject}, skipping")
+                            continue
 
                     m = Matcher(sig.signature)
                     log.debug("Checking for HTTP matches")

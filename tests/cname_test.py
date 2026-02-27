@@ -1,3 +1,4 @@
+import os
 import pytest
 import datetime
 import requests
@@ -397,3 +398,139 @@ async def test_cname_whois_unregistered_missingdata(fs, mock_dispatch_whois, htt
             findings = baddns_cname.analyze()
             print(findings)
         assert not exit_mock.called
+
+
+# Custom signature YAML for not_cnames tests
+_NOT_CNAMES_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: word
+    value: vulnerable-service.com
+  ips: []
+  nameservers: []
+  not_cnames:
+  - type: word
+    value: excluded.vulnerable-service.com
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "Bucket does not exist"
+  matchers-condition: and
+mode: http
+service_name: Not-Cnames Test Service
+source: self
+"""
+
+_NOT_CNAMES_NXDOMAIN_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: word
+    value: vulnerable-service.com
+  ips: []
+  nameservers: []
+  not_cnames:
+  - type: word
+    value: excluded.vulnerable-service.com
+matcher_rule:
+mode: dns_nxdomain
+service_name: Not-Cnames NXDOMAIN Test Service
+source: self
+"""
+
+
+def _write_sig(fs, yaml_content, filename="test_not_cnames.yml"):
+    """Write a custom signature YAML into the fake filesystem and return the signatures dir."""
+    sig_dir = "/tmp/signatures"
+    fs.create_dir(sig_dir)
+    fs.create_file(os.path.join(sig_dir, filename), contents=yaml_content)
+    return sig_dir
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_not_cnames_exclusion(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    """CNAME matches both cnames and not_cnames — signature should be skipped, no findings."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["excluded.vulnerable-service.com"]},
+        "excluded.vulnerable-service.com": {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    httpx_mock.add_response(url="http://bad.dns/", status_code=200, text="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_SIG_YAML)
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_not_cnames_no_exclusion(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    """CNAME matches cnames but NOT not_cnames — findings should be returned."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["other.vulnerable-service.com"]},
+        "other.vulnerable-service.com": {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    httpx_mock.add_response(url="http://bad.dns/", status_code=200, text="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_SIG_YAML)
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "Not-Cnames Test Service" for f in findings)
+
+
+@pytest.mark.asyncio
+async def test_cname_nxdomain_not_cnames_exclusion(fs, mock_dispatch_whois, configure_mock_resolver):
+    """NXDOMAIN CNAME matches both cnames and not_cnames — signature should be skipped."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["excluded.vulnerable-service.com."]},
+        "_NXDOMAIN": ["excluded.vulnerable-service.com"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_NXDOMAIN_SIG_YAML, filename="test_not_cnames_nxdomain.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    # Should get GENERIC finding (since it's cross-domain NXDOMAIN) but NOT the signature match
+    assert not any(f.to_dict()["signature"] == "Not-Cnames NXDOMAIN Test Service" for f in (findings or []))
+
+
+@pytest.mark.asyncio
+async def test_cname_nxdomain_not_cnames_no_exclusion(fs, mock_dispatch_whois, configure_mock_resolver):
+    """NXDOMAIN CNAME matches cnames but NOT not_cnames — signature findings should be returned."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["other.vulnerable-service.com."]},
+        "_NXDOMAIN": ["other.vulnerable-service.com"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_NXDOMAIN_SIG_YAML, filename="test_not_cnames_nxdomain.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "Not-Cnames NXDOMAIN Test Service" for f in findings)
