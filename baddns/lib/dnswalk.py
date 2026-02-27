@@ -47,6 +47,10 @@ class DnsWalk:
 
     async def ns_trace(self, target):
         log.debug(f"Attempting to find NS records for {target}")
+        for label in target.split("."):
+            if len(label) > 63:
+                log.debug(f"Skipping target [{target}]: label [{label}] exceeds 63-octet RFC 1035 limit")
+                return []
         nameserver_ips = self.root_servers[:]
         solved_nameservers = await self.ns_recursive_solve(nameserver_ips, target, depth=0)
         if solved_nameservers == None:
