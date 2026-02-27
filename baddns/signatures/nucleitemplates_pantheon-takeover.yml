@@ -1,19 +1,23 @@
 identifiers:
   cnames:
   - type: word
-    value: apigee.io
+    value: pantheonsite.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - status: 404
-    type: status
+  - dsl:
+    - Host != ip
+    type: dsl
   - condition: and
     part: body
     type: word
     words:
-    - 404 Not Found
+    - Unknown site
+    - The page could not be loaded properly.
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Pantheon Takeover Detection
