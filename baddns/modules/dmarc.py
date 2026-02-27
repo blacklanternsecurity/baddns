@@ -56,6 +56,7 @@ class BadDNS_dmarc(BadDNS_base):
                         "target": self.target,
                         "description": "No DMARC record found - domain has no protection against email spoofing",
                         "confidence": "CONFIRMED",
+                        "severity": "INFORMATIONAL",
                         "signature": "N/A",
                         "indicator": "No DMARC record",
                         "trigger": self.dmarc_target,
@@ -72,7 +73,8 @@ class BadDNS_dmarc(BadDNS_base):
                     {
                         "target": self.target,
                         "description": "DMARC policy is set to none - spoofed emails will be delivered",
-                        "confidence": "POSSIBLE",
+                        "confidence": "MODERATE",
+                        "severity": "INFORMATIONAL",
                         "signature": "N/A",
                         "indicator": "p=none",
                         "trigger": self.dmarc_target,
@@ -88,7 +90,8 @@ class BadDNS_dmarc(BadDNS_base):
                     {
                         "target": self.target,
                         "description": "DMARC subdomain policy is set to none - subdomains can be spoofed",
-                        "confidence": "POSSIBLE",
+                        "confidence": "MODERATE",
+                        "severity": "INFORMATIONAL",
                         "signature": "N/A",
                         "indicator": "sp=none",
                         "trigger": self.dmarc_target,
@@ -107,7 +110,8 @@ class BadDNS_dmarc(BadDNS_base):
                             {
                                 "target": self.target,
                                 "description": "DMARC policy is only partially applied",
-                                "confidence": "POSSIBLE",
+                                "confidence": "MODERATE",
+                                "severity": "INFORMATIONAL",
                                 "signature": "N/A",
                                 "indicator": f"pct={pct}",
                                 "trigger": self.dmarc_target,
@@ -124,7 +128,8 @@ class BadDNS_dmarc(BadDNS_base):
                     {
                         "target": self.target,
                         "description": "No DMARC aggregate reporting (rua) configured",
-                        "confidence": "POSSIBLE",
+                        "confidence": "MODERATE",
+                        "severity": "INFORMATIONAL",
                         "signature": "N/A",
                         "indicator": "No rua tag",
                         "trigger": self.dmarc_target,

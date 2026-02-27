@@ -20,11 +20,18 @@ class Finding:
         self.finding_dict["description"] = description
 
         confidence = finding_dict.get("confidence", None)
-        if confidence == None or confidence not in ["CONFIRMED", "PROBABLE", "POSSIBLE", "UNLIKELY"]:
+        if confidence == None or confidence not in ["CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN"]:
             raise BadDNSFindingException(
-                "Confidence must be present and must be one of: CONFIRMED, PROBABLE, POSSIBLE, UNLIKELY"
+                "Confidence must be present and must be one of: CONFIRMED, HIGH, MODERATE, LOW, UNKNOWN"
             )
         self.finding_dict["confidence"] = confidence
+
+        severity = finding_dict.get("severity", None)
+        if severity == None or severity not in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL"]:
+            raise BadDNSFindingException(
+                "Severity must be present and must be one of: CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL"
+            )
+        self.finding_dict["severity"] = severity
 
         signature = finding_dict.get("signature", None)
         if not signature:

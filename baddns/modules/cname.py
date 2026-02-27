@@ -93,7 +93,8 @@ class BadDNS_cname(BadDNS_base):
                                     {
                                         "target": self.target_dnsmanager.target,
                                         "description": f"Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
-                                        "confidence": "PROBABLE",
+                                        "confidence": "HIGH",
+                                        "severity": "MEDIUM",
                                         "signature": sig.signature["service_name"],
                                         "indicator": indicator,
                                         "trigger": trigger,
@@ -113,7 +114,8 @@ class BadDNS_cname(BadDNS_base):
                         {
                             "target": self.target_dnsmanager.target,
                             "description": f"Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-                            "confidence": "POSSIBLE",
+                            "confidence": "MODERATE",
+                            "severity": "MEDIUM",
                             "signature": "GENERIC",
                             "indicator": "Generic Dangling CNAME",
                             "trigger": trigger,
@@ -181,7 +183,8 @@ class BadDNS_cname(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": f"Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-                                    "confidence": "PROBABLE",
+                                    "confidence": "HIGH",
+                                    "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": sig.summarize_matcher_rule(),
                                     "trigger": trigger,
@@ -199,6 +202,7 @@ class BadDNS_cname(BadDNS_base):
                             "target": self.target_dnsmanager.target,
                             "description": f"CNAME {whois_finding}",
                             "confidence": "CONFIRMED",
+                            "severity": "MEDIUM",
                             "signature": "N/A",
                             "indicator": "Whois Data",
                             "trigger": self.subject,

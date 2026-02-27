@@ -21,7 +21,8 @@ async def test_txt_match(fs, mock_dispatch_whois, configure_mock_resolver):
     expected = {
         "target": "bad.dns",
         "description": "Vulnerable Host [baddns.azurewebsites.net] in TXT Record. Original Event: [Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)]",
-        "confidence": "PROBABLE",
+        "confidence": "HIGH",
+        "severity": "LOW",
         "signature": "Microsoft Azure Takeover Detection",
         "indicator": "azurewebsites.net",
         "trigger": "bad.dns",

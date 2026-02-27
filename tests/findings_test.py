@@ -9,6 +9,7 @@ def _valid_finding(**overrides):
         "target": "bad.dns",
         "description": "test finding",
         "confidence": "CONFIRMED",
+        "severity": "MEDIUM",
         "signature": "TestSig",
         "indicator": "test indicator",
         "trigger": "test.trigger.com",
@@ -34,6 +35,14 @@ class TestFindingValidation:
     def test_missing_confidence(self):
         with pytest.raises(BadDNSFindingException, match="Confidence must be present"):
             Finding(_valid_finding(confidence=None))
+
+    def test_invalid_severity(self):
+        with pytest.raises(BadDNSFindingException, match="Severity must be present"):
+            Finding(_valid_finding(severity="INVALID"))
+
+    def test_missing_severity(self):
+        with pytest.raises(BadDNSFindingException, match="Severity must be present"):
+            Finding(_valid_finding(severity=None))
 
     def test_missing_signature(self):
         with pytest.raises(BadDNSFindingException, match="signature is required"):
@@ -66,6 +75,7 @@ class TestFindingOutput:
         d = f.to_dict()
         assert d["target"] == "bad.dns"
         assert d["confidence"] == "CONFIRMED"
+        assert d["severity"] == "MEDIUM"
         assert d["module"] == "CNAME"
 
     def test_trigger_list(self):

@@ -104,6 +104,7 @@ class BadDNS_txt(BadDNS_base):
                             "target": self.target,
                             "description": f"{finding_set['description']}. Original Event: [{finding_dict['description']}]",
                             "confidence": finding_dict["confidence"],
+                            "severity": "LOW",
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
                             "trigger": finding_set["trigger"],
