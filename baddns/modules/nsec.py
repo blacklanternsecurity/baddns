@@ -46,6 +46,19 @@ class BadDNS_nsec(BadDNS_base):
     async def dispatch(self):
         log.debug("in dispatch")
         target_base_domain = tldextract.extract(self.target).registered_domain
+
+        # Check if target is a CNAME before NSEC walk. dnspython's resolver follows
+        # CNAME chains transparently, so querying NSEC on a CNAME'd domain returns
+        # NSEC records from the CNAME target's zone (e.g. a CDN), not the original
+        # domain's zone. This causes false positives.
+        cname_result = await self.target_dnsmanager.do_resolve(self.target, "CNAME")
+        if cname_result:
+            log.debug(
+                f"Target {self.target} is a CNAME ({cname_result}), skipping NSEC check"
+                " (NSEC records would belong to the CNAME target's zone)"
+            )
+            return False
+
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "TXT"])
         if self.target_dnsmanager.answers["NSEC"] == None:
             log.debug("No NSEC records found, aborting")
@@ -56,12 +69,17 @@ class BadDNS_nsec(BadDNS_base):
         if nsec_walk:
             self.infomsg(f"NSEC Records detected, attempting NSEC walk against domain [{self.target}]")
             self.nsec_chain.remove(self.target)
+
+            if not self.nsec_chain:
+                log.debug("NSEC walk completed but no new domains were discovered")
+                return False
+
             nonmatching_results = len(
                 [host for host in self.nsec_chain if not host.endswith(f".{target_base_domain}")]
             )
-            if len(self.nsec_chain) == nonmatching_results == 1:
+            if nonmatching_results and nonmatching_results == len(self.nsec_chain):
                 log.debug(
-                    f"Aborting because NSEC chain contained only 1 result [{self.nsec_chain[0]}] which did not match the base domain of the target"
+                    f"Aborting because all NSEC chain results are outside the target base domain [{target_base_domain}]"
                 )
                 return False
             return True
