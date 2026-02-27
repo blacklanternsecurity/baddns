@@ -37,7 +37,7 @@ class Finding:
         self.finding_dict["indicator"] = indicator
 
         trigger = finding_dict.get("trigger", None)
-        if not indicator:
+        if not trigger:
             raise BadDNSFindingException("trigger is required in a Finding")
         if isinstance(trigger, list):
             trigger = ", ".join(trigger)
