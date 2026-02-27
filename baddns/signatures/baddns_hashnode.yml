@@ -1,0 +1,24 @@
+identifiers:
+  cnames:
+  - type: word
+    value: hashnode.network
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - condition: and
+    part: body
+    type: word
+    words:
+    - The deployment could not be found on Vercel
+    - DEPLOYMENT_NOT_FOUND
+  - status: 404
+    type: status
+  matchers-condition: and
+mode: http
+service_name: Hashnode Takeover Detection
+source: self
