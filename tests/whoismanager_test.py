@@ -7,6 +7,9 @@ from baddns.lib.whoismanager import WhoisManager
 class TestWhoisManager:
     """Test WhoisManager error handling, specifically PywhoisError"""
 
+    def setup_method(self):
+        WhoisManager.clear_cache()
+
     @pytest.mark.asyncio
     async def test_pywhois_error_handling(self):
         """Test that PywhoisError is properly caught and handled"""

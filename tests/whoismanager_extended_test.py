@@ -5,6 +5,9 @@ from baddns.lib.whoismanager import WhoisManager
 
 
 class TestDispatchWHOIS:
+    def setup_method(self):
+        WhoisManager.clear_cache()
+
     @pytest.mark.asyncio
     async def test_generic_exception(self):
         manager = WhoisManager("example.com")

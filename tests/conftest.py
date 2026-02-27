@@ -17,6 +17,7 @@ with open(local_test_file, "r") as real_file:
 @pytest.fixture()
 def mock_dispatch_whois(request, monkeypatch):
     value = getattr(request, "param", None)
+    WhoisManager.clear_cache()
 
     async def fake_dispatch_whois(self):
         print(f"Running mock_dispatch_whois with value: [{value}]")
