@@ -216,6 +216,27 @@ async def _main():
 
     signatures = load_signatures(signatures_dir=custom_signatures, signature_filter=signature_filter)
 
+    if args.signatures:
+        active_modes = {sig.signature["mode"] for sig in signatures}
+        MODULE_SIGNATURE_MODES = {
+            "CNAME": {"http", "dns_nxdomain"},
+            "TXT": {"http", "dns_nxdomain"},
+            "REFERENCES": {"http", "dns_nxdomain"},
+            "NS": {"dns_nosoa"},
+        }
+        modules_to_execute = [
+            m for m in modules_to_execute
+            if m.name.upper() in MODULE_SIGNATURE_MODES
+            and MODULE_SIGNATURE_MODES[m.name.upper()] & active_modes
+        ]
+        if not modules_to_execute:
+            log.warning("No modules match the selected signatures. Nothing to do.")
+            sys.exit(0)
+        log.info(
+            f"Signature filter active. Running signature-matched modules: "
+            f"[{', '.join(m.name for m in modules_to_execute)}]"
+        )
+
     for ModuleClass in modules_to_execute:
         await execute_module(
             ModuleClass, args.target, custom_nameservers, signatures, silent=silent, direct_mode=direct_mode
