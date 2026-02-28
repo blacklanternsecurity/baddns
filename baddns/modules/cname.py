@@ -73,7 +73,7 @@ class BadDNS_cname(BadDNS_base):
 
             self.infomsg(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
             for sig in self.signatures:
-                if sig.signature["mode"] == "dns_nxdomain":
+                if sig.signature["mode"] == "dns_nxdomain" and not sig.signature.get("negative_signature", False):
                     log.debug(f"Trying signature {sig.signature['service_name']}")
                     if any(
                         self.cname_dnsmanager.target.endswith(nc["value"])
@@ -103,6 +103,18 @@ class BadDNS_cname(BadDNS_base):
                                 )
                             )
                             break
+            # Check negative signatures before falling back to generic
+            if not signature_match:
+                for sig in self.signatures:
+                    if sig.signature["mode"] == "dns_nxdomain" and sig.signature.get("negative_signature", False):
+                        sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
+                        for sig_cname in sig_cnames:
+                            if self.cname_dnsmanager.target.endswith(sig_cname):
+                                log.debug(
+                                    f"Negative signature match [{sig.signature['service_name']}] for CNAME {self.cname_dnsmanager.target}, suppressing generic finding"
+                                )
+                                return findings
+
             if (
                 signature_match == False
                 and trigger[-1] != "self"
