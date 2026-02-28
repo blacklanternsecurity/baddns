@@ -38,7 +38,7 @@ class BadDNS_mtasts(BadDNS_base):
         }
         self._policy_client = http_client_class(timeout=5, verify=False, headers=headers)
 
-    async def dispatch(self):
+    async def _dispatch(self):
         # Step 1: Check for _mta-sts TXT record
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "NSEC"])
         if self.target_dnsmanager.answers["TXT"] is None:

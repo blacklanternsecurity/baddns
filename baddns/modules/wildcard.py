@@ -37,7 +37,7 @@ class BadDNS_wildcard(BadDNS_base):
             return None
         return ".".join(parts[1:])
 
-    async def dispatch(self):
+    async def _dispatch(self):
         self.cname_findings_direct = []
         self.cname_findings = []
 

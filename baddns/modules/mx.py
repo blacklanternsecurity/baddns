@@ -20,7 +20,7 @@ class BadDNS_mx(BadDNS_base):
         )
         self.mx_whoismanager = {}
 
-    async def dispatch(self):
+    async def _dispatch(self):
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "TXT", "NSEC"])
         if self.target_dnsmanager.answers["MX"] == None:
             log.debug("No MX records found, aborting")

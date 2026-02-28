@@ -38,7 +38,7 @@ class BadDNS_dmarc(BadDNS_base):
             return None
         return tags
 
-    async def dispatch(self):
+    async def _dispatch(self):
         # Step 1: Check _dmarc.<target> (RFC 7489 Section 6.6.3)
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "NSEC"])
         txt_records = self.target_dnsmanager.answers["TXT"]

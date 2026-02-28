@@ -184,7 +184,7 @@ class BadDNS_references(BadDNS_base):
             cname_findings.extend(result)
         return cname_findings
 
-    async def dispatch(self):
+    async def _dispatch(self):
         log.debug("in references dispatch")
         await self.target_httpmanager.dispatchHttp()
         log.debug("HTTP dispatch complete")

@@ -601,3 +601,21 @@ async def test_cname_http_lovable_negative(fs, mock_dispatch_whois, httpx_mock, 
         findings = baddns_cname.analyze()
 
     assert not any(f.to_dict()["signature"] == "Lovable Takeover Detection" for f in (findings or []))
+
+
+@pytest.mark.asyncio
+async def test_cname_srv_style_target_skipped(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {
+        "bill._tcp.app.flipster.io": {"CNAME": ["cname.vercel-dns.com."]},
+        "_NXDOMAIN": ["cname.vercel-dns.com"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bill._tcp.app.flipster.io"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    result = await baddns_cname.dispatch()
+    assert result is False
