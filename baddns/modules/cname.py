@@ -28,7 +28,7 @@ class BadDNS_cname(BadDNS_base):
         self.cname_dnsmanager = None
         self.cname_whoismanager = None
 
-    async def dispatch(self):
+    async def _dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
         if self.direct_mode == False:
             if self.target_dnsmanager.answers["CNAME"] != None:

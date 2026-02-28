@@ -32,6 +32,15 @@ class BadDNS_base:
         else:
             log.debug(msg)
 
+    async def dispatch(self):
+        if any(label.startswith("_") for label in self.target.split(".")):
+            log.debug(f"Skipping SRV-style target [{self.target}], SRV-style subdomains are not supported")
+            return False
+        return await self._dispatch()
+
+    async def _dispatch(self):
+        raise NotImplementedError
+
     async def cleanup(self):
         pass
 

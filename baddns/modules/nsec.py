@@ -43,7 +43,7 @@ class BadDNS_nsec(BadDNS_base):
             current_domain = next_domain
         return True
 
-    async def dispatch(self):
+    async def _dispatch(self):
         log.debug("in dispatch")
         target_base_domain = tldextract.extract(self.target).registered_domain
 
