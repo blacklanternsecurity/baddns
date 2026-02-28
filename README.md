@@ -1,7 +1,7 @@
 # BadDNS
 Check subdomains for subdomain takeovers and other DNS tomfoolery
 
-[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 ![License](https://img.shields.io/badge/license-GPLv3-f126ea.svg)
 [![tests](https://github.com/blacklanternsecurity/baddns/actions/workflows/tests.yaml/badge.svg)](https://github.com/blacklanternsecurity/baddns/actions/workflows/tests.yaml)
 [![codecov](https://codecov.io/gh/blacklanternsecurity/baddns/branch/main/graph/badge.svg)](https://codecov.io/gh/blacklanternsecurity/baddns)
@@ -24,7 +24,7 @@ Or use pipx: `pipx install git+https://github.com/blacklanternsecurity/baddns`
 After installing with pip, you can just run `baddns` from the command line.
 
 ```
-usage: baddns [-h] [-n CUSTOM_NAMESERVERS] [-c CUSTOM_SIGNATURES] [-l] [-s] [-m MODULES] [-d] [target]
+usage: baddns [-h] [-n CUSTOM_NAMESERVERS] [-c CUSTOM_SIGNATURES] [-l] [-s] [-m MODULES] [-d] [-D] [target]
 
 Check subdomains for subdomain takeovers and other DNS tomfoolery
 
@@ -38,10 +38,11 @@ options:
   -c CUSTOM_SIGNATURES, --custom-signatures CUSTOM_SIGNATURES
                         Use an alternate directory for loading signatures
   -l, --list-modules    List available modules and their descriptions.
-  -s, --silent          Show only vulnerable targets
+  -s, --silent          Only show results, no other output (JSON format)
   -m MODULES, --modules MODULES
                         Comma separated list of module names to use. Ex: module1,module2,module3
   -d, --debug           Enable debug logging
+  -D, --direct          Enable direct mode
 
 ```
 ## Modules
@@ -54,6 +55,9 @@ options:
 | references | Check HTML content for links or other references that contain a hijackable domain |
 | txt | Check TXT record contents for hijackable domains |
 | zonetransfer | Attempt a DNS zone transfer |
+| dmarc | Check for missing or misconfigured DMARC records |
+| mta-sts | Check for MTA-STS misconfigurations and dangling mta-sts subdomains |
+| wildcard | Check for wildcard DNS records that could enable domain-wide subdomain takeover |
 
 ## Examples
 
