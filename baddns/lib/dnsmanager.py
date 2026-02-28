@@ -128,7 +128,12 @@ class DNSManager:
                         r = self.process_answer(await self.dns_client.resolve(target, "CNAME"), "CNAME")
                         if len(r) == 0:
                             break
-                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers) as e:
+                    except (
+                        dns.resolver.NoAnswer,
+                        dns.resolver.NXDOMAIN,
+                        dns.resolver.NoNameservers,
+                        dns.resolver.LifetimeTimeout,
+                    ) as e:
                         log.debug(f"Error resolving cname chain: {e}")
                         break
                 return cname_chain

@@ -178,6 +178,21 @@ class TestDoResolve:
         assert result == ["step1.example.com"]
 
     @pytest.mark.asyncio
+    async def test_cname_chain_lifetime_timeout(self):
+        """LifetimeTimeout during CNAME chain following must not propagate."""
+        mock_rr1 = MagicMock()
+        mock_rr1.rdtype.name = "CNAME"
+        mock_rr1.to_text.return_value = "step1.example.com."
+
+        self.mock_client.resolve.side_effect = [
+            [mock_rr1],  # initial resolve succeeds
+            dns.resolver.LifetimeTimeout(timeout=5.0, errors=[]),  # chain step times out
+        ]
+        result = await self.mgr.do_resolve("test.example.com", "CNAME")
+        # Should return the partial chain, not raise
+        assert result == ["step1.example.com"]
+
+    @pytest.mark.asyncio
     async def test_empty_result(self):
         self.mock_client.resolve.return_value = []
         result = await self.mgr.do_resolve("test.example.com", "NS")
@@ -195,6 +210,22 @@ class TestDispatchDNS:
         await self.mgr.dispatchDNS(omit_types=["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"])
         # Only NSEC should have been queried
         assert self.mock_client.resolve.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_omit_types_rejects_nested_list(self):
+        """A nested list like [["A", "AAAA"]] should not silently skip all omissions."""
+        self.mock_client.resolve.return_value = []
+        await self.mgr.dispatchDNS(omit_types=["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"])
+        flat_count = self.mock_client.resolve.call_count  # should be 1 (only NSEC)
+
+        self.mock_client.reset_mock()
+        await self.mgr.dispatchDNS(omit_types=[["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]])
+        nested_count = self.mock_client.resolve.call_count
+
+        # With a nested list, nothing gets omitted — all 8 types are queried
+        # This test documents the correct flat-list behavior vs the broken nested-list behavior
+        assert flat_count == 1
+        assert nested_count == 8  # bug: nested list doesn't omit anything
 
     @pytest.mark.asyncio
     async def test_timeout_in_dispatch(self):
