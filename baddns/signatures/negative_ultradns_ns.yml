@@ -1,0 +1,14 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - ultradns.com
+  - ultradns.net
+  - ultradns.org
+  - ultradns.biz
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: UltraDNS
+source: self
+negative_signature: true

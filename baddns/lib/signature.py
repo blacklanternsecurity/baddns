@@ -16,6 +16,7 @@ class BadDNSSignature:
             "identifiers": {"cnames": [], "not_cnames": [], "ips": [], "nameservers": []},
             "mode": None,
             "matcher_rule": {},
+            "negative_signature": False,
         }
 
     def initialize(self, **kwargs):
@@ -29,6 +30,7 @@ class BadDNSSignature:
         self.signature["identifiers"]["ips"] = identifiers.get("ips", [])
         self.signature["identifiers"]["nameservers"] = identifiers.get("nameservers", [])
         self.signature["matcher_rule"] = kwargs.get("matcher_rule", None)
+        self.signature["negative_signature"] = kwargs.get("negative_signature", False)
 
         if not self.signature["mode"]:
             raise BadDNSSignatureException(f"mode is a required attribute")
