@@ -1,0 +1,14 @@
+identifiers:
+  cnames:
+  - type: word
+    value: impervadns.net
+  - type: word
+    value: incapdns.net
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule: null
+mode: dns_nxdomain
+service_name: Imperva
+source: self
+negative_signature: true

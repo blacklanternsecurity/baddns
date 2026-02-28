@@ -79,6 +79,98 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock
 
 
 @pytest.mark.asyncio
+async def test_cname_dnsnxdomain_negative_signature_imperva(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {
+        "bad.dns": {"CNAME": ["7mkvokl.ng.impervadns.net."]},
+        "_NXDOMAIN": ["7mkvokl.ng.impervadns.net"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_negative_signature_incapdns(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {
+        "bad.dns": {"CNAME": ["59ygw.x.incapdns.net."]},
+        "_NXDOMAIN": ["59ygw.x.incapdns.net"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_positive_with_negative_loaded(fs, mock_dispatch_whois, configure_mock_resolver):
+    """Positive signature still fires when negative signatures are also loaded."""
+    mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "Microsoft Azure Takeover Detection" for f in findings)
+
+
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_generic_with_negative_loaded(fs, mock_dispatch_whois, configure_mock_resolver):
+    """Generic finding still fires for non-Imperva unknown CNAMEs when negative signatures are loaded."""
+    mock_data = {"bad.dns": {"CNAME": ["baddns.somerandomthing.net."]}, "_NXDOMAIN": ["baddns.somerandomthing.net"]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    expected = {
+        "target": "bad.dns",
+        "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
+        "confidence": "MODERATE",
+        "severity": "MEDIUM",
+        "signature": "GENERIC",
+        "indicator": "Generic Dangling CNAME",
+        "trigger": "baddns.somerandomthing.net",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
 async def test_cname_dnsnxdomain_generic_negative(fs, mock_dispatch_whois, configure_mock_resolver):
     mock_data = {"bad.dns": {"CNAME": ["baddns.somerandomthing.dns."]}, "_NXDOMAIN": ["baddns.somerandomthing.dns"]}
     mock_resolver = configure_mock_resolver(mock_data)
