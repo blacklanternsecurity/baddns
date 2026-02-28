@@ -44,7 +44,8 @@ class MockResolver:
 
 def mock_signature_load(fs, signature_filename):
     fake_dir = "/tmp/signatures"
-    fs.create_dir(fake_dir)
+    if not os.path.exists(fake_dir):
+        fs.create_dir(fake_dir)
     signatures_dir = resources.files("baddns") / "signatures"
     signature_file = os.path.join(signatures_dir, signature_filename)
     fs.add_real_file(signature_file)
