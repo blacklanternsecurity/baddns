@@ -1,0 +1,12 @@
+identifiers:
+  cnames:
+  - type: word
+    value: bodis.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule: null
+mode: dns_nxdomain
+service_name: Bodis
+source: self
+negative_signature: true
