@@ -7,6 +7,11 @@ from baddns.modules.references import BadDNS_references
 from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
 
+mock_whois_unregistered = {
+    "type": "error",
+    "data": 'No match for "WORSE.DNS".\r\n>>> Last update of whois database: 2023-08-17T14:07:31Z <<<\r\n',
+}
+
 requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
 requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
 requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
@@ -84,7 +89,8 @@ mock_references_headers_cors = {
 
 @pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+@pytest.mark.parametrize("mock_dispatch_whois", [mock_whois_unregistered], indirect=True)
+async def test_references_cname_css(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
         mock_resolver = configure_mock_resolver(mock_data)
@@ -118,7 +124,8 @@ async def test_references_cname_css(fs, httpx_mock, configure_mock_resolver, cac
 
 @pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+@pytest.mark.parametrize("mock_dispatch_whois", [mock_whois_unregistered], indirect=True)
+async def test_references_cname_js(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
         mock_resolver = configure_mock_resolver(mock_data)
@@ -153,7 +160,7 @@ async def test_references_cname_js(fs, httpx_mock, configure_mock_resolver, cach
 
 @pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+async def test_references_direct_js(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}, "_NXDOMAIN": ["direct.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
@@ -187,7 +194,7 @@ async def test_references_direct_js(fs, httpx_mock, configure_mock_resolver, cac
 
 @pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+async def test_references_direct_css(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {"bad.dns": {"A": ["127.0.0.1"]}, "_NXDOMAIN": ["direct.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
@@ -222,7 +229,7 @@ async def test_references_direct_css(fs, httpx_mock, configure_mock_resolver, ca
 
 @pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-async def test_references_direct_csp(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+async def test_references_direct_csp(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list):
     with patch("sys.exit") as exit_mock:
         mock_data = {
             "bad.dns": {"A": ["127.0.0.1"]},
@@ -272,7 +279,9 @@ async def test_references_direct_csp(fs, httpx_mock, configure_mock_resolver, ca
 
 @pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-async def test_references_direct_cors(fs, httpx_mock, configure_mock_resolver, cached_suffix_list):
+async def test_references_direct_cors(
+    fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list
+):
     with patch("sys.exit") as exit_mock:
         mock_data = {
             "bad.dns": {"A": ["127.0.0.1"]},

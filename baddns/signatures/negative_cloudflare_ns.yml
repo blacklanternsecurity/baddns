@@ -2,9 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - awsdns
+  - ns.cloudflare.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
-service_name: AWS Route53
-source: dnsreaper
+service_name: Cloudflare
+source: self
+negative_signature: true
