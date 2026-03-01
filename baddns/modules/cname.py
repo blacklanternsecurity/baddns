@@ -101,6 +101,7 @@ class BadDNS_cname(BadDNS_base):
                 and trigger[-1] != "self"
                 and tldextract.extract(trigger[-1]).registered_domain
                 != tldextract.extract(self.target_dnsmanager.target).registered_domain
+                and not self.signature_filter
             ):
                 findings.append(
                     Finding(
@@ -116,6 +117,10 @@ class BadDNS_cname(BadDNS_base):
                     )
                 )
             else:
+                if self.signature_filter and not signature_match:
+                    log.debug(
+                        f"Signature filter active: suppressing generic CNAME finding for [{self.cname_dnsmanager.target}]"
+                    )
                 log.debug(
                     f"Not reporting generic cname for trigger [{trigger}] from domain [{self.target_dnsmanager.target}]"
                 )

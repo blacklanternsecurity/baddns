@@ -63,3 +63,21 @@ async def test_ns_nosoa_generic(fs, configure_mock_resolver):
         "module": "NS",
     }
     assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+async def test_ns_nosoa_generic_suppressed_by_signature_filter(fs, configure_mock_resolver):
+    """When signature_filter=True and no dns_nosoa signature matches, the generic N/A finding should be suppressed."""
+    mock_data = {"bad.dns": {"NS": ["ns1.somerandomthing.com."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
+    mock_resolver = configure_mock_resolver(mock_data, mock_dnswalk_data=["ns1.somerandomthing.com"])
+
+    target = "bad.dns"
+    mock_signature_load(fs, "dnsreaper_wordpress_com_ns.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_ns = BadDNS_ns(target, signatures=signatures, dns_client=mock_resolver, signature_filter=True)
+
+    findings = None
+    if await baddns_ns.dispatch():
+        findings = baddns_ns.analyze()
+
+    assert not findings

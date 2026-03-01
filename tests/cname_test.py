@@ -199,6 +199,25 @@ async def test_cname_chainedcname_nxdomain(fs, mock_dispatch_whois, httpx_mock, 
     assert any(expected == finding.to_dict() for finding in findings)
 
 
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_generic_suppressed_by_signature_filter(fs, mock_dispatch_whois, configure_mock_resolver):
+    """When signature_filter=True and no dns_nxdomain signature matches, the GENERIC finding should be suppressed."""
+    mock_data = {"bad.dns": {"CNAME": ["baddns.somerandomthing.net."]}, "_NXDOMAIN": ["baddns.somerandomthing.net"]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver, signature_filter=True)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
 whois_mock_expired = {
     "type": "response",
     "data": {

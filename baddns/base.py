@@ -12,6 +12,7 @@ class BadDNS_base:
         signatures=None,
         custom_nameservers=None,
         cli=False,
+        signature_filter=False,
         **kwargs,
     ):
         self.target = self.set_target(target)
@@ -21,6 +22,7 @@ class BadDNS_base:
         self.custom_nameservers = custom_nameservers
         self.parent_class = kwargs.get("parent_class", "self")
         self.cli = cli
+        self.signature_filter = signature_filter
 
     # hook to allow external manipulation of target assignment
     def set_target(self, target):

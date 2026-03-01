@@ -75,11 +75,11 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
     return arg_value
 
 
-async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False, direct_mode=False):
+async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False, direct_mode=False, signature_filter=False):
     findings = None
     try:
         module_instance = ModuleClass(
-            target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True, direct_mode=direct_mode
+            target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True, direct_mode=direct_mode, signature_filter=signature_filter
         )
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
@@ -239,7 +239,7 @@ async def _main():
 
     for ModuleClass in modules_to_execute:
         await execute_module(
-            ModuleClass, args.target, custom_nameservers, signatures, silent=silent, direct_mode=direct_mode
+            ModuleClass, args.target, custom_nameservers, signatures, silent=silent, direct_mode=direct_mode, signature_filter=bool(args.signatures)
         )
 
 

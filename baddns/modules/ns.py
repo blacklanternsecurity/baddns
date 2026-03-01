@@ -94,21 +94,26 @@ class BadDNS_ns(BadDNS_base):
                             f"Found match for for target nameservers {', '.join(target_nameservers)} with signature [{sig.signature['service_name']}]"
                         )
                         return findings
-            log.debug(
-                f"No signature found, falling back to report generic dangling NS record for nameservers: [{', '.join(target_nameservers)}]]"
-            )
-            findings.append(
-                Finding(
-                    {
-                        "target": self.target_dnsmanager.target,
-                        "description": "Dangling NS Records (NS records without SOA)",
-                        "confidence": "POSSIBLE",
-                        "signature": "N/A",
-                        "indicator": "DNSWalk Analysis",
-                        "trigger": target_nameservers,
-                        "module": type(self),
-                    }
+            if self.signature_filter:
+                log.debug(
+                    f"Signature filter active: suppressing generic NS finding for nameservers: [{', '.join(target_nameservers)}]"
                 )
-            )
+            else:
+                log.debug(
+                    f"No signature found, falling back to report generic dangling NS record for nameservers: [{', '.join(target_nameservers)}]]"
+                )
+                findings.append(
+                    Finding(
+                        {
+                            "target": self.target_dnsmanager.target,
+                            "description": "Dangling NS Records (NS records without SOA)",
+                            "confidence": "POSSIBLE",
+                            "signature": "N/A",
+                            "indicator": "DNSWalk Analysis",
+                            "trigger": target_nameservers,
+                            "module": type(self),
+                        }
+                    )
+                )
 
         return findings

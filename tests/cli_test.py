@@ -206,6 +206,22 @@ def test_cli_signature_filter_nxdomain_integration(monkeypatch, capsys, mocker, 
     assert "Azure" in captured.out
 
 
+def test_cli_signature_filter_suppresses_generic(monkeypatch, capsys, mocker, configure_mock_resolver):
+    """With -S for a non-matching signature, the generic CNAME fallback should be suppressed."""
+    monkeypatch.setattr(
+        "sys.argv",
+        ["python", "-S", "dnsreaper_github_pages", "-m", "CNAME", "bad.dns"],
+    )
+    mock_data = {"bad.dns": {"CNAME": ["baddns.internal-elb.amazonaws.com."]}, "_NXDOMAIN": ["baddns.internal-elb.amazonaws.com"]}
+    mock_resolver = configure_mock_resolver(mock_data)
+    mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+
+    cli.main()
+    captured = capsys.readouterr()
+    assert "Vulnerable!" not in captured.out
+    assert "GENERIC" not in captured.out
+
+
 def test_cli_list_signatures(monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["python", "-L"])
     with pytest.raises(SystemExit) as exc_info:
