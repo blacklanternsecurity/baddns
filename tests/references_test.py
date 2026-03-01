@@ -279,7 +279,9 @@ async def test_references_direct_csp(fs, mock_dispatch_whois, httpx_mock, config
 
 @pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
-async def test_references_direct_cors(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list):
+async def test_references_direct_cors(
+    fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver, cached_suffix_list
+):
     with patch("sys.exit") as exit_mock:
         mock_data = {
             "bad.dns": {"A": ["127.0.0.1"]},
