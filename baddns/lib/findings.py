@@ -65,6 +65,15 @@ class Finding:
         if found_domains:
             self.finding_dict["found_domains"] = found_domains
 
+    @property
+    def name(self):
+        """Display name: 'BadDNS {module} {signature}' (omit signature if N/A)."""
+        module_name = self.finding_dict["module"]
+        sig = self.finding_dict["signature"]
+        if sig and sig != "N/A":
+            return f"BadDNS {module_name} {sig}"
+        return f"BadDNS {module_name}"
+
     def to_dict(self):
         return self.finding_dict
 
