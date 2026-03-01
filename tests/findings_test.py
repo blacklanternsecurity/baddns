@@ -104,3 +104,11 @@ class TestFindingOutput:
         del d["description"]
         f = Finding(d)
         assert f.to_dict()["description"] == "N/A"
+
+    def test_name_with_signature(self):
+        f = Finding(_valid_finding(signature="Azure Takeover"))
+        assert f.name == "BadDNS CNAME Azure Takeover"
+
+    def test_name_without_signature(self):
+        f = Finding(_valid_finding(signature="N/A"))
+        assert f.name == "BadDNS CNAME"
