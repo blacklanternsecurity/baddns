@@ -8,7 +8,7 @@ It's also a fully functional standalone command-line tool, useful for any time y
 
 ## Modular
 
-BadDNS is modular. This means new functionality can be added easily in the future, and its also easy to customize which modules you want to use and which you don't. Currently, BadDNS has 10 modules, which are explored in the [Modules Section](modules.md). 
+BadDNS is modular. This means new functionality can be added easily in the future, and its also easy to customize which modules you want to use and which you don't. Currently, BadDNS has 11 modules, which are explored in the [Modules Section](modules.md). 
 
 ## CLI
 

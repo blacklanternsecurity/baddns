@@ -58,6 +58,7 @@ options:
 | dmarc | Check for missing or misconfigured DMARC records |
 | mta-sts | Check for MTA-STS misconfigurations and dangling mta-sts subdomains |
 | wildcard | Check for wildcard DNS records that could enable domain-wide subdomain takeover |
+| spf | Check for missing or misconfigured SPF records and hijackable include/redirect domains |
 
 ## Examples
 
