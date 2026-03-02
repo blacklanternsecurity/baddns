@@ -218,16 +218,9 @@ async def _main():
 
     if args.signatures:
         active_modes = {sig.signature["mode"] for sig in signatures}
-        MODULE_SIGNATURE_MODES = {
-            "CNAME": {"http", "dns_nxdomain"},
-            "TXT": {"http", "dns_nxdomain"},
-            "REFERENCES": {"http", "dns_nxdomain"},
-            "NS": {"dns_nosoa"},
-        }
         modules_to_execute = [
             m for m in modules_to_execute
-            if m.name.upper() in MODULE_SIGNATURE_MODES
-            and MODULE_SIGNATURE_MODES[m.name.upper()] & active_modes
+            if m.supported_modes & active_modes
         ]
         if not modules_to_execute:
             log.warning("No modules match the selected signatures. Nothing to do.")

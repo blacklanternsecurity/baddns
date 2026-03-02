@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 class BadDNS_cname(BadDNS_base):
     name = "CNAME"
     description = "Check for dangling CNAME records and interrogate them for subdomain takeover opportunities"
+    supported_modes = {"http", "dns_nxdomain"}
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)

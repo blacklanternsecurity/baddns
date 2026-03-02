@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 class BadDNS_txt(BadDNS_base):
     name = "TXT"
     description = "Check TXT record contents for hijackable domains"
+    supported_modes = {"http", "dns_nxdomain"}
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)

@@ -4,6 +4,8 @@ log = logging.getLogger(__name__)
 
 
 class BadDNS_base:
+    supported_modes = set()
+
     def __init__(
         self,
         target,

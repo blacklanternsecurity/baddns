@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 class BadDNS_references(BadDNS_base):
     name = "references"
     description = "Check HTML content for links or other references that contain a hijackable domain"
+    supported_modes = {"http", "dns_nxdomain"}
 
     regex_jssrc = re.compile(r'<script[^>]*src\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
     regex_csssrc = re.compile(r'<link[^>]*href\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
