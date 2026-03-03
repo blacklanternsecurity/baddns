@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 class BadDNS_dmarc(BadDNS_base):
     name = "DMARC"
     description = "Check for missing or misconfigured DMARC records"
+    skip_cloud_targets = True
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)

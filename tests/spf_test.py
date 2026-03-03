@@ -492,3 +492,18 @@ async def test_spf_subdomain_inherits_takeover(fs, mock_dispatch_whois, configur
             "module": "SPF",
         }
         assert any(expected == finding.to_dict() for finding in findings)
+
+
+# --- Cloud provider skip tests ---
+
+
+@pytest.mark.asyncio
+async def test_spf_cloud_target_skipped(configure_mock_resolver):
+    """Cloud provider targets should be skipped for SPF checks."""
+    mock_data = {}
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "vinrclsql1-eus2.azurewebsites.net"
+    m = BadDNS_spf(target, dns_client=mock_resolver)
+    with patch("baddns.base.cloudcheck", return_value=[("Azure", "cloud", "azurewebsites.net")]):
+        result = await m.dispatch()
+    assert result is False

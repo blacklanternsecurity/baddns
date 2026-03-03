@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from baddns.modules.dmarc import BadDNS_dmarc
 
 
@@ -317,3 +318,18 @@ async def test_dmarc_subdomain_inherited_invalid_pct(configure_mock_resolver):
     findings = m.analyze()
     indicators = [f.to_dict()["indicator"] for f in findings]
     assert not any(i.startswith("pct=") for i in indicators)
+
+
+# --- Cloud provider skip tests ---
+
+
+@pytest.mark.asyncio
+async def test_dmarc_cloud_target_skipped(configure_mock_resolver):
+    """Cloud provider targets should be skipped for DMARC checks."""
+    mock_data = {}
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "vinrclsql1-eus2.azurewebsites.net"
+    m = BadDNS_dmarc(target, dns_client=mock_resolver)
+    with patch("baddns.base.cloudcheck", return_value=[("Azure", "cloud", "azurewebsites.net")]):
+        result = await m.dispatch()
+    assert result is False

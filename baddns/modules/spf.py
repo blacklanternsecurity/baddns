@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 class BadDNS_spf(BadDNS_base):
     name = "SPF"
     description = "Check for missing or misconfigured SPF records and hijackable include/redirect domains"
+    skip_cloud_targets = True
 
     # Mechanisms that consume a DNS lookup per RFC 7208 Section 4.6.4
     _dns_lookup_mechanisms = {"include", "a", "mx", "ptr", "exists", "redirect"}

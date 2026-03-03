@@ -19,6 +19,7 @@ python-whois = "^0.9.6"
 tldextract = "^5.1.1"
 python-dateutil = "2.9.0.post0"
 httpx = ">=0.27.0,<0.29.0"
+cloudcheck = ">=7,<8"
 
 [tool.poetry.group.dev.dependencies]
 requests-mock = "^1.11.0"
