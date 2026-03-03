@@ -2,6 +2,21 @@ import pytest
 from baddns.modules.dmarc import BadDNS_dmarc
 
 
+class TestParseDmarcRecord:
+    def test_empty_part_skipped(self):
+        """Empty parts from trailing/double semicolons should be skipped (line 32)."""
+        result = BadDNS_dmarc.parse_dmarc_record("v=DMARC1; ; p=reject")
+        assert result is not None
+        assert result["p"] == "reject"
+
+    def test_no_separator_skipped(self):
+        """Parts without '=' should be skipped (line 35)."""
+        result = BadDNS_dmarc.parse_dmarc_record("v=DMARC1; badpart; p=reject")
+        assert result is not None
+        assert "badpart" not in result
+        assert result["p"] == "reject"
+
+
 @pytest.mark.asyncio
 async def test_dmarc_no_txt_records(configure_mock_resolver):
     mock_data = {}
@@ -289,3 +304,16 @@ async def test_dmarc_deep_subdomain_inherits(configure_mock_resolver):
     assert await m.dispatch()
     findings = m.analyze()
     assert len(findings) == 0
+
+
+@pytest.mark.asyncio
+async def test_dmarc_subdomain_inherited_invalid_pct(configure_mock_resolver):
+    """Org DMARC record with non-numeric pct should not crash (inherited ValueError path)."""
+    mock_data = {"_dmarc.example.com": {"TXT": ["v=DMARC1; p=reject; pct=abc; rua=mailto:dmarc@example.com"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "sub.example.com"
+    m = BadDNS_dmarc(target, dns_client=mock_resolver)
+    assert await m.dispatch()
+    findings = m.analyze()
+    indicators = [f.to_dict()["indicator"] for f in findings]
+    assert not any(i.startswith("pct=") for i in indicators)

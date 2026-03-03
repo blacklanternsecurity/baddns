@@ -53,6 +53,29 @@ async def test_mtasts_no_txt_record(fs, mock_dispatch_whois, configure_mock_reso
 
 
 @pytest.mark.asyncio
+async def test_mtasts_txt_exists_no_sts(fs, mock_dispatch_whois, configure_mock_resolver):
+    """TXT record exists but doesn't contain v=STSv1 -> dispatch returns False."""
+    mock_data = {"_mta-sts.bad.dns": {"TXT": ["v=spf1 include:example.com ~all"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    baddns_mtasts = BadDNS_mtasts("bad.dns", dns_client=mock_resolver, signatures=[])
+    result = await baddns_mtasts.dispatch()
+    await baddns_mtasts.cleanup()
+
+    assert result is False
+
+
+def test_mtasts_parse_policy_line_without_colon():
+    """Lines without ':' in policy text should be skipped."""
+    policy_text = "version: STSv1\nmode: enforce\ngarbage line\nmx: mail.bad.dns\nmax_age: 86400\n"
+    result = BadDNS_mtasts._parse_policy(policy_text)
+    assert result["version"] == "STSv1"
+    assert result["mode"] == "enforce"
+    assert result["mx"] == ["mail.bad.dns"]
+    assert result["max_age"] == "86400"
+
+
+@pytest.mark.asyncio
 @pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
 async def test_mtasts_dangling_cname_nxdomain(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
     """TXT exists, mta-sts subdomain has CNAME to NXDOMAIN azure host -> takeover finding."""

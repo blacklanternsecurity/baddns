@@ -129,6 +129,25 @@ async def test_nsec_empty_chain(mock_dispatch_whois, configure_mock_resolver):
 
 
 @pytest.mark.asyncio
+async def test_nsec_walk_true_but_chain_empty(mock_dispatch_whois, configure_mock_resolver):
+    """NSEC walk succeeds but all discovered domains start with backslash, so chain is empty after target removal."""
+    mock_data = {
+        "bad.com": {"NSEC": ["\\001.bad.com"]},
+        "\\001.bad.com": {"NSEC": []},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "bad.com"
+
+    baddns_nsec = BadDNS_nsec(target, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_nsec.dispatch():
+        findings = baddns_nsec.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
 async def test_nsec_all_nonmatching(mock_dispatch_whois, configure_mock_resolver):
     """All NSEC walk results are outside the target's base domain. Should not be a finding."""
     mock_data = {

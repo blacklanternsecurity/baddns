@@ -1,3 +1,4 @@
+import re
 import pytest
 import requests
 import functools
@@ -316,3 +317,16 @@ async def test_references_direct_cors(
         }
 
         assert any(expected == finding.to_dict() for finding in findings)
+
+
+def test_references_extract_domains_empty_group(configure_mock_resolver):
+    """Regex match with empty group(1) should hit 'Failed to extract domain' branch."""
+    mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    instance = BadDNS_references("bad.dns", signatures=[], dns_client=mock_resolver)
+
+    # Replace regex_domain_url with one that produces empty group(1)
+    instance.regex_domain_url = re.compile(r"()(\S+)")
+    header_regex = re.compile(r"TestHeader: (.+?)\|")
+    results = instance.extract_domains_headers("TestHeader", header_regex, "TestHeader: something.com|", "test desc")
+    assert results == []

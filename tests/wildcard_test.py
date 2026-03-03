@@ -14,9 +14,19 @@ requests.Session.request = functools.partialmethod(requests.Session.request, ver
 requests.request = functools.partial(requests.request, verify=False)
 
 
+_real_generate_random_label = BadDNS_wildcard._generate_random_label
+
+
 @pytest.fixture(autouse=True)
 def patch_random_label(monkeypatch):
     monkeypatch.setattr(BadDNS_wildcard, "_generate_random_label", staticmethod(lambda: "baddns-test1234"))
+
+
+def test_generate_random_label():
+    """The real _generate_random_label returns a baddns- prefixed string."""
+    label = _real_generate_random_label()
+    assert label.startswith("baddns-")
+    assert len(label) == 15
 
 
 @pytest.mark.asyncio
