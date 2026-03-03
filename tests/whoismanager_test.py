@@ -38,6 +38,16 @@ class TestWhoisManager:
         assert manager.whois_result["data"] == "Invalid domain for WHOIS"
 
     @pytest.mark.asyncio
+    async def test_whois_restricted_tld_skipped(self):
+        """WHOIS should be skipped for restricted TLDs (.gov, .mil, .edu, .int)"""
+        for domain in ["example.gov", "sub.example.mil", "school.edu", "wipo.int"]:
+            manager = WhoisManager(domain)
+            await manager.dispatchWHOIS()
+            assert manager.whois_result is None, f"Expected None for {domain}"
+            findings = manager.analyzeWHOIS()
+            assert findings is None, f"Expected no findings for {domain}"
+
+    @pytest.mark.asyncio
     async def test_successful_whois_query(self):
         """Test successful WHOIS query doesn't trigger errors"""
         manager = WhoisManager("example.com")

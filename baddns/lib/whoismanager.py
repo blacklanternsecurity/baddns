@@ -8,6 +8,8 @@ from whois.exceptions import PywhoisError
 
 log = logging.getLogger(__name__)
 
+RESTRICTED_TLDS = {"gov", "mil", "edu", "int"}
+
 
 class WhoisManager:
     _cache = {}
@@ -26,6 +28,13 @@ class WhoisManager:
             registered_domain = self.target
         else:
             registered_domain = ext.registered_domain
+
+        # Skip WHOIS for restricted TLDs (.gov, .mil, .edu, .int)
+        tld = ext.suffix.lower().split(".")[-1] if ext.suffix else ""
+        if tld in RESTRICTED_TLDS:
+            log.debug(f"Skipping WHOIS for restricted TLD [{ext.suffix}] domain [{registered_domain}]")
+            self.whois_result = None
+            return
 
         # Guard against empty/invalid domains
         if not registered_domain or "." not in registered_domain:
