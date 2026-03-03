@@ -134,8 +134,19 @@ class BadDNS_spf(BadDNS_base):
             if effective_spf["redirect"]:
                 domains_to_check.append(effective_spf["redirect"])
 
+            # Determine the base domain of the SPF source to detect self-referential includes
+            spf_source_ext = tldextract.extract(self.target)
+            spf_source_domain = spf_source_ext.registered_domain if self.is_subdomain else self.target
+
             for domain in domains_to_check:
                 if not domain:
+                    continue
+                # Skip WHOIS for includes whose base domain matches the SPF source
+                domain_base = tldextract.extract(domain).registered_domain
+                if domain_base and spf_source_domain and domain_base == spf_source_domain:
+                    log.debug(
+                        f"Skipping WHOIS for self-referential SPF include [{domain}] (same base domain as SPF source)"
+                    )
                     continue
                 log.debug(f"performing WHOIS lookup for SPF domain [{domain}]")
                 self.spf_whoismanagers[domain] = WhoisManager(domain)
