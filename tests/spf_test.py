@@ -1,6 +1,6 @@
 import pytest
 import datetime
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, AsyncMock
 from baddns.modules.spf import BadDNS_spf
 
 mock_whois_unregistered = {
@@ -551,3 +551,20 @@ async def test_spf_self_referential_subdomain_include_skipped(configure_mock_res
     assert "_ip4spf.dot.gov" not in m.spf_whoismanagers
     # spf.otherdomain.com is NOT self-referential, should have WHOIS dispatched
     assert "spf.otherdomain.com" in m.spf_whoismanagers
+
+
+# --- Cloud provider skip tests ---
+
+
+@pytest.mark.asyncio
+async def test_spf_cloud_target_skipped(configure_mock_resolver):
+    """Cloud provider targets should be skipped for SPF checks."""
+    mock_data = {}
+    mock_resolver = configure_mock_resolver(mock_data)
+    target = "bad.com"
+    m = BadDNS_spf(target, dns_client=mock_resolver)
+    mock_cc = MagicMock()
+    mock_cc.lookup = AsyncMock(return_value=[{"name": "SomeCloud", "tags": ["cloud"]}])
+    with patch("baddns.base.CloudCheck", return_value=mock_cc):
+        result = await m.dispatch()
+    assert result is False
