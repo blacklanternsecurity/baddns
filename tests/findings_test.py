@@ -112,3 +112,45 @@ class TestFindingOutput:
     def test_name_without_signature(self):
         f = Finding(_valid_finding(signature="N/A"))
         assert f.name == "BadDNS CNAME"
+
+
+class TestMeetsMinimum:
+    def test_no_filters(self):
+        f = Finding(_valid_finding(confidence="LOW", severity="INFORMATIONAL"))
+        assert f.meets_minimum() is True
+
+    def test_confidence_exact_match(self):
+        f = Finding(_valid_finding(confidence="HIGH"))
+        assert f.meets_minimum(min_confidence="HIGH") is True
+
+    def test_confidence_above_threshold(self):
+        f = Finding(_valid_finding(confidence="CONFIRMED"))
+        assert f.meets_minimum(min_confidence="HIGH") is True
+
+    def test_confidence_below_threshold(self):
+        f = Finding(_valid_finding(confidence="LOW"))
+        assert f.meets_minimum(min_confidence="HIGH") is False
+
+    def test_severity_exact_match(self):
+        f = Finding(_valid_finding(severity="MEDIUM"))
+        assert f.meets_minimum(min_severity="MEDIUM") is True
+
+    def test_severity_above_threshold(self):
+        f = Finding(_valid_finding(severity="CRITICAL"))
+        assert f.meets_minimum(min_severity="LOW") is True
+
+    def test_severity_below_threshold(self):
+        f = Finding(_valid_finding(severity="INFORMATIONAL"))
+        assert f.meets_minimum(min_severity="LOW") is False
+
+    def test_both_filters_pass(self):
+        f = Finding(_valid_finding(confidence="CONFIRMED", severity="CRITICAL"))
+        assert f.meets_minimum(min_confidence="HIGH", min_severity="MEDIUM") is True
+
+    def test_confidence_passes_severity_fails(self):
+        f = Finding(_valid_finding(confidence="CONFIRMED", severity="INFORMATIONAL"))
+        assert f.meets_minimum(min_confidence="HIGH", min_severity="MEDIUM") is False
+
+    def test_confidence_fails_severity_passes(self):
+        f = Finding(_valid_finding(confidence="UNKNOWN", severity="CRITICAL"))
+        assert f.meets_minimum(min_confidence="HIGH", min_severity="MEDIUM") is False

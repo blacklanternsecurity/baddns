@@ -13,6 +13,7 @@ from pathlib import Path
 from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 from .lib.logging import setup_logging
 from .lib.loader import load_signatures
+from .lib.findings import CONFIDENCE_LEVELS, SEVERITY_LEVELS
 
 from baddns.base import get_all_modules
 
@@ -60,6 +61,28 @@ def validate_nameservers(
     return arg_value
 
 
+VALID_MIN_CONFIDENCE = CONFIDENCE_LEVELS[:-1]  # exclude UNKNOWN (no-op)
+VALID_MIN_SEVERITY = SEVERITY_LEVELS[:-1]  # exclude INFORMATIONAL (no-op)
+
+
+def validate_confidence(arg_value):
+    value = arg_value.upper()
+    if value not in VALID_MIN_CONFIDENCE:
+        raise argparse.ArgumentTypeError(
+            f"'{arg_value}' is not a valid confidence level. Choose from: {', '.join(VALID_MIN_CONFIDENCE)}"
+        )
+    return value
+
+
+def validate_severity(arg_value):
+    value = arg_value.upper()
+    if value not in VALID_MIN_SEVERITY:
+        raise argparse.ArgumentTypeError(
+            f"'{arg_value}' is not a valid severity level. Choose from: {', '.join(VALID_MIN_SEVERITY)}"
+        )
+    return value
+
+
 def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_]+)*$")):
     if not pattern.match(arg_value):
         raise argparse.ArgumentTypeError(
@@ -75,7 +98,16 @@ def validate_modules(arg_value, pattern=re.compile(r"^[a-zA-Z0-9_]+(,[a-zA-Z0-9_
     return arg_value
 
 
-async def execute_module(ModuleClass, target, custom_nameservers, signatures, silent=False, direct_mode=False):
+async def execute_module(
+    ModuleClass,
+    target,
+    custom_nameservers,
+    signatures,
+    silent=False,
+    direct_mode=False,
+    min_confidence=None,
+    min_severity=None,
+):
     findings = None
     try:
         module_instance = ModuleClass(
@@ -88,6 +120,8 @@ async def execute_module(ModuleClass, target, custom_nameservers, signatures, si
     log.info(f"Starting [{module_instance.name}] module with target [{target}]")
     if await module_instance.dispatch():
         findings = module_instance.analyze()
+        if findings:
+            findings = [f for f in findings if f.meets_minimum(min_confidence, min_severity)]
         if findings:
             if not silent:
                 print(f"{Fore.GREEN}{'Vulnerable!'}{Style.RESET_ALL}")
@@ -133,6 +167,18 @@ async def _main():
 
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
     parser.add_argument("-D", "--direct", action="store_true", help="Enable direct mode")
+
+    parser.add_argument(
+        "--min-confidence",
+        type=validate_confidence,
+        help="Minimum confidence level to report. Levels: CONFIRMED, HIGH, MODERATE, LOW (exclude UNKNOWN)",
+    )
+
+    parser.add_argument(
+        "--min-severity",
+        type=validate_severity,
+        help="Minimum severity level to report. Levels: CRITICAL, HIGH, MEDIUM, LOW (exclude INFORMATIONAL)",
+    )
 
     parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
     args = parser.parse_args()
@@ -196,7 +242,14 @@ async def _main():
 
     for ModuleClass in modules_to_execute:
         await execute_module(
-            ModuleClass, args.target, custom_nameservers, signatures, silent=silent, direct_mode=direct_mode
+            ModuleClass,
+            args.target,
+            custom_nameservers,
+            signatures,
+            silent=silent,
+            direct_mode=direct_mode,
+            min_confidence=args.min_confidence,
+            min_severity=args.min_severity,
         )
 
 
@@ -222,5 +275,5 @@ ascii_art_banner = """
 """
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

@@ -5,6 +5,9 @@ import json
 
 log = logging.getLogger(__name__)
 
+CONFIDENCE_LEVELS = ("CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN")
+SEVERITY_LEVELS = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL")
+
 
 class Finding:
     def __init__(self, finding_dict):
@@ -76,6 +79,15 @@ class Finding:
 
     def to_dict(self):
         return self.finding_dict
+
+    def meets_minimum(self, min_confidence=None, min_severity=None):
+        if min_confidence:
+            if CONFIDENCE_LEVELS.index(self.finding_dict["confidence"]) > CONFIDENCE_LEVELS.index(min_confidence):
+                return False
+        if min_severity:
+            if SEVERITY_LEVELS.index(self.finding_dict["severity"]) > SEVERITY_LEVELS.index(min_severity):
+                return False
+        return True
 
     def to_json(self):
         return json.dumps(self.finding_dict)
