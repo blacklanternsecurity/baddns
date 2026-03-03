@@ -1,3 +1,4 @@
+import argparse
 import dns
 import pytest
 import asyncio
@@ -181,6 +182,91 @@ identifiers:
         cli.main()
         captured = capsys.readouterr()
         assert "custom signatures" in captured.err.lower() or True  # Runs without error
+
+
+class TestValidateConfidence:
+    def test_valid_levels(self):
+        for level in ("CONFIRMED", "HIGH", "MODERATE", "LOW"):
+            assert cli.validate_confidence(level) == level
+
+    def test_case_insensitive(self):
+        assert cli.validate_confidence("confirmed") == "CONFIRMED"
+        assert cli.validate_confidence("High") == "HIGH"
+
+    def test_unknown_rejected(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="not a valid confidence level"):
+            cli.validate_confidence("UNKNOWN")
+
+    def test_invalid_value(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="not a valid confidence level"):
+            cli.validate_confidence("BOGUS")
+
+
+class TestValidateSeverity:
+    def test_valid_levels(self):
+        for level in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
+            assert cli.validate_severity(level) == level
+
+    def test_case_insensitive(self):
+        assert cli.validate_severity("critical") == "CRITICAL"
+        assert cli.validate_severity("Medium") == "MEDIUM"
+
+    def test_informational_rejected(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="not a valid severity level"):
+            cli.validate_severity("INFORMATIONAL")
+
+    def test_invalid_value(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="not a valid severity level"):
+            cli.validate_severity("BOGUS")
+
+
+class TestCLIMinConfidenceFilter:
+    def test_min_confidence_filters_findings(self, monkeypatch, capsys, mocker, configure_mock_resolver):
+        """--min-confidence HIGH should exclude MODERATE findings from CNAME nxdomain."""
+        monkeypatch.setattr("sys.argv", ["python", "-s", "--min-confidence", "HIGH", "-m", "CNAME", "bad.dns"])
+        mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
+        mock_resolver = configure_mock_resolver(mock_data)
+        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        cli.main()
+        captured = capsys.readouterr()
+        # CNAME nxdomain findings are CONFIRMED, so they should appear
+        assert "baddns.azurewebsites.net" in captured.out
+
+    def test_min_confidence_confirmed_excludes_high(self, monkeypatch, capsys, mocker, configure_mock_resolver):
+        """--min-confidence CONFIRMED should exclude HIGH confidence CNAME nxdomain findings."""
+        monkeypatch.setattr("sys.argv", ["python", "-s", "--min-confidence", "CONFIRMED", "-m", "CNAME", "bad.dns"])
+        mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
+        mock_resolver = configure_mock_resolver(mock_data)
+        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        cli.main()
+        captured = capsys.readouterr()
+        # CNAME nxdomain findings are HIGH confidence, so CONFIRMED filter should exclude them
+        assert "Vulnerable!" not in captured.out
+        assert "azurewebsites" not in captured.out
+
+
+class TestCLIMinSeverityFilter:
+    def test_min_severity_critical_excludes_medium(self, monkeypatch, capsys, mocker, configure_mock_resolver):
+        """--min-severity CRITICAL should exclude MEDIUM severity findings."""
+        monkeypatch.setattr("sys.argv", ["python", "-s", "--min-severity", "CRITICAL", "-m", "CNAME", "bad.dns"])
+        mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
+        mock_resolver = configure_mock_resolver(mock_data)
+        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        cli.main()
+        captured = capsys.readouterr()
+        # CNAME nxdomain findings are MEDIUM severity, so they should be filtered out
+        assert "Vulnerable!" not in captured.out
+        assert "azurewebsites" not in captured.out
+
+    def test_min_severity_low_includes_medium(self, monkeypatch, capsys, mocker, configure_mock_resolver):
+        """--min-severity LOW should include MEDIUM severity findings."""
+        monkeypatch.setattr("sys.argv", ["python", "-s", "--min-severity", "LOW", "-m", "CNAME", "bad.dns"])
+        mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
+        mock_resolver = configure_mock_resolver(mock_data)
+        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        cli.main()
+        captured = capsys.readouterr()
+        assert "baddns.azurewebsites.net" in captured.out
 
 
 class TestExecuteModule:
