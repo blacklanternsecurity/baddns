@@ -49,7 +49,7 @@ class BadDNS_mx(BadDNS_base):
                             "description": f"MX {whois_finding}",
                             "confidence": "CONFIRMED",
                             "severity": "MEDIUM",
-                            "signature": "N/A",
+                            "signature": "MX",
                             "indicator": "Whois Data",
                             "trigger": whois_domain,
                             "module": type(self),

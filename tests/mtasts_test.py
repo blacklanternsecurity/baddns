@@ -137,7 +137,7 @@ async def test_mtasts_policy_unreachable(fs, mock_dispatch_whois, httpx_mock, co
         "description": "Orphaned MTA-STS TXT record: _mta-sts.bad.dns exists but policy is unreachable (HTTP 404)",
         "confidence": "MODERATE",
         "severity": "MEDIUM",
-        "signature": "N/A",
+        "signature": "MTA-STS",
         "indicator": "MTA-STS Policy Unreachable",
         "trigger": "_mta-sts.bad.dns",
         "module": "MTA-STS",

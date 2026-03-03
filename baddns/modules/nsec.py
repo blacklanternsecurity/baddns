@@ -96,7 +96,7 @@ class BadDNS_nsec(BadDNS_base):
                     "description": f"DNSSEC NSEC Zone Walking Enabled for domain: [{self.target}]",
                     "confidence": "CONFIRMED",
                     "severity": "INFORMATIONAL",
-                    "signature": "N/A",
+                    "signature": "NSEC",
                     "indicator": "NSEC Records",
                     "trigger": self.target,
                     "module": type(self),

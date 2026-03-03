@@ -90,7 +90,7 @@ class BadDNS_zonetransfer(BadDNS_base):
                         "description": "Successful Zone Transfer",
                         "confidence": "CONFIRMED",
                         "severity": "INFORMATIONAL",
-                        "signature": "N/A",
+                        "signature": "Zone Transfer",
                         "indicator": "Successful XFR Request",
                         "trigger": self.zone_nameservers,
                         "module": type(self),

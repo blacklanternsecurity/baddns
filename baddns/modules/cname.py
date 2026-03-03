@@ -215,7 +215,7 @@ class BadDNS_cname(BadDNS_base):
                             "description": f"CNAME {whois_finding}",
                             "confidence": "CONFIRMED",
                             "severity": "MEDIUM",
-                            "signature": "N/A",
+                            "signature": "CNAME Takeover",
                             "indicator": "Whois Data",
                             "trigger": self.subject,
                             "module": type(self),

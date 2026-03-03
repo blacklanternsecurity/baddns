@@ -39,7 +39,7 @@ async def test_zonetransfer_discovery(fs, configure_mock_resolver, monkeypatch):
         "description": "Successful Zone Transfer",
         "confidence": "CONFIRMED",
         "severity": "INFORMATIONAL",
-        "signature": "N/A",
+        "signature": "Zone Transfer",
         "indicator": "Successful XFR Request",
         "trigger": "ns1.bad.dns",
         "module": "zonetransfer",
