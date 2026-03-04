@@ -45,7 +45,7 @@ class TestWhoisManager:
             await manager.dispatchWHOIS()
             assert manager.whois_result is None, f"Expected None for {domain}"
             findings = manager.analyzeWHOIS()
-            assert findings is None, f"Expected no findings for {domain}"
+            assert findings == [], f"Expected no findings for {domain}"
 
     @pytest.mark.asyncio
     async def test_successful_whois_query(self):
