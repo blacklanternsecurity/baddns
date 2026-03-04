@@ -62,6 +62,8 @@ class WhoisManager:
         self._cache[registered_domain] = self.whois_result
 
     def analyzeWHOIS(self):
+        if not self.whois_result:
+            return []
         if self.whois_result:
             whois_findings = []
             if self.whois_result["type"] == "error":
@@ -101,8 +103,6 @@ class WhoisManager:
                     else:
                         log.debug(f"Domain {self.target} is not expired")
             return whois_findings
-        else:
-            log.debug("whois_result was NoneType")
 
     @staticmethod
     def date_parse(unknown_date):

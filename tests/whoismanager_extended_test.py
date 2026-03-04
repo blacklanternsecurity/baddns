@@ -30,7 +30,7 @@ class TestAnalyzeWHOIS:
         manager = WhoisManager("example.com")
         manager.whois_result = None
         result = manager.analyzeWHOIS()
-        assert result is None
+        assert result == []
 
     def test_not_expired(self):
         future_date = datetime.now(timezone.utc) + timedelta(days=365)
