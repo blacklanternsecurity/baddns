@@ -211,9 +211,9 @@ class TestValidateSeverity:
         assert cli.validate_severity("critical") == "CRITICAL"
         assert cli.validate_severity("Medium") == "MEDIUM"
 
-    def test_informational_rejected(self):
+    def test_info_rejected(self):
         with pytest.raises(argparse.ArgumentTypeError, match="not a valid severity level"):
-            cli.validate_severity("INFORMATIONAL")
+            cli.validate_severity("INFO")
 
     def test_invalid_value(self):
         with pytest.raises(argparse.ArgumentTypeError, match="not a valid severity level"):

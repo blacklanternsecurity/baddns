@@ -6,7 +6,7 @@ import json
 log = logging.getLogger(__name__)
 
 CONFIDENCE_LEVELS = ("CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN")
-SEVERITY_LEVELS = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL")
+SEVERITY_LEVELS = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
 
 
 class Finding:
@@ -30,9 +30,9 @@ class Finding:
         self.finding_dict["confidence"] = confidence
 
         severity = finding_dict.get("severity", None)
-        if severity == None or severity not in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL"]:
+        if severity == None or severity not in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]:
             raise BadDNSFindingException(
-                "Severity must be present and must be one of: CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL"
+                "Severity must be present and must be one of: CRITICAL, HIGH, MEDIUM, LOW, INFO"
             )
         self.finding_dict["severity"] = severity
 

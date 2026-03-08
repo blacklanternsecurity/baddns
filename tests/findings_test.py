@@ -116,7 +116,7 @@ class TestFindingOutput:
 
 class TestMeetsMinimum:
     def test_no_filters(self):
-        f = Finding(_valid_finding(confidence="LOW", severity="INFORMATIONAL"))
+        f = Finding(_valid_finding(confidence="LOW", severity="INFO"))
         assert f.meets_minimum() is True
 
     def test_confidence_exact_match(self):
@@ -140,7 +140,7 @@ class TestMeetsMinimum:
         assert f.meets_minimum(min_severity="LOW") is True
 
     def test_severity_below_threshold(self):
-        f = Finding(_valid_finding(severity="INFORMATIONAL"))
+        f = Finding(_valid_finding(severity="INFO"))
         assert f.meets_minimum(min_severity="LOW") is False
 
     def test_both_filters_pass(self):
@@ -148,7 +148,7 @@ class TestMeetsMinimum:
         assert f.meets_minimum(min_confidence="HIGH", min_severity="MEDIUM") is True
 
     def test_confidence_passes_severity_fails(self):
-        f = Finding(_valid_finding(confidence="CONFIRMED", severity="INFORMATIONAL"))
+        f = Finding(_valid_finding(confidence="CONFIRMED", severity="INFO"))
         assert f.meets_minimum(min_confidence="HIGH", min_severity="MEDIUM") is False
 
     def test_confidence_fails_severity_passes(self):

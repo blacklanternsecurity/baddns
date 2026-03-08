@@ -62,7 +62,7 @@ def validate_nameservers(
 
 
 VALID_MIN_CONFIDENCE = CONFIDENCE_LEVELS[:-1]  # exclude UNKNOWN (no-op)
-VALID_MIN_SEVERITY = SEVERITY_LEVELS[:-1]  # exclude INFORMATIONAL (no-op)
+VALID_MIN_SEVERITY = SEVERITY_LEVELS[:-1]  # exclude INFO (no-op)
 
 
 def validate_confidence(arg_value):
@@ -177,7 +177,7 @@ async def _main():
     parser.add_argument(
         "--min-severity",
         type=validate_severity,
-        help="Minimum severity level to report. Levels: CRITICAL, HIGH, MEDIUM, LOW (exclude INFORMATIONAL)",
+        help="Minimum severity level to report. Levels: CRITICAL, HIGH, MEDIUM, LOW (exclude INFO)",
     )
 
     parser.add_argument("target", nargs="?", type=validate_target, help="subdomain to analyze")
