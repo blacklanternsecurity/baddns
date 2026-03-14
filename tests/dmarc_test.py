@@ -30,7 +30,7 @@ async def test_dmarc_no_txt_records(configure_mock_resolver):
     f = findings[0].to_dict()
     assert f["indicator"] == "No DMARC record"
     assert f["confidence"] == "CONFIRMED"
-    assert f["severity"] == "INFORMATIONAL"
+    assert f["severity"] == "INFO"
     assert f["trigger"] == "_dmarc.bad.com"
     assert f["module"] == "DMARC"
 
