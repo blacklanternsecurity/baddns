@@ -107,9 +107,6 @@ class DNSManager:
         except dns.resolver.LifetimeTimeout as e:
             log.debug(f"Dns Timeout: {e}")
             return
-        except dns.resolver.NoNameservers:
-            log.debug(f"All nameservers failed to answer the query")
-            return
         except Exception as e:
             log.warning(f"Unknown error resolving DNS: [{e}]")
             return
@@ -131,7 +128,12 @@ class DNSManager:
                         r = self.process_answer(await self.dns_client.resolve(target, "CNAME"), "CNAME")
                         if len(r) == 0:
                             break
-                    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers) as e:
+                    except (
+                        dns.resolver.NoAnswer,
+                        dns.resolver.NXDOMAIN,
+                        dns.resolver.NoNameservers,
+                        dns.resolver.LifetimeTimeout,
+                    ) as e:
                         log.debug(f"Error resolving cname chain: {e}")
                         break
                 return cname_chain
@@ -150,8 +152,4 @@ class DNSManager:
             tasks.append((task, rdatatype))  # Store the task along with its rdatatype
 
         for task, rdatatype in tasks:  # Unpack the task and its corresponding rdatatype
-            try:
-                self.answers[rdatatype] = await task
-            except dns.resolver.LifetimeTimeout:
-                log.debug(f"Got LifetimeTimeout for rdatatype [{rdatatype}] for target [{self.target}]")
-                self.answers[rdatatype] = None
+            self.answers[rdatatype] = await task

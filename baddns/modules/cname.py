@@ -28,7 +28,7 @@ class BadDNS_cname(BadDNS_base):
         self.cname_dnsmanager = None
         self.cname_whoismanager = None
 
-    async def dispatch(self):
+    async def _dispatch(self):
         await self.target_dnsmanager.dispatchDNS()
         if self.direct_mode == False:
             if self.target_dnsmanager.answers["CNAME"] != None:
@@ -73,8 +73,14 @@ class BadDNS_cname(BadDNS_base):
 
             self.infomsg(f"Got NXDOMAIN for CNAME {self.cname_dnsmanager.target}. Checking against signatures...")
             for sig in self.signatures:
-                if sig.signature["mode"] == "dns_nxdomain":
+                if sig.signature["mode"] == "dns_nxdomain" and not sig.signature.get("negative_signature", False):
                     log.debug(f"Trying signature {sig.signature['service_name']}")
+                    if any(
+                        self.cname_dnsmanager.target.endswith(nc["value"])
+                        for nc in sig.signature["identifiers"]["not_cnames"]
+                    ):
+                        log.debug(f"not_cnames exclusion matched, skipping {sig.signature['service_name']}")
+                        continue
                     sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
                     for sig_cname in sig_cnames:
                         log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
@@ -87,7 +93,8 @@ class BadDNS_cname(BadDNS_base):
                                     {
                                         "target": self.target_dnsmanager.target,
                                         "description": f"Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
-                                        "confidence": "PROBABLE",
+                                        "confidence": "HIGH",
+                                        "severity": "MEDIUM",
                                         "signature": sig.signature["service_name"],
                                         "indicator": indicator,
                                         "trigger": trigger,
@@ -96,6 +103,18 @@ class BadDNS_cname(BadDNS_base):
                                 )
                             )
                             break
+            # Check negative signatures before falling back to generic
+            if not signature_match:
+                for sig in self.signatures:
+                    if sig.signature["mode"] == "dns_nxdomain" and sig.signature.get("negative_signature", False):
+                        sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
+                        for sig_cname in sig_cnames:
+                            if self.cname_dnsmanager.target.endswith(sig_cname):
+                                log.debug(
+                                    f"Negative signature match [{sig.signature['service_name']}] for CNAME {self.cname_dnsmanager.target}, suppressing generic finding"
+                                )
+                                return findings
+
             if (
                 signature_match == False
                 and trigger[-1] != "self"
@@ -107,7 +126,8 @@ class BadDNS_cname(BadDNS_base):
                         {
                             "target": self.target_dnsmanager.target,
                             "description": f"Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-                            "confidence": "POSSIBLE",
+                            "confidence": "MODERATE",
+                            "severity": "MEDIUM",
                             "signature": "GENERIC",
                             "indicator": "Generic Dangling CNAME",
                             "trigger": trigger,
@@ -157,6 +177,14 @@ class BadDNS_cname(BadDNS_base):
                             continue
                         log.debug("passed IPS")
 
+                    if len(sig.signature["identifiers"]["not_cnames"]) > 0:
+                        if any(
+                            not_cname_dict["value"] in self.subject
+                            for not_cname_dict in sig.signature["identifiers"]["not_cnames"]
+                        ):
+                            log.debug(f"not_cnames exclusion matched for {self.subject}, skipping")
+                            continue
+
                     m = Matcher(sig.signature)
                     log.debug("Checking for HTTP matches")
                     if any(m.is_match(hr) for hr in http_results if hr is not None):
@@ -167,7 +195,8 @@ class BadDNS_cname(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": f"Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-                                    "confidence": "PROBABLE",
+                                    "confidence": "HIGH",
+                                    "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": sig.summarize_matcher_rule(),
                                     "trigger": trigger,
@@ -185,7 +214,8 @@ class BadDNS_cname(BadDNS_base):
                             "target": self.target_dnsmanager.target,
                             "description": f"CNAME {whois_finding}",
                             "confidence": "CONFIRMED",
-                            "signature": "N/A",
+                            "severity": "MEDIUM",
+                            "signature": "CNAME Takeover",
                             "indicator": "Whois Data",
                             "trigger": self.subject,
                             "module": type(self),

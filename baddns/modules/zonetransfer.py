@@ -66,7 +66,7 @@ class BadDNS_zonetransfer(BadDNS_base):
             self.parse_zone(zone)
             return True
 
-    async def dispatch(self):
+    async def _dispatch(self):
         zone_transfer_detected = False
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "MX", "AAAA", "CNAME", "SOA", "TXT", "NSEC"])
         if self.target_dnsmanager.answers["NS"]:
@@ -89,7 +89,8 @@ class BadDNS_zonetransfer(BadDNS_base):
                         "target": self.target_dnsmanager.target,
                         "description": "Successful Zone Transfer",
                         "confidence": "CONFIRMED",
-                        "signature": "N/A",
+                        "severity": "INFO",
+                        "signature": "Zone Transfer",
                         "indicator": "Successful XFR Request",
                         "trigger": self.zone_nameservers,
                         "module": type(self),

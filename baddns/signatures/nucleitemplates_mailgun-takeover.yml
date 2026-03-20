@@ -1,5 +1,7 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: mailgun.org
   ips: []
   nameservers: []
   not_cnames: []
@@ -8,12 +10,9 @@ matcher_rule:
   - dsl:
     - Host != ip
     type: dsl
-  - condition: and
-    part: body
-    type: word
-    words:
-    - This UserVoice subdomain is currently available!
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
-service_name: Uservoice Takeover Detection
+service_name: Mailgun Takeover Detection
 source: nucleitemplates

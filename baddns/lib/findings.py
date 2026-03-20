@@ -5,6 +5,9 @@ import json
 
 log = logging.getLogger(__name__)
 
+CONFIDENCE_LEVELS = ("CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN")
+SEVERITY_LEVELS = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
+
 
 class Finding:
     def __init__(self, finding_dict):
@@ -20,11 +23,18 @@ class Finding:
         self.finding_dict["description"] = description
 
         confidence = finding_dict.get("confidence", None)
-        if confidence == None or confidence not in ["CONFIRMED", "PROBABLE", "POSSIBLE", "UNLIKELY"]:
+        if confidence == None or confidence not in ["CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN"]:
             raise BadDNSFindingException(
-                "Confidence must be present and must be one of: CONFIRMED, PROBABLE, POSSIBLE, UNLIKELY"
+                "Confidence must be present and must be one of: CONFIRMED, HIGH, MODERATE, LOW, UNKNOWN"
             )
         self.finding_dict["confidence"] = confidence
+
+        severity = finding_dict.get("severity", None)
+        if severity == None or severity not in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]:
+            raise BadDNSFindingException(
+                "Severity must be present and must be one of: CRITICAL, HIGH, MEDIUM, LOW, INFO"
+            )
+        self.finding_dict["severity"] = severity
 
         signature = finding_dict.get("signature", None)
         if not signature:
@@ -37,7 +47,7 @@ class Finding:
         self.finding_dict["indicator"] = indicator
 
         trigger = finding_dict.get("trigger", None)
-        if not indicator:
+        if not trigger:
             raise BadDNSFindingException("trigger is required in a Finding")
         if isinstance(trigger, list):
             trigger = ", ".join(trigger)
@@ -58,8 +68,26 @@ class Finding:
         if found_domains:
             self.finding_dict["found_domains"] = found_domains
 
+    @property
+    def name(self):
+        """Display name: 'BadDNS {module} {signature}' (omit signature if N/A)."""
+        module_name = self.finding_dict["module"]
+        sig = self.finding_dict["signature"]
+        if sig and sig != "N/A":
+            return f"BadDNS {module_name} {sig}"
+        return f"BadDNS {module_name}"
+
     def to_dict(self):
         return self.finding_dict
+
+    def meets_minimum(self, min_confidence=None, min_severity=None):
+        if min_confidence:
+            if CONFIDENCE_LEVELS.index(self.finding_dict["confidence"]) > CONFIDENCE_LEVELS.index(min_confidence):
+                return False
+        if min_severity:
+            if SEVERITY_LEVELS.index(self.finding_dict["severity"]) > SEVERITY_LEVELS.index(min_severity):
+                return False
+        return True
 
     def to_json(self):
         return json.dumps(self.finding_dict)

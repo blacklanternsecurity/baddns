@@ -8,7 +8,7 @@ It's also a fully functional standalone command-line tool, useful for any time y
 
 ## Modular
 
-BadDNS is modular. This means new functionality can be added easily in the future, and its also easy to customize which modules you want to use and which you don't. Currently, BadDNS has 7 modules, which are explored in the [Modules Section](modules.md). 
+BadDNS is modular. This means new functionality can be added easily in the future, and its also easy to customize which modules you want to use and which you don't. Currently, BadDNS has 11 modules, which are explored in the [Modules Section](modules.md). 
 
 ## CLI
 
@@ -25,11 +25,13 @@ options:
   -n CUSTOM_NAMESERVERS, --custom-nameservers CUSTOM_NAMESERVERS
                         Provide a list of custom nameservers separated by comma.
   -c CUSTOM_SIGNATURES, --custom-signatures CUSTOM_SIGNATURES
-                        Use an alternate directory for loadings signatures
+                        Use an alternate directory for loading signatures
   -l, --list-modules    List available modules and their descriptions.
+  -s, --silent          Only show results, no other output (JSON format)
   -m MODULES, --modules MODULES
                         Comma separated list of module names to use. Ex: module1,module2,module3
   -d, --debug           Enable debug logging
+  -D, --direct          Enable direct mode
 ```
 ![Cname Detection with CLI](screenshots/cname.png)
 

@@ -174,3 +174,20 @@ async def test_dnswalk_subdomainfindns(dnswalk_harness):
     print(ns_trace_results)
     assert ns_trace_results
     assert sorted(ns_trace_results) == ["ns1.wordpress.com", "ns2.wordpress.com"]
+
+
+mock_data_empty = {
+    "ns_records": [],
+    "a_records": {},
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("dnswalk_harness", [mock_data_empty], indirect=True)
+async def test_dnswalk_label_too_long(dnswalk_harness):
+    """Labels exceeding 63 octets should cause ns_trace to return []."""
+    long_label = "a" * 64
+    target = f"{long_label}.bad.dns"
+    dnswalk = DnsWalk(mock_dns_manager, raw_query_max_retries=3, raw_query_timeout=5.0, raw_query_retry_wait=1)
+    result = await dnswalk.ns_trace(target)
+    assert result == []

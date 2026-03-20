@@ -1,8 +1,7 @@
 import pytest
 import datetime
-from mock import patch
+from unittest.mock import patch
 from baddns.modules.mx import BadDNS_mx
-
 
 mock_whois_unregistered = {
     "type": "error",
@@ -60,7 +59,8 @@ async def test_mx_unregistered(fs, mock_dispatch_whois, configure_mock_resolver,
             "target": "bad.dns",
             "description": "MX unregistered",
             "confidence": "CONFIRMED",
-            "signature": "N/A",
+            "severity": "MEDIUM",
+            "signature": "MX",
             "indicator": "Whois Data",
             "trigger": "mail2.worse.dns",
             "module": "MX",
@@ -86,7 +86,8 @@ async def test_mx_expired(fs, mock_dispatch_whois, configure_mock_resolver, cach
             "target": "bad.dns",
             "description": "MX Registration Expired (Expiration: [2023-02-25 15:56:10]",
             "confidence": "CONFIRMED",
-            "signature": "N/A",
+            "severity": "MEDIUM",
+            "signature": "MX",
             "indicator": "Whois Data",
             "trigger": "mail2.worse.dns",
             "module": "MX",

@@ -1,7 +1,8 @@
+import os
 import pytest
 import datetime
 import requests
-from mock import patch
+from unittest.mock import patch
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
@@ -38,7 +39,8 @@ async def test_cname_dnsnxdomain_azure_match(fs, mock_dispatch_whois, configure_
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
-        "confidence": "PROBABLE",
+        "confidence": "HIGH",
+        "severity": "MEDIUM",
         "signature": "Microsoft Azure Takeover Detection",
         "indicator": "azurewebsites.net",
         "trigger": "baddns.azurewebsites.net",
@@ -66,7 +68,100 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "POSSIBLE",
+        "confidence": "MODERATE",
+        "severity": "MEDIUM",
+        "signature": "GENERIC",
+        "indicator": "Generic Dangling CNAME",
+        "trigger": "baddns.somerandomthing.net",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_negative_signature_imperva(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {
+        "bad.dns": {"CNAME": ["7mkvokl.ng.impervadns.net."]},
+        "_NXDOMAIN": ["7mkvokl.ng.impervadns.net"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_negative_signature_incapdns(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {
+        "bad.dns": {"CNAME": ["59ygw.x.incapdns.net."]},
+        "_NXDOMAIN": ["59ygw.x.incapdns.net"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_positive_with_negative_loaded(fs, mock_dispatch_whois, configure_mock_resolver):
+    """Positive signature still fires when negative signatures are also loaded."""
+    mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "Microsoft Azure Takeover Detection" for f in findings)
+
+
+@pytest.mark.asyncio
+async def test_cname_dnsnxdomain_generic_with_negative_loaded(fs, mock_dispatch_whois, configure_mock_resolver):
+    """Generic finding still fires for non-Imperva unknown CNAMEs when negative signatures are loaded."""
+    mock_data = {"bad.dns": {"CNAME": ["baddns.somerandomthing.net."]}, "_NXDOMAIN": ["baddns.somerandomthing.net"]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    mock_signature_load(fs, "negative_imperva_cname.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    expected = {
+        "target": "bad.dns",
+        "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
+        "confidence": "MODERATE",
+        "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",
         "trigger": "baddns.somerandomthing.net",
@@ -134,7 +229,8 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, httpx_mock, c
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-        "confidence": "PROBABLE",
+        "confidence": "HIGH",
+        "severity": "MEDIUM",
         "signature": "Bigcartel Takeover Detection",
         "indicator": "[Words: <h1>Oops! We couldn&#8217;t find that page.</h1> | Condition: and | Part: body] Matchers-Condition: and",
         "trigger": "baddns.bigcartel.com",
@@ -159,7 +255,8 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "POSSIBLE",
+        "confidence": "MODERATE",
+        "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",
         "trigger": "baddns.bigcartel.com",
@@ -190,7 +287,8 @@ async def test_cname_chainedcname_nxdomain(fs, mock_dispatch_whois, httpx_mock, 
     expected = {
         "target": "chain.bad.dns",
         "description": "Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
-        "confidence": "PROBABLE",
+        "confidence": "HIGH",
+        "severity": "MEDIUM",
         "signature": "Microsoft Azure Takeover Detection",
         "indicator": "azurewebsites.net",
         "trigger": "chain2.bad.dns, baddns.azurewebsites.net",
@@ -254,7 +352,8 @@ async def test_cname_whois_expired(fs, mock_dispatch_whois, httpx_mock, configur
         "target": "bad.dns",
         "description": "CNAME Registration Expired (Expiration: [2023-02-25 15:56:10]",
         "confidence": "CONFIRMED",
-        "signature": "N/A",
+        "severity": "MEDIUM",
+        "signature": "CNAME Takeover",
         "indicator": "Whois Data",
         "trigger": "worse.dns",
         "module": "CNAME",
@@ -288,7 +387,8 @@ async def test_cname_whois_unregistered_match(fs, mock_dispatch_whois, httpx_moc
         "target": "bad.dns",
         "description": "CNAME unregistered",
         "confidence": "CONFIRMED",
-        "signature": "N/A",
+        "severity": "MEDIUM",
+        "signature": "CNAME Takeover",
         "indicator": "Whois Data",
         "trigger": "worse.dns",
         "module": "CNAME",
@@ -397,3 +497,217 @@ async def test_cname_whois_unregistered_missingdata(fs, mock_dispatch_whois, htt
             findings = baddns_cname.analyze()
             print(findings)
         assert not exit_mock.called
+
+
+# Custom signature YAML for not_cnames tests
+_NOT_CNAMES_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: word
+    value: vulnerable-service.com
+  ips: []
+  nameservers: []
+  not_cnames:
+  - type: word
+    value: excluded.vulnerable-service.com
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "Bucket does not exist"
+  matchers-condition: and
+mode: http
+service_name: Not-Cnames Test Service
+source: self
+"""
+
+_NOT_CNAMES_NXDOMAIN_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: word
+    value: vulnerable-service.com
+  ips: []
+  nameservers: []
+  not_cnames:
+  - type: word
+    value: excluded.vulnerable-service.com
+matcher_rule:
+mode: dns_nxdomain
+service_name: Not-Cnames NXDOMAIN Test Service
+source: self
+"""
+
+
+def _write_sig(fs, yaml_content, filename="test_not_cnames.yml"):
+    """Write a custom signature YAML into the fake filesystem and return the signatures dir."""
+    sig_dir = "/tmp/signatures"
+    fs.create_dir(sig_dir)
+    fs.create_file(os.path.join(sig_dir, filename), contents=yaml_content)
+    return sig_dir
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_not_cnames_exclusion(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    """CNAME matches both cnames and not_cnames — signature should be skipped, no findings."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["excluded.vulnerable-service.com"]},
+        "excluded.vulnerable-service.com": {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    httpx_mock.add_response(url="http://bad.dns/", status_code=200, text="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_SIG_YAML)
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not findings
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_not_cnames_no_exclusion(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    """CNAME matches cnames but NOT not_cnames — findings should be returned."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["other.vulnerable-service.com"]},
+        "other.vulnerable-service.com": {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+    httpx_mock.add_response(url="http://bad.dns/", status_code=200, text="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_SIG_YAML)
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "Not-Cnames Test Service" for f in findings)
+
+
+@pytest.mark.asyncio
+async def test_cname_nxdomain_not_cnames_exclusion(fs, mock_dispatch_whois, configure_mock_resolver):
+    """NXDOMAIN CNAME matches both cnames and not_cnames — signature should be skipped."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["excluded.vulnerable-service.com."]},
+        "_NXDOMAIN": ["excluded.vulnerable-service.com"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_NXDOMAIN_SIG_YAML, filename="test_not_cnames_nxdomain.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    # Should get GENERIC finding (since it's cross-domain NXDOMAIN) but NOT the signature match
+    assert not any(f.to_dict()["signature"] == "Not-Cnames NXDOMAIN Test Service" for f in (findings or []))
+
+
+@pytest.mark.asyncio
+async def test_cname_nxdomain_not_cnames_no_exclusion(fs, mock_dispatch_whois, configure_mock_resolver):
+    """NXDOMAIN CNAME matches cnames but NOT not_cnames — signature findings should be returned."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["other.vulnerable-service.com."]},
+        "_NXDOMAIN": ["other.vulnerable-service.com"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    sig_dir = _write_sig(fs, _NOT_CNAMES_NXDOMAIN_SIG_YAML, filename="test_not_cnames_nxdomain.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "Not-Cnames NXDOMAIN Test Service" for f in findings)
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_lovable_match(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    mock_data = {"bad.dns": {"CNAME": ["baddns.lovable.app"]}, "baddns.lovable.app": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    httpx_mock.add_response(
+        url="http://bad.dns/",
+        status_code=404,
+        text="Publish or update your Lovable project for it to appear here.",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "baddns_lovable.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    expected = {
+        "target": "bad.dns",
+        "description": "Dangling CNAME, probable subdomain takeover (HTTP String Match)",
+        "confidence": "HIGH",
+        "severity": "MEDIUM",
+        "signature": "Lovable Takeover Detection",
+        "indicator": "[Words: Publish or update your Lovable project for it to appear here | Condition: and | Part: body] Matchers-Condition: and",
+        "trigger": "baddns.lovable.app",
+        "module": "CNAME",
+    }
+    assert any(expected == finding.to_dict() for finding in findings)
+
+
+@pytest.mark.asyncio
+@pytest.mark.httpx_mock(assert_all_requests_were_expected=False)
+async def test_cname_http_lovable_negative(fs, mock_dispatch_whois, httpx_mock, configure_mock_resolver):
+    """CNAME to lovable.app but response body doesn't match — no findings."""
+    mock_data = {"bad.dns": {"CNAME": ["baddns.lovable.app"]}, "baddns.lovable.app": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    httpx_mock.add_response(
+        url="http://bad.dns/",
+        status_code=200,
+        text="<h1>Welcome to my site</h1>",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "baddns_lovable.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not any(f.to_dict()["signature"] == "Lovable Takeover Detection" for f in (findings or []))
+
+
+@pytest.mark.asyncio
+async def test_cname_srv_style_target_skipped(fs, mock_dispatch_whois, configure_mock_resolver):
+    mock_data = {
+        "bill._tcp.app.flipster.io": {"CNAME": ["cname.vercel-dns.com."]},
+        "_NXDOMAIN": ["cname.vercel-dns.com"],
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    target = "bill._tcp.app.flipster.io"
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver)
+
+    result = await baddns_cname.dispatch()
+    assert result is False

@@ -7,6 +7,9 @@ from baddns.lib.whoismanager import WhoisManager
 class TestWhoisManager:
     """Test WhoisManager error handling, specifically PywhoisError"""
 
+    def setup_method(self):
+        WhoisManager.clear_cache()
+
     @pytest.mark.asyncio
     async def test_pywhois_error_handling(self):
         """Test that PywhoisError is properly caught and handled"""
@@ -33,6 +36,16 @@ class TestWhoisManager:
 
         assert manager.whois_result["type"] == "error"
         assert manager.whois_result["data"] == "Invalid domain for WHOIS"
+
+    @pytest.mark.asyncio
+    async def test_whois_restricted_tld_skipped(self):
+        """WHOIS should be skipped for restricted TLDs (.gov, .mil, .edu, .int)"""
+        for domain in ["example.gov", "sub.example.mil", "school.edu", "wipo.int"]:
+            manager = WhoisManager(domain)
+            await manager.dispatchWHOIS()
+            assert manager.whois_result is None, f"Expected None for {domain}"
+            findings = manager.analyzeWHOIS()
+            assert findings == [], f"Expected no findings for {domain}"
 
     @pytest.mark.asyncio
     async def test_successful_whois_query(self):

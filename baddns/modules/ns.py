@@ -22,9 +22,9 @@ class BadDNS_ns(BadDNS_base):
             target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
         )
 
-    async def dispatch(self):
+    async def _dispatch(self):
         # omit everything except CNAME. If there is a CNAME chain, we want to run against the end of it.
-        await self.target_dnsmanager.dispatchDNS(omit_types=[["A", "AAAA", "MX", "NS", "SOA", "TXT", "NSEC"]])
+        await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "MX", "NS", "SOA", "TXT", "NSEC"])
 
         if self.target_dnsmanager.answers["CNAME"] != None:
             self.infomsg(
@@ -72,8 +72,9 @@ class BadDNS_ns(BadDNS_base):
         if self.target_dnsmanager.answers["SOA"] == None:
             log.debug("No SOA record found w/nameservers present")
             r = None
+            # Check positive signatures first
             for sig in self.signatures:
-                if sig.signature["mode"] == "dns_nosoa":
+                if sig.signature["mode"] == "dns_nosoa" and not sig.signature.get("negative_signature", False):
                     sig_nameservers = [ns for ns in sig.signature["identifiers"]["nameservers"]]
                     r = self.get_substring_matches(target_nameservers, sig_nameservers)
                     if r:
@@ -82,7 +83,8 @@ class BadDNS_ns(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": "Dangling NS Records (NS records without SOA) with known impact",
-                                    "confidence": "PROBABLE",
+                                    "confidence": "HIGH",
+                                    "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": f"DnsWalk Analysis with signature match: {r[1]}",
                                     "trigger": target_nameservers,
@@ -94,6 +96,16 @@ class BadDNS_ns(BadDNS_base):
                             f"Found match for for target nameservers {', '.join(target_nameservers)} with signature [{sig.signature['service_name']}]"
                         )
                         return findings
+            # Check negative signatures before falling back to generic
+            for sig in self.signatures:
+                if sig.signature["mode"] == "dns_nosoa" and sig.signature.get("negative_signature", False):
+                    sig_nameservers = [ns for ns in sig.signature["identifiers"]["nameservers"]]
+                    r = self.get_substring_matches(target_nameservers, sig_nameservers)
+                    if r:
+                        log.debug(
+                            f"Negative signature match [{sig.signature['service_name']}] for nameservers {', '.join(target_nameservers)}, suppressing generic finding"
+                        )
+                        return findings
             log.debug(
                 f"No signature found, falling back to report generic dangling NS record for nameservers: [{', '.join(target_nameservers)}]]"
             )
@@ -102,8 +114,9 @@ class BadDNS_ns(BadDNS_base):
                     {
                         "target": self.target_dnsmanager.target,
                         "description": "Dangling NS Records (NS records without SOA)",
-                        "confidence": "POSSIBLE",
-                        "signature": "N/A",
+                        "confidence": "LOW",
+                        "severity": "MEDIUM",
+                        "signature": "GENERIC",
                         "indicator": "DNSWalk Analysis",
                         "trigger": target_nameservers,
                         "module": type(self),

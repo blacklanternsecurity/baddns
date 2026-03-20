@@ -2,7 +2,7 @@ import os
 import sys
 import dns
 import pytest
-from mock import patch
+from unittest.mock import patch
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(f"{os.path.dirname(SCRIPT_DIR)}")
@@ -99,7 +99,7 @@ def test_cli_direct(monkeypatch, capsys, mocker, httpx_mock, configure_mock_reso
     httpx_mock.add_response(
         url="http://bad.dns/",
         status_code=200,
-        text="The specified bucket does not exist",
+        text="<li>BucketName: bad.dns</li>The specified bucket does not exist",
     )
 
     cli.main()

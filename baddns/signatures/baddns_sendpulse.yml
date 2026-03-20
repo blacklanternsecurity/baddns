@@ -1,0 +1,20 @@
+identifiers:
+  cnames:
+  - type: word
+    value: stat-pulse.com
+  - type: word
+    value: sendpulse.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - dsl:
+    - Host != ip
+    type: dsl
+  - status: 502
+    type: status
+  matchers-condition: and
+mode: http
+service_name: SendPulse Takeover Detection
+source: self

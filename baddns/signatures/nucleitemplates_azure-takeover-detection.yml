@@ -3,29 +3,15 @@ identifiers:
   - type: word
     value: azure-api.net
   - type: word
-    value: azure-mobile.net
-  - type: word
     value: azurecontainer.io
-  - type: word
-    value: azurecr.io
-  - type: word
-    value: azuredatalakestore.net
-  - type: word
-    value: azureedge.net
-  - type: word
-    value: azurefd.net
   - type: word
     value: azurehdinsight.net
   - type: word
     value: azurewebsites.net
   - type: word
-    value: azurewebsites.windows.net
-  - type: word
     value: blob.core.windows.net
   - type: word
     value: cloudapp.azure.com
-  - type: word
-    value: cloudapp.net
   - type: word
     value: database.windows.net
   - type: word
@@ -38,6 +24,8 @@ identifiers:
     value: trafficmanager.net
   - type: word
     value: visualstudio.com
+  - type: word
+    value: web.core.windows.net
   ips: []
   nameservers: []
   not_cnames: []

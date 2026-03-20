@@ -7,7 +7,7 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - status: 500
+  - status: 404
     type: status
   matchers-condition: and
 mode: http

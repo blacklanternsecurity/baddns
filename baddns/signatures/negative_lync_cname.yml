@@ -1,0 +1,12 @@
+identifiers:
+  cnames:
+  - type: word
+    value: online.lync.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule: null
+mode: dns_nxdomain
+service_name: Microsoft Lync (Skype for Business Online)
+source: self
+negative_signature: true
