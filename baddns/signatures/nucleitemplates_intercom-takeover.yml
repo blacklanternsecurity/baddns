@@ -16,5 +16,6 @@ matcher_rule:
     - This page is reserved for artistic dogs.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Intercom Takeover Detection
 source: nucleitemplates
