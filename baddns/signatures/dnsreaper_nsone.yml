@@ -6,5 +6,6 @@ identifiers:
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
+negative_signature: false
 service_name: ns1.com
 source: dnsreaper
