@@ -21,5 +21,6 @@ matcher_rule:
     - <title>Please renew your subscription</title>
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: tilda takeover detection
 source: nucleitemplates
