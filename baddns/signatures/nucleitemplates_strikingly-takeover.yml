@@ -16,5 +16,6 @@ matcher_rule:
     - you've come to the right place.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Strikingly Takeover Detection
 source: nucleitemplates
