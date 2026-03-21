@@ -14,5 +14,6 @@ matcher_rule:
     - YouTrack Starting Page
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: myjetbrains.com
 source: dnsreaper
