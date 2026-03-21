@@ -14,5 +14,6 @@ matcher_rule:
     - https://www.wishpond.com/404?campaign=true
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: wishpond.com
 source: dnsreaper
