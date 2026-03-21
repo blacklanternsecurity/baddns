@@ -7,9 +7,13 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - status: 302
-    type: status
+  - condition: or
+    part: body
+    type: word
+    words:
+    - No landing page found.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: agilecrm.com
 source: dnsreaper
