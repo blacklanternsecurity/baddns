@@ -15,5 +15,6 @@ matcher_rule:
     - Non-hub domain, The URL you've accessed does not provide a hub.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Uberflip Takeover Detection
 source: nucleitemplates
