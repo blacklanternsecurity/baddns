@@ -20,5 +20,6 @@ matcher_rule:
     type: dsl
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Bigcartel Takeover Detection
 source: nucleitemplates
