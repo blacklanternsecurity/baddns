@@ -15,5 +15,6 @@ matcher_rule:
     - You've tried to access an account/page that does not exist
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: HelpDocs Takeover Detection
 source: nucleitemplates
