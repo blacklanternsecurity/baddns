@@ -17,5 +17,6 @@ matcher_rule:
     - Help Centre Closed
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Zendesk Takeover Detection
 source: nucleitemplates
