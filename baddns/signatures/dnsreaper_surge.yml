@@ -14,5 +14,6 @@ matcher_rule:
     - project not found
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: surge.sh
 source: dnsreaper
