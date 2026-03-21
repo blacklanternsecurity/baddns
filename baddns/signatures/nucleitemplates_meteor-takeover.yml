@@ -12,5 +12,6 @@ matcher_rule:
     - '404 Not Found: No applications registered for host '''
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Meteor subdomain takeover
 source: nucleitemplates
