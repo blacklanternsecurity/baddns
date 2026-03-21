@@ -14,5 +14,6 @@ matcher_rule:
     - The request could not be satisfied.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: hatenablog.com
 source: dnsreaper
