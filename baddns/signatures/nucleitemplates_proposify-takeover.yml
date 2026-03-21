@@ -15,5 +15,6 @@ matcher_rule:
     - If you need immediate assistance, please contact <a href="mailto:support@proposify.biz
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: proposify takeover detection
 source: nucleitemplates
