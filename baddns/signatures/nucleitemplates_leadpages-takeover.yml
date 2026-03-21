@@ -18,5 +18,6 @@ matcher_rule:
     - Double check that you have the right web address and give it another go!
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Leadpages takeover detection
 source: nucleitemplates
