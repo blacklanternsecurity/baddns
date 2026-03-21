@@ -16,5 +16,6 @@ matcher_rule:
     - does not exist in our system
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: hubspot takeover detection
 source: nucleitemplates
