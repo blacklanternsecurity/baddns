@@ -18,5 +18,6 @@ matcher_rule:
     - Page Not Found
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: BrightCove
 source: dnsreaper
