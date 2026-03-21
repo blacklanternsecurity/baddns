@@ -15,5 +15,6 @@ matcher_rule:
     - If this is your website and you've just created it, try refreshing in a minute
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Anima Takeover Detection
 source: nucleitemplates
