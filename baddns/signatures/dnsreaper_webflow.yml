@@ -16,5 +16,6 @@ matcher_rule:
     - 404 - Page not found
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: webflow.com
 source: dnsreaper
