@@ -15,5 +15,6 @@ matcher_rule:
     - 'Location: https://gemfury.com/404'
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Gemfury Takeover Detection
 source: nucleitemplates
