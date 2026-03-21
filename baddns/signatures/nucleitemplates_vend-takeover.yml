@@ -15,5 +15,6 @@ matcher_rule:
     - Looks like you've traveled too far into cyberspace.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: vend takeover detection
 source: nucleitemplates
