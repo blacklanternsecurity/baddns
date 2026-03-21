@@ -20,5 +20,6 @@ matcher_rule:
     - ERR_NGROK_3200
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: ngrok.io
 source: dnsreaper
