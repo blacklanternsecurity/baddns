@@ -14,5 +14,6 @@ matcher_rule:
     - 404 - Not Found - Frontify
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: frontify.com
 source: dnsreaper
