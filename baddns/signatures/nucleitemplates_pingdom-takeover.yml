@@ -16,5 +16,6 @@ matcher_rule:
     - This public report page has not been activated by the user
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Pingdom Takeover Detection
 source: nucleitemplates
