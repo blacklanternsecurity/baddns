@@ -15,5 +15,6 @@ matcher_rule:
     - The page you were looking for doesn
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Convert Pages
 source: dnsreaper
