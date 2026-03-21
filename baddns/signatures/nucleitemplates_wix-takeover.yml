@@ -23,5 +23,6 @@ matcher_rule:
     type: dsl
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Wix Takeover Detection
 source: nucleitemplates
