@@ -14,5 +14,6 @@ matcher_rule:
     - Sign in to Lightspeed Retail POS Software | Lightspeed Retail
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: vendhq.com
 source: dnsreaper
