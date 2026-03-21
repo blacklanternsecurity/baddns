@@ -11,8 +11,9 @@ matcher_rule:
     part: body
     type: word
     words:
-    - You may have mistyped the address or the page may have moved.
+    - Cloudflare is currently unable to resolve your requested domain
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: thinkific.com
 source: dnsreaper
