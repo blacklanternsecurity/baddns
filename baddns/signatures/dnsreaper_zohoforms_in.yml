@@ -1,18 +1,16 @@
 identifiers:
   cnames:
   - type: word
-    value: zohohost.in
+    value: forms.cs.zohohost.in
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: and
-    part: body
-    type: word
-    words:
-    - <center><h1>403 Forbidden</h1></center>
+  - status: 403
+    type: status
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: zoho forms india
 source: dnsreaper
