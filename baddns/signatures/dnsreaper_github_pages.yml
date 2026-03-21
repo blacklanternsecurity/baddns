@@ -22,5 +22,6 @@ matcher_rule:
     - '<title>Site not found '
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Github Pages
 source: dnsreaper
