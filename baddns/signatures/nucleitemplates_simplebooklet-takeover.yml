@@ -15,5 +15,6 @@ matcher_rule:
     - We can't find this <a href="https://simplebooklet.com
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: simplebooklet takeover detection
 source: nucleitemplates
