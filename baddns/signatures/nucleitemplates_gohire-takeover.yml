@@ -18,5 +18,6 @@ matcher_rule:
     type: status
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: GoHire Takeover Detection
 source: nucleitemplates
