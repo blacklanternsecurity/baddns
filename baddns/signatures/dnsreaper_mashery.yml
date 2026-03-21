@@ -14,5 +14,6 @@ matcher_rule:
     - Unrecognized domain
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: mashery.com
 source: dnsreaper
