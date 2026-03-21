@@ -17,5 +17,6 @@ matcher_rule:
     - pagewiz
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Pagewiz subdomain takeover
 source: nucleitemplates
