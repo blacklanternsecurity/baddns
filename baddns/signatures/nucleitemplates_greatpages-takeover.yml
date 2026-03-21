@@ -15,5 +15,6 @@ matcher_rule:
     - "P\xE1gina n\xE3o encontrada (Erro 404)"
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: GreatPages - Takeover Detection
 source: nucleitemplates
