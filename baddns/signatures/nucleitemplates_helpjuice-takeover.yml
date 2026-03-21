@@ -1,7 +1,5 @@
 identifiers:
-  cnames:
-  - type: word
-    value: helpjuice.com
+  cnames: []
   ips: []
   nameservers: []
   not_cnames: []
@@ -17,5 +15,6 @@ matcher_rule:
     - We could not find what you're looking for.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: helpjuice takeover detection
 source: nucleitemplates
