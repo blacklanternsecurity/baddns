@@ -13,5 +13,6 @@ matcher_rule:
     - job board website is either expired or its domain name is invalid.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: smartjobboard.com
 source: dnsreaper
