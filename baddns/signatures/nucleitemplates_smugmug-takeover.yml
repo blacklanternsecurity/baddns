@@ -15,5 +15,6 @@ matcher_rule:
     - '{"text":"Page Not Found"'
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Smugmug Takeover Detection
 source: nucleitemplates
