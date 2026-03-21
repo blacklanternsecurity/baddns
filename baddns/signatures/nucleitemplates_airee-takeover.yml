@@ -18,5 +18,6 @@ matcher_rule:
       \u0447\u0435\u043D"
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Airee Takeover Detection
 source: nucleitemplates
