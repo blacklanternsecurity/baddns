@@ -45,5 +45,6 @@ identifiers:
   not_cnames: []
 matcher_rule: null
 mode: dns_nxdomain
+negative_signature: false
 service_name: AWS Elastic Beanstalk
 source: dnsreaper
