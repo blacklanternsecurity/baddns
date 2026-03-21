@@ -11,5 +11,6 @@ matcher_rule:
     type: status
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: bettermode.com
 source: dnsreaper
