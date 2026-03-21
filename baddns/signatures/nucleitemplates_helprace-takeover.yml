@@ -16,5 +16,6 @@ matcher_rule:
     - Admin of this Helprace account needs to set up domain alias
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Helprace Takeover Detection
 source: nucleitemplates
