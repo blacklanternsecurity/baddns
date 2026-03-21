@@ -15,5 +15,6 @@ matcher_rule:
     - unknown to Read the Docs
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Read the Docs Takeover Detection
 source: nucleitemplates
