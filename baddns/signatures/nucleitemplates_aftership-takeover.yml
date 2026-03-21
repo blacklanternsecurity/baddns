@@ -16,5 +16,6 @@ matcher_rule:
       exist.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: Aftership - Subdomain Takeover Detection
 source: nucleitemplates
