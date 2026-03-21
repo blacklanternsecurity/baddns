@@ -15,5 +15,6 @@ matcher_rule:
     - Sorry, this page is no longer available.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: AgileCRM Takeover Detection
 source: nucleitemplates
