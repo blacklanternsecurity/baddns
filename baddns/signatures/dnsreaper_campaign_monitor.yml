@@ -7,14 +7,13 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - <center>csw</center>
-  - status: 301
-    type: status
+    - WHOOPS! The page you're looking for does not exist.
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: campaignmonitor.com
 source: dnsreaper
