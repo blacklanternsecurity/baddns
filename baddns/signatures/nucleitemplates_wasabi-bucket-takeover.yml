@@ -1,7 +1,5 @@
 identifiers:
-  cnames:
-  - type: word
-    value: wasabisys.com
+  cnames: []
   ips: []
   nameservers: []
   not_cnames: []
@@ -20,5 +18,6 @@ matcher_rule:
     - BucketName
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: wasabi Bucket Takeover - Detection
 source: nucleitemplates
