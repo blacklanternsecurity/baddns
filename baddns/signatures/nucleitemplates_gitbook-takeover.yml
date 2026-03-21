@@ -16,5 +16,6 @@ matcher_rule:
     - Domain not found
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: gitbook takeover detection
 source: nucleitemplates
