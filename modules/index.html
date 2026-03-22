@@ -1,0 +1,786 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Check subdomains for subdomain takeovers and other DNS tomfoolery">
+      
+      
+        <meta name="author" content="Paul Mueller">
+      
+      
+        <link rel="canonical" href="https://blacklanternsecurity.github.io/baddns/modules/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../signatures/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../baddns.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Modules - BadDNS Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cname" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="BadDNS Docs" class="md-header__button md-logo" aria-label="BadDNS Docs" data-md-component="logo">
+      
+  <img src="../logo-md.jpg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            BadDNS Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Modules
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/blacklanternsecurity/baddns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    blacklanternsecurity/baddns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Manual
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="BadDNS Docs" class="md-nav__button md-logo" aria-label="BadDNS Docs" data-md-component="logo">
+      
+  <img src="../logo-md.jpg" alt="logo">
+
+    </a>
+    BadDNS Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/blacklanternsecurity/baddns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    blacklanternsecurity/baddns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Manual
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Manual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modules
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cname" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cname
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nsec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nsec
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        references
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#txt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        txt
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mx
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zonetransfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        zonetransfer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dmarc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dmarc
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mta-sts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mta-sts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wildcard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        wildcard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        spf
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../signatures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Signatures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../research/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Modules</h1>
+
+<h2 id="cname">cname</h2>
+<p>The <code>cname</code> modules check for "Dangling" CNAME records, and then interrogates them for takeover opportunities. </p>
+<p>A dangling DNS record refers to a record which points to a resource that doesn't exist anymore. In the context of a subdomain takeover, this can manifest in several ways. For instance, consider a record pointing to an *.azurewebsites.net instance (for example) that isn't registered anymore, and results in an NXDOMAIN result. This situation allows someone else to register the same instance with Azure and redirect the dangling CNAME record to their resource.  It could also point to a service (such as WordPress) that resolves but results in a particular error message or status code indicating that the subdomain is available for use within the service.</p>
+<p>All of the specific knowledge for each of these services is contained within <a href="../signatures/">signatures</a>. When a dangling CNAME is discovered, it will be checked against every signature for a match. If a match is found, it is considered a <code>VULNERABILITY</code>. If not, it might still be interesting (it could be an undiscovered new type of takeover) and will be reported accordingly. When using BadDNS via the <a href="https://github.com/blacklanternsecurity/bbot/">BBOT</a> module, these instances are reported as a <code>FINDING</code> for a generic dangling record.</p>
+<p>Since many takeover detections depend on strings within HTTP content, BadDNS performs HTTP requests to its targets, in addition to DNS queries.</p>
+<p>WHOIS requests are also made, which are used to determine the expiration date of the CNAME's base domain target. The focus of BadDNS isn't solely on subdomains; taking over a base domain inherently grants control over all its subdomains.</p>
+<h2 id="ns">ns</h2>
+<p>NS records can also be subject to dangling issues, similar to CNAME records. A signature is necessary to determine if the dangling NS record is exploitable. Additionally, generic dangling NS records are reported, as they might reveal a new type of takeover that has not yet been investigated.</p>
+<p>To identify a "Dangling" NS record, we examine NS records that exist without a corresponding SOA (Start of Authority) record. As noted in the <a href="../research/">research notes</a>, this process can be challenging due to variations in DNS server behavior. Some of them will <strong>lie</strong> to you about an NS record they find if they can't find an SOA record, effectively concealing the dangling NS records. To deal with this, the <code>ns</code> module mimicks the behavior of an actual DNS server making a recursive lookups, starting a the TLD (top-level domain). </p>
+<p>If it finds any dangling NS records, they are checked against every <code>ns</code> signature for a match.</p>
+<h2 id="nsec">nsec</h2>
+<p>NSEC walking refers to a method used by attackers to enumerate the contents of a DNS zone when DNSSEC (DNS Security Extensions) is implemented. DNSSEC was designed to add an extra layer of security to the DNS by validating the authenticity of the responses. It uses two record types for this purpose: NSEC (Next Secure Record) and NSEC3. These records provide proof of non-existence of a DNS record, helping to prevent common attacks like cache poisoning.</p>
+<p>However, NSEC records inadvertently introduce a vulnerability. An NSEC record not only indicates that a specific DNS record does not exist but also reveals the next valid domain name in the DNS zone. By continuously querying for non-existent records, an attacker can use the responses to gradually map the entire set of domain names in a zone, a technique known as NSEC walking. This process can uncover subdomains and other DNS entries that might not be intended for public knowledge.</p>
+<p>The NSEC module looks for instances where NSEC records are present, and then attempts to actually "walk" the records, and then report all of the domains it finds in the process.</p>
+<h2 id="references">references</h2>
+<p>What happens if a website is pointing to an external source for it's Javascript or CSS, and that external source can be taken over? The best cross-site scripting you could ever ask for. The references module does just that, wrapping the <code>cname</code> module behind the scenes and sending any CSS/JS domains found in the target's HTML content for analysis. If a match is found, it's emitted with the added context of the page it was found in.</p>
+<h2 id="txt">txt</h2>
+<p>TXT records in DNS serve a variety of purposes, one common use being domain ownership verification. A service may require setting a specific TXT record, a task achievable only by the domain owner, thereby confirming ownership. However, the utilization of TXT records extends far beyond this. They are often employed for a myriad of custom, sometimes unconventional, purposes.</p>
+<p>What happens when a TXT record just happens to contain a domain/subdomain that just happens to be vulnerable to a takeover?. Who knows. This type of detection is the least likely to be exploitable - but if it is, it could be very interesting. If you get a detection here, it's worth doing the takeover and just spinning up a server and seeing what requests get sent to it.</p>
+<p>Behind the scenes, when a domain is found in a TXT record, the <code>txt</code> module actually sends the domain/subdomain to the <code>cname</code> module where it gets processed just like any other subdomain. If there's a hit, its emitted with the added context of the TXT record it was found in. </p>
+<h2 id="mx">mx</h2>
+<p>Taking over a dangling MX record can have significant consequences. If an organization has multiple MX records and some of them are still functional, they may not notice that there is a dangling record present. An attacker who is able to gain control of a domain the dangling record is pointing to can start receiving a portion of an organization's email. Although the impact of control of an email server heavily depends on the priority settings for the various mail servers (emails may only go to lower priority servers if the higher priority servers go down), it can have a significant impact. In addition to the partial loss of email functionality, credentials or other sensitive information could be captured if they are shared in the intercepted emails.</p>
+<p>A crafty attacker might even resend messages they siphon off, so the organization never notices a problem, and then silently gain access to a portion of their emails indefinitely.</p>
+<h2 id="zonetransfer">zonetransfer</h2>
+<p>Zone transfers are a legitimate function used by DNS servers to synchronize DNS record information between a primary DNS server and its secondary servers. This synchronization ensures that all servers have an up-to-date copy of the DNS records, which are crucial for routing internet traffic to the correct locations.</p>
+<p>While essential for DNS operation, zone transfers can pose significant security risks if not properly secured. An unrestricted zone transfer can expose all DNS records of a domain to unauthorized parties. Although rare, when they do occur they typically yield every domain for the organization, which can be a gold mine for an attacker trying to perform recon against a target.</p>
+<p>The <code>zonetransfer</code> module will interrogate the name server(s) that are authoritative for the target domain and attempt a zone transfer. If successful, it will also harvest all of the available records and present them within the result.</p>
+<h2 id="dmarc">dmarc</h2>
+<p>DMARC (Domain-based Message Authentication, Reporting, and Conformance) is a DNS-based email authentication protocol that helps protect domains from being used in email spoofing attacks. A DMARC record is published as a TXT record at <code>_dmarc.&lt;domain&gt;</code> and specifies a policy (<code>none</code>, <code>quarantine</code>, or <code>reject</code>) that tells receiving mail servers how to handle messages that fail authentication checks.</p>
+<p>The <code>dmarc</code> module queries for DMARC records and checks for several misconfigurations:</p>
+<ul>
+<li><strong>Missing DMARC record</strong> — No <code>_dmarc</code> TXT record exists at all, leaving the domain with no protection against email spoofing.</li>
+<li><strong>Policy set to <code>none</code></strong> — A <code>p=none</code> policy means spoofed emails will still be delivered, offering monitoring but no enforcement.</li>
+<li><strong>Weak subdomain policy</strong> — The <code>sp=none</code> tag or an inherited <code>p=none</code> from the organizational domain means subdomains can be spoofed even if the parent domain has a stricter policy.</li>
+<li><strong>Partial enforcement</strong> — A <code>pct</code> value less than 100 means the policy is only applied to a fraction of messages.</li>
+<li><strong>No aggregate reporting</strong> — Missing <code>rua</code> tag means the domain owner receives no reports about authentication failures.</li>
+</ul>
+<p>For subdomains, the module implements the RFC 7489 two-step lookup: it first checks <code>_dmarc.&lt;subdomain&gt;</code>, and if no record is found, falls back to the organizational domain's DMARC record.</p>
+<h2 id="mta-sts">mta-sts</h2>
+<p>MTA-STS (Mail Transfer Agent Strict Transport Security) is a mechanism that allows mail service providers to declare their ability to receive TLS-secured connections and to specify whether sending SMTP servers should refuse to deliver to MX hosts that do not offer TLS. It works via a TXT record at <code>_mta-sts.&lt;domain&gt;</code> and a policy file hosted at <code>https://mta-sts.&lt;domain&gt;/.well-known/mta-sts.txt</code>.</p>
+<p>The <code>mta-sts</code> module checks for several issues related to MTA-STS configuration:</p>
+<ul>
+<li><strong>Dangling mta-sts subdomain</strong> — If <code>mta-sts.&lt;domain&gt;</code> has a dangling CNAME, an attacker could take over the subdomain and serve a malicious MTA-STS policy, potentially redirecting email to attacker-controlled mail servers. The module delegates to the <code>cname</code> module to check the <code>mta-sts</code> subdomain for takeover opportunities.</li>
+<li><strong>Orphaned TXT record</strong> — The <code>_mta-sts</code> TXT record exists but the policy file is unreachable, indicating a stale or misconfigured deployment.</li>
+<li><strong>Policy MX mismatch</strong> — In <code>enforce</code> mode, if actual MX records don't match the policy's <code>mx</code> lines, legitimate email delivery may be disrupted.</li>
+<li><strong>Dangling MX domains in policy</strong> — WHOIS checks on domains listed in the policy's <code>mx</code> lines can reveal expired or available domains that could be registered by an attacker.</li>
+</ul>
+<h2 id="wildcard">wildcard</h2>
+<p>A wildcard DNS record (e.g., <code>*.example.com</code>) causes all subdomains to resolve to the same target. While this is sometimes intentional, it can have serious security implications if the wildcard points to a CNAME that is vulnerable to takeover.</p>
+<p>The <code>wildcard</code> module probes for wildcard DNS records by querying a random subdomain of the target's parent domain. If a wildcard CNAME is detected, the module delegates to the <code>cname</code> module to check whether the CNAME target is dangling or matches a known takeover signature.</p>
+<p>A successful wildcard CNAME takeover is particularly severe because it affects <strong>all</strong> subdomains of the parent domain simultaneously, not just a single subdomain. This means a single dangling wildcard CNAME could expose thousands of subdomains to takeover at once.</p>
+<h2 id="spf">spf</h2>
+<p>SPF (Sender Policy Framework) is a DNS-based email authentication mechanism that specifies which mail servers are authorized to send email on behalf of a domain. An SPF record is published as a TXT record at the domain and contains a list of mechanisms (<code>include</code>, <code>a</code>, <code>mx</code>, <code>ip4</code>, <code>ip6</code>, etc.) and a default qualifier (<code>-all</code>, <code>~all</code>, <code>?all</code>, or <code>+all</code>) that determines how unauthorized senders are handled.</p>
+<p>The <code>spf</code> module queries for SPF records and checks for several issues:</p>
+<ul>
+<li><strong>Missing SPF record</strong> — No SPF TXT record exists, leaving the domain with no protection against email spoofing.</li>
+<li><strong>Multiple SPF records</strong> — More than one SPF record causes a permanent error per RFC 7208, effectively breaking SPF entirely.</li>
+<li><strong>Permissive <code>+all</code></strong> — Explicitly authorizes any server to send email for the domain, rendering SPF useless.</li>
+<li><strong>Neutral <code>?all</code></strong> — Provides no protection against unauthorized senders.</li>
+<li><strong>DNS lookup limit exceeded</strong> — SPF records that exceed the 10 DNS lookup limit per RFC 7208 cause a permanent error.</li>
+<li><strong>Hijackable include/redirect domains</strong> — WHOIS checks on domains referenced in <code>include</code> and <code>redirect</code> mechanisms can reveal expired or available domains that could be registered by an attacker to authorize their own mail servers.</li>
+</ul>
+<p>For subdomains, the module falls back to the organizational domain's SPF record if no direct SPF record is found, since SPF policy at the parent domain covers subdomains.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "navigation.tabs", "navigation.sections", "navigation.expand", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
