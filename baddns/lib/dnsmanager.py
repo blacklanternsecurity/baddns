@@ -2,7 +2,7 @@ import re
 import logging
 import asyncio
 
-from blastdns import Client, ClientConfig, DNSResult, DNSError, get_system_resolvers, BlastDNSError, ResolverError
+from blastdns import Client, DNSError, get_system_resolvers, BlastDNSError, ResolverError
 
 log = logging.getLogger(__name__)
 
@@ -124,7 +124,6 @@ class DNSManager:
                 elif rdtype == "UNKNOWN":
                     # Handle unsupported record types passed through as Unknown
                     if isinstance(value, dict):
-                        code = value.get("code", "")
                         raw = value.get("rdata", {})
                         raw_bytes = raw.get("anything", [])
                         if raw_bytes and isinstance(raw_bytes, list):
