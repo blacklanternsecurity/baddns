@@ -1,7 +1,7 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from baddns.lib.dnsmanager import DNSManager
-from blastdns import MockClient, DNSResult, DNSError
+from blastdns import MockClient
 
 
 class TestGetIPv4:

@@ -1,7 +1,6 @@
 import os
 import site
 import pytest
-from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.whoismanager import WhoisManager
 from baddns.lib.dnswalk import DnsWalk
 from .helpers import create_mock_client, DnsWalkHarness
