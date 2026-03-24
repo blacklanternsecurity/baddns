@@ -1,5 +1,4 @@
 import argparse
-import dns
 import pytest
 import asyncio
 from baddns import cli
@@ -103,7 +102,7 @@ class TestCLISilentMode:
         monkeypatch.setattr("sys.argv", ["python", "-s", "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
-        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
         cli.main()
         captured = capsys.readouterr()
         # In silent mode, the banner should NOT be printed
@@ -125,7 +124,7 @@ class TestCLIDebugMode:
         monkeypatch.setattr("sys.argv", ["python", "-d", "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {}}
         mock_resolver = configure_mock_resolver(mock_data)
-        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
         cli.main()
         # Debug mode should run without error
 
@@ -178,7 +177,7 @@ identifiers:
         monkeypatch.setattr("sys.argv", ["python", "-c", str(tmp_path), "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {}}
         mock_resolver = configure_mock_resolver(mock_data)
-        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
         cli.main()
         captured = capsys.readouterr()
         assert "custom signatures" in captured.err.lower() or True  # Runs without error
@@ -226,7 +225,7 @@ class TestCLIMinConfidenceFilter:
         monkeypatch.setattr("sys.argv", ["python", "-s", "--min-confidence", "HIGH", "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
-        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
         cli.main()
         captured = capsys.readouterr()
         # CNAME nxdomain findings are CONFIRMED, so they should appear
@@ -237,7 +236,7 @@ class TestCLIMinConfidenceFilter:
         monkeypatch.setattr("sys.argv", ["python", "-s", "--min-confidence", "CONFIRMED", "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
-        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
         cli.main()
         captured = capsys.readouterr()
         # CNAME nxdomain findings are HIGH confidence, so CONFIRMED filter should exclude them
@@ -251,7 +250,7 @@ class TestCLIMinSeverityFilter:
         monkeypatch.setattr("sys.argv", ["python", "-s", "--min-severity", "CRITICAL", "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
-        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
         cli.main()
         captured = capsys.readouterr()
         # CNAME nxdomain findings are MEDIUM severity, so they should be filtered out
@@ -263,7 +262,7 @@ class TestCLIMinSeverityFilter:
         monkeypatch.setattr("sys.argv", ["python", "-s", "--min-severity", "LOW", "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
-        mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+        mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
         cli.main()
         captured = capsys.readouterr()
         assert "baddns.azurewebsites.net" in captured.out

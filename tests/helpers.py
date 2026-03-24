@@ -2,9 +2,23 @@ import os
 import dns
 from importlib import resources
 
+from blastdns import MockClient
 
-def mock_process_answer(self, answer, rdatatype):
-    return answer
+
+def mock_process_answer(self, result, rdatatype):
+    """Test helper that extracts answers from a DNSResult, returning plain strings.
+
+    This is used by conftest to monkeypatch DNSManager.process_answer so that
+    test assertions can work with simple string data.
+    """
+    if result is None:
+        return []
+    results = []
+    for record in result.response.answers:
+        for rdtype, value in record.rdata.items():
+            value = str(value).rstrip(".").lower()
+            results.append(value)
+    return results
 
 
 class MockDNSWalk:
@@ -15,31 +29,11 @@ class MockDNSWalk:
         self.mock_dnswalk_data
 
 
-class MockResolver:
-    def __init__(self, mock_data=None):
-        self.mock_data = mock_data if mock_data else {}
-        self.nameservers = ["127.0.0.2"]
-
-    async def resolve(self, query_name, rdtype_obj=None):
-        query_name_str = str(query_name)
-
-        # Check for _NXDOMAIN
-        if "_NXDOMAIN" in self.mock_data and query_name_str in self.mock_data["_NXDOMAIN"]:
-            # Simulate the NXDOMAIN exception
-            raise dns.resolver.NXDOMAIN
-
-        if rdtype_obj is None:
-            rdtype = "A"
-        elif isinstance(rdtype_obj, str):
-            rdtype = rdtype_obj.upper()
-        else:
-            rdtype = str(rdtype_obj.name).upper()
-
-        # Fetch the relevant mock data based on query_name and rdtype
-        results = self.mock_data.get(query_name_str, {}).get(rdtype, [])
-
-        # Strip trailing dots from the results for domains
-        return [result.rstrip(".") for result in results]
+def create_mock_client(mock_data):
+    """Create a blastdns MockClient configured with the given mock data."""
+    client = MockClient()
+    client.mock_dns(mock_data)
+    return client
 
 
 def mock_signature_load(fs, signature_filename):

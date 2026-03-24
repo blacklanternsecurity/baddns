@@ -1,6 +1,5 @@
 import os
 import sys
-import dns
 import pytest
 from unittest.mock import patch
 
@@ -46,7 +45,7 @@ def test_cli_cname_nxdomain(monkeypatch, capsys, mocker, configure_mock_resolver
 
     mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
     mock_resolver = configure_mock_resolver(mock_data)
-    mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+    mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
 
     cli.main()
     captured = capsys.readouterr()
@@ -68,7 +67,7 @@ def test_cli_cname_http(monkeypatch, capsys, mocker, httpx_mock, configure_mock_
     )
     mock_data = {"bad.dns": {"CNAME": ["baddns.bigcartel.com"]}, "baddns.bigcartel.com": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
-    mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+    mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
 
     httpx_mock.add_response(
         url="http://bad.dns/",
@@ -94,7 +93,7 @@ def test_cli_direct(monkeypatch, capsys, mocker, httpx_mock, configure_mock_reso
     )
     mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
-    mocker.patch.object(dns.asyncresolver, "Resolver", return_value=mock_resolver)
+    mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
 
     httpx_mock.add_response(
         url="http://bad.dns/",
