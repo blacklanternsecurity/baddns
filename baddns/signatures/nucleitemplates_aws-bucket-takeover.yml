@@ -6,8 +6,6 @@ identifiers:
   - type: word
     value: amazonaws.com
   - type: word
-    value: wasabisys.com
-  - type: word
     value: ks3.ksyun.com
   - type: word
     value: kss.ksyun.com
@@ -82,9 +80,16 @@ matcher_rule:
     - BucketName
   - dsl:
     - contains(tolower(header), 'x-guploader-uploadid')
+    - contains(tolower(header), "aliyunoss")
     negative: true
     type: dsl
+  - negative: true
+    part: host
+    regex:
+    - ^[a-z0-9][a-z0-9-]+-[0-9]{12}-[a-z0-9-]+-an\.s3\.[a-z0-9-]+\.amazonaws\.com
+    type: regex
   matchers-condition: and
 mode: http
+negative_signature: false
 service_name: AWS Bucket Takeover Detection
 source: nucleitemplates
