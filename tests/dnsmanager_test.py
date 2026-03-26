@@ -181,11 +181,13 @@ class TestDispatchDNS:
 
         mock_client = AsyncMock()
         mock_client.resolvers = ["127.0.0.1:53"]
-        mock_client.resolve_full.side_effect = ResolverError("no data")
+        mock_client.resolve_multi_full.side_effect = ResolverError("no data")
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         await mgr.dispatchDNS(omit_types=["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"])
         # Only NSEC should have been queried
-        assert mock_client.resolve_full.call_count == 1
+        mock_client.resolve_multi_full.assert_called_once()
+        call_args = mock_client.resolve_multi_full.call_args
+        assert call_args[0][1] == ["NSEC"]
 
     @pytest.mark.asyncio
     async def test_timeout_in_dispatch(self):
@@ -193,10 +195,11 @@ class TestDispatchDNS:
 
         mock_client = AsyncMock()
         mock_client.resolvers = ["127.0.0.1:53"]
-        mock_client.resolve_full.side_effect = ResolverError("DNS timeout")
+        mock_client.resolve_multi_full.side_effect = ResolverError("DNS timeout")
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         await mgr.dispatchDNS()
-        # do_resolve catches ResolverError and returns None, so all answers should be None
+        # dispatchDNS catches ResolverError and sets NoAnswer, all type answers stay None
+        assert mgr.answers["NoAnswer"] is True
         for rtype in DNSManager.dns_record_types:
             assert mgr.answers[rtype] is None
 
