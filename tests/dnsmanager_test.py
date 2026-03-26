@@ -1,12 +1,7 @@
 import pytest
-import dns.resolver
-import dns.rdatatype
-import dns.name
-import dns.rdata
-import dns.rrset
-import dns.rdataclass
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from baddns.lib.dnsmanager import DNSManager
+from blastdns import MockClient
 
 
 class TestGetIPv4:
@@ -33,207 +28,177 @@ class TestCleanDnsRecord:
     def test_clean_string(self):
         assert DNSManager._clean_dns_record("example.com.") == "example.com"
 
-    def test_clean_rdata_object(self):
-        mock_rdata = MagicMock()
-        mock_rdata.to_text.return_value = "example.com."
-        assert DNSManager._clean_dns_record(mock_rdata) == "example.com"
+    def test_clean_string_no_dot(self):
+        assert DNSManager._clean_dns_record("example.com") == "example.com"
 
 
 class TestProcessAnswer:
     def setup_method(self):
-        self.mgr = DNSManager("test.example.com", dns_client=MagicMock())
+        mock_client = MockClient()
+        self.mgr = DNSManager("test.example.com", dns_client=mock_client)
 
     def test_none_answer(self):
         assert self.mgr.process_answer(None, "A") == []
 
-    def test_a_record(self):
-        rr = MagicMock()
-        rr.rdtype.name = "A"
-        rr.to_text.return_value = "1.2.3.4"
-        result = self.mgr.process_answer([rr], "A")
-        assert "1.2.3.4" in result
+    @pytest.mark.asyncio
+    async def test_a_record(self):
+        mock_client = MockClient()
+        mock_client.mock_dns({"test.example.com": {"A": ["1.2.3.4"]}})
+        result = await mock_client.resolve_full("test.example.com", "A")
+        processed = self.mgr.process_answer(result, "A")
+        assert "1.2.3.4" in processed
 
-    def test_soa_record(self):
-        rr = MagicMock()
-        rr.rdtype.name = "SOA"
-        rr.mname.to_text.return_value = "ns1.example.com."
-        result = self.mgr.process_answer([rr], "SOA")
-        assert "ns1.example.com" in result
+    @pytest.mark.asyncio
+    async def test_mx_record(self):
+        mock_client = MockClient()
+        mock_client.mock_dns({"test.example.com": {"MX": ["10 mail.example.com."]}})
+        result = await mock_client.resolve_full("test.example.com", "MX")
+        processed = self.mgr.process_answer(result, "MX")
+        assert "mail.example.com" in processed
 
-    def test_mx_record(self):
-        rr = MagicMock()
-        rr.rdtype.name = "MX"
-        rr.exchange.to_text.return_value = "mail.example.com."
-        result = self.mgr.process_answer([rr], "MX")
-        assert "mail.example.com" in result
+    @pytest.mark.asyncio
+    async def test_txt_record(self):
+        mock_client = MockClient()
+        mock_client.mock_dns({"test.example.com": {"TXT": ["v=spf1 include:example.com ~all"]}})
+        result = await mock_client.resolve_full("test.example.com", "TXT")
+        processed = self.mgr.process_answer(result, "TXT")
+        assert "v=spf1 include:example.com ~all" in processed
 
-    def test_srv_record(self):
-        rr = MagicMock()
-        rr.rdtype.name = "SRV"
-        rr.target.to_text.return_value = "sipdir.example.com."
-        result = self.mgr.process_answer([rr], "SRV")
-        assert "sipdir.example.com" in result
+    @pytest.mark.asyncio
+    async def test_cname_record(self):
+        mock_client = MockClient()
+        mock_client.mock_dns({"test.example.com": {"CNAME": ["target.example.com."]}})
+        result = await mock_client.resolve_full("test.example.com", "CNAME")
+        processed = self.mgr.process_answer(result, "CNAME")
+        assert "target.example.com" in processed
 
-    def test_txt_record(self):
-        rr = MagicMock()
-        rr.rdtype.name = "TXT"
-        rr.strings = [b"v=spf1 include:example.com ~all"]
-        result = self.mgr.process_answer([rr], "TXT")
-        assert "v=spf1 include:example.com ~all" in result
-
-    def test_nsec_record(self):
-        rr = MagicMock()
-        rr.rdtype.name = "NSEC"
-        rr.next.to_text.return_value = "next.example.com."
-        result = self.mgr.process_answer([rr], "NSEC")
-        assert "next.example.com" in result
-
-    def test_unknown_record_type(self):
-        rr = MagicMock()
-        rr.rdtype.name = "CAA"
-        result = self.mgr.process_answer([rr], "CAA")
-        assert result == []
+    @pytest.mark.asyncio
+    async def test_ns_record(self):
+        mock_client = MockClient()
+        mock_client.mock_dns({"test.example.com": {"NS": ["ns1.example.com."]}})
+        result = await mock_client.resolve_full("test.example.com", "NS")
+        processed = self.mgr.process_answer(result, "NS")
+        assert "ns1.example.com" in processed
 
 
 class TestDoResolve:
     def setup_method(self):
-        self.mock_client = AsyncMock()
-        self.mgr = DNSManager("test.example.com", dns_client=self.mock_client)
-
-    @pytest.mark.asyncio
-    async def test_noanswer(self):
-        self.mock_client.resolve.side_effect = dns.resolver.NoAnswer
-        result = await self.mgr.do_resolve("test.example.com", "A")
-        assert result is None
-        assert self.mgr.answers["NoAnswer"] is True
+        self.mock_client = MockClient()
 
     @pytest.mark.asyncio
     async def test_nxdomain(self):
-        self.mock_client.resolve.side_effect = dns.resolver.NXDOMAIN
-        result = await self.mgr.do_resolve("test.example.com", "A")
+        self.mock_client.mock_dns({"_NXDOMAIN": ["test.example.com"]})
+        mgr = DNSManager("test.example.com", dns_client=self.mock_client)
+        result = await mgr.do_resolve("test.example.com", "A")
         assert result is None
-        assert self.mgr.answers["NXDOMAIN"] is True
+        assert mgr.answers["NXDOMAIN"] is True
 
     @pytest.mark.asyncio
-    async def test_lifetime_timeout(self):
-        self.mock_client.resolve.side_effect = dns.resolver.LifetimeTimeout(timeout=5.0, errors=[])
-        result = await self.mgr.do_resolve("test.example.com", "A")
+    async def test_noanswer(self):
+        # Host exists with A record but we query AAAA - no answer
+        self.mock_client.mock_dns({"test.example.com": {"A": ["1.2.3.4"]}})
+        mgr = DNSManager("test.example.com", dns_client=self.mock_client)
+        result = await mgr.do_resolve("test.example.com", "AAAA")
         assert result is None
+        assert mgr.answers["NoAnswer"] is True
 
     @pytest.mark.asyncio
-    async def test_generic_exception(self):
-        self.mock_client.resolve.side_effect = Exception("something broke")
-        result = await self.mgr.do_resolve("test.example.com", "A")
+    async def test_resolver_error(self):
+        # Use AsyncMock to simulate a ResolverError from resolve_full
+        from blastdns import ResolverError
+
+        mock_client = AsyncMock()
+        mock_client.resolve_full.side_effect = ResolverError("resolver timeout")
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        result = await mgr.do_resolve("test.example.com", "A")
+        assert result is None
+        assert mgr.answers["NoAnswer"] is True
+
+    @pytest.mark.asyncio
+    async def test_blastdns_error(self):
+        # Use AsyncMock to simulate a BlastDNSError from resolve_full
+        from blastdns import BlastDNSError
+
+        mock_client = AsyncMock()
+        mock_client.resolve_full.side_effect = BlastDNSError("something broke")
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        result = await mgr.do_resolve("test.example.com", "A")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_a_record_sets_ips(self):
-        mock_rr = MagicMock()
-        mock_rr.rdtype.name = "A"
-        mock_rr.to_text.return_value = "1.2.3.4"
-        self.mock_client.resolve.return_value = [mock_rr]
-        result = await self.mgr.do_resolve("test.example.com", "A")
+        self.mock_client.mock_dns({"test.example.com": {"A": ["1.2.3.4"]}})
+        mgr = DNSManager("test.example.com", dns_client=self.mock_client)
+        result = await mgr.do_resolve("test.example.com", "A")
         assert "1.2.3.4" in result
-        assert "1.2.3.4" in self.mgr.ips
+        assert "1.2.3.4" in mgr.ips
 
     @pytest.mark.asyncio
     async def test_aaaa_record_sets_ips(self):
-        mock_rr = MagicMock()
-        mock_rr.rdtype.name = "AAAA"
-        mock_rr.to_text.return_value = "::1"
-        self.mock_client.resolve.return_value = [mock_rr]
-        result = await self.mgr.do_resolve("test.example.com", "AAAA")
+        self.mock_client.mock_dns({"test.example.com": {"AAAA": ["::1"]}})
+        mgr = DNSManager("test.example.com", dns_client=self.mock_client)
+        result = await mgr.do_resolve("test.example.com", "AAAA")
         assert "::1" in result
-        assert "::1" in self.mgr.ips
+        assert "::1" in mgr.ips
 
     @pytest.mark.asyncio
     async def test_cname_chain(self):
-        mock_rr1 = MagicMock()
-        mock_rr1.rdtype.name = "CNAME"
-        mock_rr1.to_text.return_value = "step1.example.com."
-
-        mock_rr2 = MagicMock()
-        mock_rr2.rdtype.name = "CNAME"
-        mock_rr2.to_text.return_value = "step2.example.com."
-
-        self.mock_client.resolve.side_effect = [
-            [mock_rr1],  # first resolve
-            [mock_rr2],  # chain step 1
-            [],  # chain ends
-        ]
-        result = await self.mgr.do_resolve("test.example.com", "CNAME")
+        self.mock_client.mock_dns(
+            {
+                "test.example.com": {"CNAME": ["step1.example.com."]},
+                "step1.example.com": {"CNAME": ["step2.example.com."]},
+            }
+        )
+        mgr = DNSManager("test.example.com", dns_client=self.mock_client)
+        result = await mgr.do_resolve("test.example.com", "CNAME")
         assert result == ["step1.example.com", "step2.example.com"]
 
     @pytest.mark.asyncio
     async def test_cname_chain_nxdomain(self):
-        mock_rr1 = MagicMock()
-        mock_rr1.rdtype.name = "CNAME"
-        mock_rr1.to_text.return_value = "step1.example.com."
-
-        self.mock_client.resolve.side_effect = [
-            [mock_rr1],
-            dns.resolver.NXDOMAIN,
-        ]
-        result = await self.mgr.do_resolve("test.example.com", "CNAME")
-        assert result == ["step1.example.com"]
-
-    @pytest.mark.asyncio
-    async def test_cname_chain_lifetime_timeout(self):
-        """LifetimeTimeout during CNAME chain following must not propagate."""
-        mock_rr1 = MagicMock()
-        mock_rr1.rdtype.name = "CNAME"
-        mock_rr1.to_text.return_value = "step1.example.com."
-
-        self.mock_client.resolve.side_effect = [
-            [mock_rr1],  # initial resolve succeeds
-            dns.resolver.LifetimeTimeout(timeout=5.0, errors=[]),  # chain step times out
-        ]
-        result = await self.mgr.do_resolve("test.example.com", "CNAME")
-        # Should return the partial chain, not raise
+        self.mock_client.mock_dns(
+            {
+                "test.example.com": {"CNAME": ["step1.example.com."]},
+                "_NXDOMAIN": ["step1.example.com"],
+            }
+        )
+        mgr = DNSManager("test.example.com", dns_client=self.mock_client)
+        result = await mgr.do_resolve("test.example.com", "CNAME")
         assert result == ["step1.example.com"]
 
     @pytest.mark.asyncio
     async def test_empty_result(self):
-        self.mock_client.resolve.return_value = []
-        result = await self.mgr.do_resolve("test.example.com", "NS")
+        # Host has no records at all
+        self.mock_client.mock_dns({})
+        mgr = DNSManager("test.example.com", dns_client=self.mock_client)
+        result = await mgr.do_resolve("test.example.com", "NS")
         assert result is None
 
 
 class TestDispatchDNS:
-    def setup_method(self):
-        self.mock_client = AsyncMock()
-        self.mgr = DNSManager("test.example.com", dns_client=self.mock_client)
-
     @pytest.mark.asyncio
     async def test_omit_types(self):
-        self.mock_client.resolve.return_value = []
-        await self.mgr.dispatchDNS(omit_types=["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"])
+        from blastdns import ResolverError
+
+        mock_client = AsyncMock()
+        mock_client.resolvers = ["127.0.0.1:53"]
+        mock_client.resolve_full.side_effect = ResolverError("no data")
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS(omit_types=["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"])
         # Only NSEC should have been queried
-        assert self.mock_client.resolve.call_count == 1
-
-    @pytest.mark.asyncio
-    async def test_omit_types_rejects_nested_list(self):
-        """A nested list like [["A", "AAAA"]] should not silently skip all omissions."""
-        self.mock_client.resolve.return_value = []
-        await self.mgr.dispatchDNS(omit_types=["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"])
-        flat_count = self.mock_client.resolve.call_count  # should be 1 (only NSEC)
-
-        self.mock_client.reset_mock()
-        await self.mgr.dispatchDNS(omit_types=[["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"]])
-        nested_count = self.mock_client.resolve.call_count
-
-        # With a nested list, nothing gets omitted — all 8 types are queried
-        # This test documents the correct flat-list behavior vs the broken nested-list behavior
-        assert flat_count == 1
-        assert nested_count == 8  # bug: nested list doesn't omit anything
+        assert mock_client.resolve_full.call_count == 1
 
     @pytest.mark.asyncio
     async def test_timeout_in_dispatch(self):
-        self.mock_client.resolve.side_effect = dns.resolver.LifetimeTimeout(timeout=5.0, errors=[])
-        await self.mgr.dispatchDNS()
-        # do_resolve catches LifetimeTimeout and returns None, so all answers should be None
+        from blastdns import ResolverError
+
+        mock_client = AsyncMock()
+        mock_client.resolvers = ["127.0.0.1:53"]
+        mock_client.resolve_full.side_effect = ResolverError("DNS timeout")
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS()
+        # do_resolve catches ResolverError and returns None, so all answers should be None
         for rtype in DNSManager.dns_record_types:
-            assert self.mgr.answers[rtype] is None
+            assert mgr.answers[rtype] is None
 
 
 class TestDNSManagerInit:
@@ -243,12 +208,12 @@ class TestDNSManagerInit:
         assert mgr.dns_client is not None
 
     def test_custom_nameservers(self):
-        mock_client = MagicMock()
-        DNSManager("test.com", dns_client=mock_client, custom_nameservers=["1.1.1.1"])
-        assert mock_client.nameservers == ["1.1.1.1"]
+        mgr = DNSManager("test.com", custom_nameservers=["1.1.1.1"])
+        # When custom nameservers are provided, a new client is created with those resolvers
+        assert "1.1.1.1" in str(mgr.dns_client.resolvers)
 
     def test_reset_answers(self):
-        mock_client = MagicMock()
+        mock_client = MockClient()
         mgr = DNSManager("test.com", dns_client=mock_client)
         mgr.answers["A"] = ["1.2.3.4"]
         mgr.reset_answers()

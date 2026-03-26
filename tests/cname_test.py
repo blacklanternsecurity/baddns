@@ -189,7 +189,10 @@ async def test_cname_dnsnxdomain_generic_negative(fs, mock_dispatch_whois, confi
 
 @pytest.mark.asyncio
 async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois, configure_mock_resolver):
-    mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "baddns.azurewebsites.net.": {"A": "127.0.0.1"}}
+    mock_data = {
+        "bad.dns": {"CNAME": ["baddns.azurewebsites.net."]},
+        "baddns.azurewebsites.net.": {"A": ["127.0.0.1"]},
+    }
     mock_resolver = configure_mock_resolver(mock_data)
 
     target = "bad.dns"

@@ -1,10 +1,9 @@
 import os
 import site
 import pytest
-from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.whoismanager import WhoisManager
 from baddns.lib.dnswalk import DnsWalk
-from .helpers import MockResolver, mock_process_answer, DnsWalkHarness
+from .helpers import create_mock_client, DnsWalkHarness
 
 import dns.asyncquery
 
@@ -43,12 +42,11 @@ def configure_mock_resolver(monkeypatch):
         return mock_ns_trace
 
     def _configure(mock_data, mock_dnswalk_data=[]):
-        mock_resolver = MockResolver(mock_data)
-        monkeypatch.setattr(DNSManager, "process_answer", mock_process_answer)
+        mock_client = create_mock_client(mock_data)
 
         # Mock DNSWalk
         monkeypatch.setattr(DnsWalk, "ns_trace", mock_ns_trace_method_generator(mock_dnswalk_data))
-        return mock_resolver
+        return mock_client
 
     return _configure
 

@@ -1,7 +1,8 @@
 import re
 import logging
 import asyncio
-import dns.asyncresolver
+
+from blastdns import Client, DNSError, get_system_resolvers, BlastDNSError, ResolverError
 
 log = logging.getLogger(__name__)
 
@@ -13,13 +14,14 @@ class DNSManager:
     dns_name_regex = re.compile(_dns_name_regex, re.I)
 
     def __init__(self, target, dns_client=None, custom_nameservers=None):
-        if not dns_client:
-            self.dns_client = dns.asyncresolver.Resolver()
-        else:
-            self.dns_client = dns_client
-
         if custom_nameservers:
-            self.dns_client.nameservers = custom_nameservers
+            # Create a new client with custom nameservers, since blastdns
+            # clients are configured with resolvers at construction time
+            self.dns_client = Client(custom_nameservers)
+        elif dns_client:
+            self.dns_client = dns_client
+        else:
+            self.dns_client = Client(get_system_resolvers())
 
         self.tld_nameservers = None
 
@@ -47,69 +49,121 @@ class DNSManager:
             ipv6.append(str(answer))
         return ipv6
 
-    # These were stolen from BBOT. Thanks TheTechromancer for saving me from hours of suffering.
     @staticmethod
     def _clean_dns_record(record):
-        if not isinstance(record, str):
-            record = str(record.to_text())
         return str(record).rstrip(".").lower()
 
-    def process_answer(self, answer, rdatatype):
-        results = set()
+    def process_answer(self, result, rdatatype):
+        """Extract string answers from a blastdns DNSResult.
 
-        if answer == None:
+        blastdns rdata formats:
+          - A/AAAA/CNAME/NS/PTR: {"A": "1.2.3.4"} (simple string)
+          - MX: {"MX": {"preference": 10, "exchange": "mail.example.com."}}
+          - TXT: {"TXT": {"txt_data": [[byte_values...]]}}
+          - SOA: {"SOA": {"mname": "ns1.", "rname": "admin.", ...}}
+          - SRV: {"SRV": {"priority": 0, "weight": 100, "port": 389, "target": "host."}}
+          - NSEC: {"NSEC": {"next_domain_name": "next.", "type_bit_maps": [...]}}
+        """
+        if result is None:
             return []
 
-        for record in answer:
-            """
-            Extract whatever hostnames/IPs a DNS records points to
-            """
-
-            rdtype = str(record.rdtype.name).upper()
-            if rdtype in ("A", "AAAA", "NS", "CNAME", "PTR"):
-                cleaned = self._clean_dns_record(record)
-                if cleaned:
-                    results.add(cleaned)
-            elif rdtype == "SOA":
-                cleaned = self._clean_dns_record(record.mname)
-                if cleaned:
-                    results.add(cleaned)
-            elif rdtype == "MX":
-                cleaned = self._clean_dns_record(record.exchange)
-                if cleaned:
-                    results.add(cleaned)
-            elif rdtype == "SRV":
-                cleaned = self._clean_dns_record(record.target)
-                if cleaned:
-                    results.add(cleaned)
-            elif rdtype == "TXT":
-                for s in record.strings:
-                    s = s.decode()
+        results = set()
+        for record in result.response.answers:
+            for rdtype, value in record.rdata.items():
+                rdtype = rdtype.upper()
+                if rdtype in ("A", "AAAA", "NS", "CNAME", "PTR"):
+                    cleaned = self._clean_dns_record(str(value))
+                    if cleaned:
+                        results.add(cleaned)
+                elif rdtype == "SOA":
+                    if isinstance(value, dict):
+                        mname = value.get("mname", "")
+                        cleaned = self._clean_dns_record(str(mname))
+                    else:
+                        cleaned = self._clean_dns_record(str(value).split()[0])
+                    if cleaned:
+                        results.add(cleaned)
+                elif rdtype == "MX":
+                    if isinstance(value, dict):
+                        exchange = value.get("exchange", "")
+                        cleaned = self._clean_dns_record(str(exchange))
+                    else:
+                        cleaned = self._clean_dns_record(str(value).split()[-1])
+                    if cleaned:
+                        results.add(cleaned)
+                elif rdtype == "SRV":
+                    if isinstance(value, dict):
+                        target = value.get("target", "")
+                        cleaned = self._clean_dns_record(str(target))
+                    else:
+                        cleaned = self._clean_dns_record(str(value).split()[-1])
+                    if cleaned:
+                        results.add(cleaned)
+                elif rdtype == "TXT":
+                    if isinstance(value, dict):
+                        # blastdns format: {"txt_data": [[byte_values...]]}
+                        txt_data = value.get("txt_data", [])
+                        parts = []
+                        for part in txt_data:
+                            if isinstance(part, list):
+                                parts.append(bytes(part).decode("utf-8", errors="replace"))
+                            else:
+                                parts.append(str(part))
+                        s = "".join(parts)
+                    else:
+                        s = str(value).strip('"').replace('" "', "")
                     results.add(s)
-            elif rdtype == "NSEC":
-                cleaned = self._clean_dns_record(record.next)
-                if cleaned:
-                    results.add(cleaned)
-            else:
-                log.debug(f'Unknown DNS record type "{rdtype}"')
+                elif rdtype == "NSEC":
+                    if isinstance(value, dict):
+                        next_domain = value.get("next_domain_name", "")
+                        cleaned = self._clean_dns_record(str(next_domain))
+                    else:
+                        cleaned = self._clean_dns_record(str(value).split()[0])
+                    if cleaned:
+                        results.add(cleaned)
+                elif rdtype == "UNKNOWN":
+                    # Handle unsupported record types passed through as Unknown
+                    if isinstance(value, dict):
+                        raw = value.get("rdata", {})
+                        raw_bytes = raw.get("anything", [])
+                        if raw_bytes and isinstance(raw_bytes, list):
+                            decoded = bytes(raw_bytes).decode("utf-8", errors="replace")
+                            cleaned = self._clean_dns_record(decoded.split()[0])
+                            if cleaned:
+                                results.add(cleaned)
+                else:
+                    log.debug(f'Unknown DNS record type "{rdtype}"')
         return list(results)
 
     async def do_resolve(self, target, rdatatype):
         try:
-            r = self.process_answer(await self.dns_client.resolve(target, rdatatype), rdatatype)
-        except (dns.resolver.NoAnswer, dns.resolver.NoNameservers) as e:
-            log.debug(f"encountered error with dns_client.resolve(): {e}")
+            result = await self.dns_client.resolve_full(target, rdatatype)
+        except ResolverError as e:
+            log.debug(f"DNS resolver error for {target} {rdatatype}: {e}")
             self.answers["NoAnswer"] = True
             return
-        except dns.resolver.NXDOMAIN:
+        except BlastDNSError as e:
+            log.warning(f"DNS error for {target} {rdatatype}: {e}")
+            return
+
+        # Check for error responses
+        if isinstance(result, DNSError):
+            log.debug(f"DNS error: {result.error}")
+            self.answers["NoAnswer"] = True
+            return
+
+        # Check response code for NXDOMAIN
+        response_code = result.response.header.response_code
+        if response_code == "NXDomain":
             self.answers["NXDOMAIN"] = True
             return
-        except dns.resolver.LifetimeTimeout as e:
-            log.debug(f"Dns Timeout: {e}")
+
+        # No answers means NoAnswer
+        if not result.response.answers:
+            self.answers["NoAnswer"] = True
             return
-        except Exception as e:
-            log.warning(f"Unknown error resolving DNS: [{e}]")
-            return
+
+        r = self.process_answer(result, rdatatype)
         if r and len(r) > 0:
             if rdatatype == "A":
                 self.ips.extend(self.get_ipv4(r))
@@ -125,15 +179,17 @@ class DNSManager:
                     target = result_cname
 
                     try:
-                        r = self.process_answer(await self.dns_client.resolve(target, "CNAME"), "CNAME")
+                        chain_result = await self.dns_client.resolve_full(target, "CNAME")
+                        if isinstance(chain_result, DNSError):
+                            break
+                        if chain_result.response.header.response_code != "NoError":
+                            break
+                        if not chain_result.response.answers:
+                            break
+                        r = self.process_answer(chain_result, "CNAME")
                         if len(r) == 0:
                             break
-                    except (
-                        dns.resolver.NoAnswer,
-                        dns.resolver.NXDOMAIN,
-                        dns.resolver.NoNameservers,
-                        dns.resolver.LifetimeTimeout,
-                    ) as e:
+                    except BlastDNSError as e:
                         log.debug(f"Error resolving cname chain: {e}")
                         break
                 return cname_chain
@@ -141,7 +197,7 @@ class DNSManager:
 
     async def dispatchDNS(self, omit_types=[]):
         log.debug(f"attempting to resolve {self.target}")
-        log.debug(f"dispatching DNS with the following nameservers: {' '.join(self.dns_client.nameservers)}")
+        log.debug(f"dispatching DNS with resolvers: {self.dns_client.resolvers}")
 
         tasks = []
         for rdatatype in self.dns_record_types:
