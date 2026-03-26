@@ -34,13 +34,15 @@ class BadDNS_ns(BadDNS_base):
             self.target = self.target_dnsmanager.answers["CNAME"][-1]
             self.target_dnsmanager.reset_answers()
 
-        await self.target_dnsmanager.dispatchDNS(omit_types=["CNAME", "NS"])
+        await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "MX", "NS", "TXT", "NSEC"])
 
         dnswalk = DnsWalk(
             self.target_dnsmanager,
-            raw_query_max_retries=self._dnswalk_kwargs.get("raw_query_max_retries", 6),
-            raw_query_timeout=self._dnswalk_kwargs.get("raw_query_timeout", 6.0),
-            raw_query_retry_wait=self._dnswalk_kwargs.get("raw_query_retry_wait", 3),
+            **{
+                k: v
+                for k, v in self._dnswalk_kwargs.items()
+                if k in ("raw_query_max_retries", "raw_query_timeout", "raw_query_retry_wait")
+            },
         )
         self.target_dnsmanager.answers["NS"] = await dnswalk.ns_trace(self.target)
         return True

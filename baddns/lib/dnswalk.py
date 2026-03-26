@@ -29,13 +29,31 @@ class DnsWalk:
 
     max_depth = 10
 
-    def __init__(self, dns_manager, raw_query_max_retries=6, raw_query_timeout=6.0, raw_query_retry_wait=3):
+    def __init__(self, dns_manager, raw_query_max_retries=4, raw_query_timeout=5.0, raw_query_retry_wait=2):
         self.dns_manager = dns_manager
         self.raw_query_max_retries = raw_query_max_retries
         self.raw_query_timeout = raw_query_timeout
         self.raw_query_retry_wait = raw_query_retry_wait
 
-    async def a_resolve(self, nameserver):
+    @staticmethod
+    def extract_glue_records(response_msg):
+        """Extract A record glue from the additional section of a DNS response."""
+        glue = {}
+        if not response_msg.additional:
+            return glue
+        for rrset in response_msg.additional:
+            if rrset.rdtype == dns.rdatatype.A:
+                name = rrset.name.to_text().rstrip(".").lower()
+                glue[name] = [rr.to_text() for rr in rrset]
+        return glue
+
+    async def a_resolve(self, nameserver, glue=None):
+        if glue:
+            glue_ips = glue.get(nameserver.lower())
+            if glue_ips:
+                log.debug(f"Using glue record for [{nameserver}]: {glue_ips}")
+                return glue_ips
+
         nameserver_ips = set()
         a_query_results = await self.dns_manager.do_resolve(nameserver, "A")
         if a_query_results:
@@ -101,6 +119,10 @@ class DnsWalk:
                 log.debug(f"Got response message: {repr(str(response_msg))}")
                 if response_msg.authority:
                     log.debug(f"Server [{nameserver_ip}] responded with authority section")
+                    glue = self.extract_glue_records(response_msg)
+
+                    # Collect NS domains from authority, checking for SOA first
+                    ns_domains = []
                     for ns_rrset in response_msg.authority:
                         for rr in ns_rrset:
                             if rr.rdtype == dns.rdatatype.SOA:
@@ -108,15 +130,20 @@ class DnsWalk:
                             if rr.rdtype == dns.rdatatype.NS:
                                 rr_domain = rr.target.to_text().rstrip(".")
                                 log.debug(f"Received NS record for [{rr_domain}]")
-                                rr_ips = await self.a_resolve(rr_domain)
-                                if rr_ips:
-                                    log.debug(f"Resolved [{rr_domain}] to ip(s) [{' '.join(rr_ips)}]")
-                                    next_nameservers.update(rr_ips)
-                                else:
-                                    log.debug(f"Could not resolve [{rr_domain}] to an IP!")
-
-                                log.debug(f"Adding {rr_domain} to temp results list, pending deeper results")
+                                ns_domains.append(rr_domain)
                                 final_results.add(rr_domain)
+
+                    # Resolve all NS domains in parallel, using glue records where available
+                    resolve_tasks = [self.a_resolve(domain, glue=glue) for domain in ns_domains]
+                    resolve_results = await asyncio.gather(*resolve_tasks)
+
+                    for rr_domain, rr_ips in zip(ns_domains, resolve_results):
+                        if rr_ips:
+                            log.debug(f"Resolved [{rr_domain}] to ip(s) [{' '.join(rr_ips)}]")
+                            next_nameservers.update(rr_ips)
+                        else:
+                            log.debug(f"Could not resolve [{rr_domain}] to an IP!")
+                        log.debug(f"Adding {rr_domain} to temp results list, pending deeper results")
                     # If we were provided an authority section but nothing resolved, report the last set - they could be dangling
                     if not next_nameservers:
                         log.debug("None of the servers provded in the authority section resolved")
