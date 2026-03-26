@@ -1,6 +1,5 @@
 import re
 import logging
-import asyncio
 
 from blastdns import Client, DNSError, get_system_resolvers, BlastDNSError, ResolverError
 
@@ -14,12 +13,10 @@ class DNSManager:
     dns_name_regex = re.compile(_dns_name_regex, re.I)
 
     def __init__(self, target, dns_client=None, custom_nameservers=None):
-        if custom_nameservers:
-            # Create a new client with custom nameservers, since blastdns
-            # clients are configured with resolvers at construction time
-            self.dns_client = Client(custom_nameservers)
-        elif dns_client:
+        if dns_client:
             self.dns_client = dns_client
+        elif custom_nameservers:
+            self.dns_client = Client(custom_nameservers)
         else:
             self.dns_client = Client(get_system_resolvers())
 
@@ -184,10 +181,8 @@ class DNSManager:
                             break
                         if chain_result.response.header.response_code != "NoError":
                             break
-                        if not chain_result.response.answers:
-                            break
                         r = self.process_answer(chain_result, "CNAME")
-                        if len(r) == 0:
+                        if not r:
                             break
                     except BlastDNSError as e:
                         log.debug(f"Error resolving cname chain: {e}")
@@ -199,13 +194,61 @@ class DNSManager:
         log.debug(f"attempting to resolve {self.target}")
         log.debug(f"dispatching DNS with resolvers: {self.dns_client.resolvers}")
 
-        tasks = []
-        for rdatatype in self.dns_record_types:
-            if rdatatype in omit_types:
-                continue
-            # Capture the current rdatatype for each task
-            task = asyncio.create_task(self.do_resolve(self.target, rdatatype))
-            tasks.append((task, rdatatype))  # Store the task along with its rdatatype
+        record_types = [rt for rt in self.dns_record_types if rt not in omit_types]
+        if not record_types:
+            return
 
-        for task, rdatatype in tasks:  # Unpack the task and its corresponding rdatatype
-            self.answers[rdatatype] = await task
+        try:
+            multi_results = await self.dns_client.resolve_multi_full(self.target, record_types)
+        except ResolverError as e:
+            log.debug(f"DNS resolver error for {self.target}: {e}")
+            self.answers["NoAnswer"] = True
+            return
+        except BlastDNSError as e:
+            log.warning(f"DNS error for {self.target}: {e}")
+            return
+
+        for rdatatype in record_types:
+            result = multi_results.get(rdatatype)
+            if result is None or isinstance(result, DNSError):
+                if result is not None:
+                    log.debug(f"DNS error for {rdatatype}: {result.error}")
+                self.answers["NoAnswer"] = True
+                continue
+
+            response_code = result.response.header.response_code
+            if response_code == "NXDomain":
+                self.answers["NXDOMAIN"] = True
+                continue
+
+            if not result.response.answers:
+                self.answers["NoAnswer"] = True
+                continue
+
+            r = self.process_answer(result, rdatatype)
+            if r and len(r) > 0:
+                if rdatatype == "A":
+                    self.ips.extend(self.get_ipv4(r))
+                elif rdatatype == "AAAA":
+                    self.ips.extend(self.get_ipv6(r))
+                elif rdatatype == "CNAME":
+                    cname_chain = []
+                    while 1:
+                        result_cname = r[0]
+                        cname_chain.append(result_cname)
+                        target = result_cname
+                        try:
+                            chain_result = await self.dns_client.resolve_full(target, "CNAME")
+                            if isinstance(chain_result, DNSError):
+                                break
+                            if chain_result.response.header.response_code != "NoError":
+                                break
+                            r = self.process_answer(chain_result, "CNAME")
+                            if not r:
+                                break
+                        except BlastDNSError as e:
+                            log.debug(f"Error resolving cname chain: {e}")
+                            break
+                    self.answers[rdatatype] = cname_chain
+                    continue
+                self.answers[rdatatype] = r

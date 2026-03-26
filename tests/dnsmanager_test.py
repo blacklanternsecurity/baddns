@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock
 from baddns.lib.dnsmanager import DNSManager
-from blastdns import MockClient
+from blastdns import MockClient, DNSError, BlastDNSError
 
 
 class TestGetIPv4:
@@ -79,6 +79,186 @@ class TestProcessAnswer:
         result = await mock_client.resolve_full("test.example.com", "NS")
         processed = self.mgr.process_answer(result, "NS")
         assert "ns1.example.com" in processed
+
+    def test_soa_record_dict(self):
+        """SOA record with dict value extracts mname."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"SOA": {"mname": "ns1.example.com.", "rname": "admin.example.com."}}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "SOA")
+        assert "ns1.example.com" in processed
+
+    def test_srv_record_dict(self):
+        """SRV record with dict value extracts target."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"SRV": {"priority": 0, "weight": 100, "port": 389, "target": "ldap.example.com."}}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "SRV")
+        assert "ldap.example.com" in processed
+
+    def test_nsec_record_dict(self):
+        """NSEC record with dict value extracts next_domain_name."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"NSEC": {"next_domain_name": "next.example.com.", "type_bit_maps": []}}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "NSEC")
+        assert "next.example.com" in processed
+
+    def test_unknown_record_type(self):
+        """Unknown rdata type should just log and return empty."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"CAA": "0 issue letsencrypt.org"}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        result = self.mgr.process_answer(FakeResult(), "CAA")
+        assert result == []
+
+    def test_soa_string_fallback(self):
+        """SOA with plain string value (not dict) uses split fallback."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"SOA": "ns1.example.com. admin.example.com. 1 3600 900 604800 86400"}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "SOA")
+        assert "ns1.example.com" in processed
+
+    def test_mx_string_fallback(self):
+        """MX with plain string value (not dict) uses split fallback."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"MX": "10 mail.example.com."}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "MX")
+        assert "mail.example.com" in processed
+
+    def test_srv_string_fallback(self):
+        """SRV with plain string value (not dict) uses split fallback."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"SRV": "0 100 389 ldap.example.com."}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "SRV")
+        assert "ldap.example.com" in processed
+
+    def test_txt_string_fallback(self):
+        """TXT with plain string value (not dict) strips quotes."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"TXT": '"v=spf1 include:example.com ~all"'}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "TXT")
+        assert "v=spf1 include:example.com ~all" in processed
+
+    def test_txt_non_list_part(self):
+        """TXT dict with non-list txt_data parts uses str fallback."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"TXT": {"txt_data": ["plain string part"]}}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "TXT")
+        assert "plain string part" in processed
+
+    def test_nsec_string_fallback(self):
+        """NSEC with plain string value (not dict) uses split fallback."""
+
+        class FakeRecord:
+            def __init__(self):
+                self.rdata = {"NSEC": "next.example.com. A AAAA"}
+
+        class FakeResponse:
+            def __init__(self):
+                self.answers = [FakeRecord()]
+
+        class FakeResult:
+            def __init__(self):
+                self.response = FakeResponse()
+
+        processed = self.mgr.process_answer(FakeResult(), "NSEC")
+        assert "next.example.com" in processed
 
 
 class TestDoResolve:
@@ -173,6 +353,42 @@ class TestDoResolve:
         result = await mgr.do_resolve("test.example.com", "NS")
         assert result is None
 
+    @pytest.mark.asyncio
+    async def test_dns_error_response(self):
+        mock_client = AsyncMock()
+        mock_client.resolve_full.return_value = DNSError(error="server failure")
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        result = await mgr.do_resolve("test.example.com", "A")
+        assert result is None
+        assert mgr.answers["NoAnswer"] is True
+
+    @pytest.mark.asyncio
+    async def test_cname_chain_dns_error(self):
+        """CNAME chain stops on DNSError from resolve_full."""
+        mock_client = AsyncMock()
+        # First call returns a CNAME, second returns DNSError
+        first_result = MockClient()
+        first_result.mock_dns({"test.example.com": {"CNAME": ["step1.example.com."]}})
+        first_response = await first_result.resolve_full("test.example.com", "CNAME")
+
+        mock_client.resolve_full.side_effect = [first_response, DNSError(error="timeout")]
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        result = await mgr.do_resolve("test.example.com", "CNAME")
+        assert result == ["step1.example.com"]
+
+    @pytest.mark.asyncio
+    async def test_cname_chain_blastdns_error(self):
+        """CNAME chain stops on BlastDNSError exception."""
+        mock_client = AsyncMock()
+        first_result = MockClient()
+        first_result.mock_dns({"test.example.com": {"CNAME": ["step1.example.com."]}})
+        first_response = await first_result.resolve_full("test.example.com", "CNAME")
+
+        mock_client.resolve_full.side_effect = [first_response, BlastDNSError("connection failed")]
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        result = await mgr.do_resolve("test.example.com", "CNAME")
+        assert result == ["step1.example.com"]
+
 
 class TestDispatchDNS:
     @pytest.mark.asyncio
@@ -181,11 +397,13 @@ class TestDispatchDNS:
 
         mock_client = AsyncMock()
         mock_client.resolvers = ["127.0.0.1:53"]
-        mock_client.resolve_full.side_effect = ResolverError("no data")
+        mock_client.resolve_multi_full.side_effect = ResolverError("no data")
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         await mgr.dispatchDNS(omit_types=["A", "AAAA", "MX", "CNAME", "NS", "SOA", "TXT"])
         # Only NSEC should have been queried
-        assert mock_client.resolve_full.call_count == 1
+        mock_client.resolve_multi_full.assert_called_once()
+        call_args = mock_client.resolve_multi_full.call_args
+        assert call_args[0][1] == ["NSEC"]
 
     @pytest.mark.asyncio
     async def test_timeout_in_dispatch(self):
@@ -193,12 +411,110 @@ class TestDispatchDNS:
 
         mock_client = AsyncMock()
         mock_client.resolvers = ["127.0.0.1:53"]
-        mock_client.resolve_full.side_effect = ResolverError("DNS timeout")
+        mock_client.resolve_multi_full.side_effect = ResolverError("DNS timeout")
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         await mgr.dispatchDNS()
-        # do_resolve catches ResolverError and returns None, so all answers should be None
+        # dispatchDNS catches ResolverError and sets NoAnswer, all type answers stay None
+        assert mgr.answers["NoAnswer"] is True
         for rtype in DNSManager.dns_record_types:
             assert mgr.answers[rtype] is None
+
+    @pytest.mark.asyncio
+    async def test_omit_all_types(self):
+        mock_client = MockClient()
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS(omit_types=DNSManager.dns_record_types)
+        # All types omitted, nothing should be queried
+        for rtype in DNSManager.dns_record_types:
+            assert mgr.answers[rtype] is None
+
+    @pytest.mark.asyncio
+    async def test_blastdns_error_in_dispatch(self):
+        mock_client = AsyncMock()
+        mock_client.resolvers = ["127.0.0.1:53"]
+        mock_client.resolve_multi_full.side_effect = BlastDNSError("connection failed")
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS()
+        for rtype in DNSManager.dns_record_types:
+            assert mgr.answers[rtype] is None
+
+    @pytest.mark.asyncio
+    async def test_dispatch_aaaa_sets_ips(self):
+        mock_client = MockClient()
+        mock_client.mock_dns({"test.example.com": {"AAAA": ["::1"]}})
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS()
+        assert "::1" in mgr.ips
+
+    @pytest.mark.asyncio
+    async def test_dispatch_cname_chain(self):
+        mock_client = MockClient()
+        mock_client.mock_dns(
+            {
+                "test.example.com": {"CNAME": ["step1.example.com."]},
+                "step1.example.com": {"CNAME": ["step2.example.com."]},
+            }
+        )
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS()
+        assert mgr.answers["CNAME"] == ["step1.example.com", "step2.example.com"]
+
+    @pytest.mark.asyncio
+    async def test_dispatch_cname_chain_dns_error(self):
+        """CNAME chain in dispatchDNS stops on DNSError."""
+        mock_client = AsyncMock()
+        mock_client.resolvers = ["127.0.0.1:53"]
+
+        # Build a multi_results dict where CNAME has a real result, others are empty
+        cname_mock = MockClient()
+        cname_mock.mock_dns({"test.example.com": {"CNAME": ["step1.example.com."]}})
+        cname_result = await cname_mock.resolve_full("test.example.com", "CNAME")
+
+        empty_mock = MockClient()
+        empty_result = await empty_mock.resolve_full("test.example.com", "A")
+
+        multi = {rt: empty_result for rt in DNSManager.dns_record_types}
+        multi["CNAME"] = cname_result
+        mock_client.resolve_multi_full.return_value = multi
+        # Chain follow returns DNSError
+        mock_client.resolve_full.return_value = DNSError(error="timeout")
+
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS()
+        assert mgr.answers["CNAME"] == ["step1.example.com"]
+
+    @pytest.mark.asyncio
+    async def test_dispatch_cname_chain_blastdns_error(self):
+        """CNAME chain in dispatchDNS stops on BlastDNSError."""
+        mock_client = AsyncMock()
+        mock_client.resolvers = ["127.0.0.1:53"]
+
+        cname_mock = MockClient()
+        cname_mock.mock_dns({"test.example.com": {"CNAME": ["step1.example.com."]}})
+        cname_result = await cname_mock.resolve_full("test.example.com", "CNAME")
+
+        empty_mock = MockClient()
+        empty_result = await empty_mock.resolve_full("test.example.com", "A")
+
+        multi = {rt: empty_result for rt in DNSManager.dns_record_types}
+        multi["CNAME"] = cname_result
+        mock_client.resolve_multi_full.return_value = multi
+        mock_client.resolve_full.side_effect = BlastDNSError("connection failed")
+
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS()
+        assert mgr.answers["CNAME"] == ["step1.example.com"]
+
+    @pytest.mark.asyncio
+    async def test_dispatch_dns_error_result(self):
+        """DNSError in resolve_multi_full results sets NoAnswer."""
+        mock_client = AsyncMock()
+        mock_client.resolvers = ["127.0.0.1:53"]
+        multi = {rt: DNSError(error="server failure") for rt in DNSManager.dns_record_types}
+        mock_client.resolve_multi_full.return_value = multi
+        mgr = DNSManager("test.example.com", dns_client=mock_client)
+        await mgr.dispatchDNS()
+        assert mgr.answers["NoAnswer"] is True
 
 
 class TestDNSManagerInit:
