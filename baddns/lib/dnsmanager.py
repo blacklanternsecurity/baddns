@@ -181,10 +181,8 @@ class DNSManager:
                             break
                         if chain_result.response.header.response_code != "NoError":
                             break
-                        if not chain_result.response.answers:
-                            break
                         r = self.process_answer(chain_result, "CNAME")
-                        if len(r) == 0:
+                        if not r:
                             break
                     except BlastDNSError as e:
                         log.debug(f"Error resolving cname chain: {e}")
@@ -245,10 +243,8 @@ class DNSManager:
                                 break
                             if chain_result.response.header.response_code != "NoError":
                                 break
-                            if not chain_result.response.answers:
-                                break
                             r = self.process_answer(chain_result, "CNAME")
-                            if len(r) == 0:
+                            if not r:
                                 break
                         except BlastDNSError as e:
                             log.debug(f"Error resolving cname chain: {e}")
