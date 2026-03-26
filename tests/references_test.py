@@ -1,7 +1,5 @@
 import re
 import pytest
-import requests
-import functools
 from unittest.mock import patch
 
 from baddns.modules.references import BadDNS_references
@@ -12,11 +10,6 @@ mock_whois_unregistered = {
     "type": "error",
     "data": 'No match for "WORSE.DNS".\r\n>>> Last update of whois database: 2023-08-17T14:07:31Z <<<\r\n',
 }
-
-requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
-requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
-requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
-requests.request = functools.partial(requests.request, verify=False)
 
 mock_references_http_css_cname = """
 <!DOCTYPE html>

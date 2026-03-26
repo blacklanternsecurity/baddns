@@ -23,7 +23,6 @@ httpx = ">=0.27.0,<0.29.0"
 cloudcheck = ">=9,<10"
 
 [tool.poetry.group.dev.dependencies]
-requests-mock = "^1.11.0"
 pytest = "^8.3.3"
 pytest-cov = ">=5,<8"
 pytest-asyncio = ">=0.21.1,<1.4.0"
@@ -32,7 +31,6 @@ pytest-httpx = ">=0.33,<0.36"
 pyfakefs = ">=5.10,<7.0"
 mock = "^5.1.0"
 poetry-dynamic-versioning = {extras = ["plugin"], version = "^1.5.0"}
-requests = "^2.31.0"
 ruff = "^0.15.4"
 
 

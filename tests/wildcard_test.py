@@ -1,17 +1,7 @@
-import functools
 import pytest
-import requests
-import ssl
 from baddns.modules.wildcard import BadDNS_wildcard
 from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
-
-ssl._create_default_https_context = ssl._create_unverified_context
-
-requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
-requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
-requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
-requests.request = functools.partial(requests.request, verify=False)
 
 
 _real_generate_random_label = BadDNS_wildcard._generate_random_label
