@@ -198,7 +198,7 @@ async def test_wildcard_whois_unregistered(fs, mock_dispatch_whois, httpx_mock, 
 
 @pytest.mark.asyncio
 async def test_wildcard_generic_dangling_cname(fs, mock_dispatch_whois, configure_mock_resolver):
-    """Wildcard CNAME to unknown NXDOMAIN service (no signature) -> MODERATE confidence, GENERIC."""
+    """Wildcard CNAME to unknown NXDOMAIN service (no signature) -> MEDIUM confidence, GENERIC."""
     mock_data = {
         "baddns-test1234.bad.dns": {"CNAME": ["unknown.randomthing.net."]},
         "_NXDOMAIN": ["unknown.randomthing.net"],
@@ -218,7 +218,7 @@ async def test_wildcard_generic_dangling_cname(fs, mock_dispatch_whois, configur
     expected = {
         "target": "sub.bad.dns",
         "description": "Wildcard CNAME detected at *.bad.dns. ALL subdomains of bad.dns are affected. Original Event: [Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)]",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "HIGH",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",

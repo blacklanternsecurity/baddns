@@ -91,7 +91,7 @@ class BadDNS_dmarc(BadDNS_base):
                                 "target": self.target,
                                 "description": "Subdomain inherits a DMARC policy of none from organizational domain"
                                 " - spoofed emails will be delivered",
-                                "confidence": "MODERATE",
+                                "confidence": "MEDIUM",
                                 "severity": "INFO",
                                 "signature": "DMARC",
                                 "indicator": f"Inherited policy: {effective_policy}",
@@ -111,7 +111,7 @@ class BadDNS_dmarc(BadDNS_base):
                                     {
                                         "target": self.target,
                                         "description": "Inherited DMARC policy is only partially applied",
-                                        "confidence": "MODERATE",
+                                        "confidence": "MEDIUM",
                                         "severity": "INFO",
                                         "signature": "DMARC",
                                         "indicator": f"pct={pct}",
@@ -151,7 +151,7 @@ class BadDNS_dmarc(BadDNS_base):
                     {
                         "target": self.target,
                         "description": "DMARC policy is set to none - spoofed emails will be delivered",
-                        "confidence": "MODERATE",
+                        "confidence": "MEDIUM",
                         "severity": "INFO",
                         "signature": "DMARC",
                         "indicator": "p=none",
@@ -168,7 +168,7 @@ class BadDNS_dmarc(BadDNS_base):
                     {
                         "target": self.target,
                         "description": "DMARC subdomain policy is set to none - subdomains can be spoofed",
-                        "confidence": "MODERATE",
+                        "confidence": "MEDIUM",
                         "severity": "INFO",
                         "signature": "DMARC",
                         "indicator": "sp=none",
@@ -188,7 +188,7 @@ class BadDNS_dmarc(BadDNS_base):
                             {
                                 "target": self.target,
                                 "description": "DMARC policy is only partially applied",
-                                "confidence": "MODERATE",
+                                "confidence": "MEDIUM",
                                 "severity": "INFO",
                                 "signature": "DMARC",
                                 "indicator": f"pct={pct}",
@@ -206,7 +206,7 @@ class BadDNS_dmarc(BadDNS_base):
                     {
                         "target": self.target,
                         "description": "No DMARC aggregate reporting (rua) configured",
-                        "confidence": "MODERATE",
+                        "confidence": "MEDIUM",
                         "severity": "INFO",
                         "signature": "DMARC",
                         "indicator": "No rua tag",

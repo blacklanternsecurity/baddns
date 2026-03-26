@@ -217,7 +217,7 @@ class BadDNS_spf(BadDNS_base):
                     {
                         "target": self.target,
                         "description": "SPF record exceeds 10 DNS lookup limit - causes permanent error per RFC 7208",
-                        "confidence": "MODERATE",
+                        "confidence": "MEDIUM",
                         "severity": "INFO",
                         "signature": "SPF",
                         "indicator": f"DNS lookup count: {parsed_spf['dns_lookup_count']}",

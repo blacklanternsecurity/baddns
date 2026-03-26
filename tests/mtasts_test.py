@@ -135,7 +135,7 @@ async def test_mtasts_policy_unreachable(fs, mock_dispatch_whois, httpx_mock, co
     expected = {
         "target": "bad.dns",
         "description": "Orphaned MTA-STS TXT record: _mta-sts.bad.dns exists but policy is unreachable (HTTP 404)",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "MTA-STS",
         "indicator": "MTA-STS Policy Unreachable",
@@ -174,7 +174,7 @@ async def test_mtasts_mx_mismatch_enforce(fs, mock_dispatch_whois, httpx_mock, c
     finding_dict = mismatch_findings[0].to_dict()
     assert "mail.bad.dns" in finding_dict["description"]
     assert "backup.bad.dns" in finding_dict["description"]
-    assert finding_dict["confidence"] == "MODERATE"
+    assert finding_dict["confidence"] == "MEDIUM"
     assert finding_dict["severity"] == "MEDIUM"
     assert finding_dict["module"] == "MTA-STS"
 

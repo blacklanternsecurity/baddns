@@ -171,7 +171,7 @@ async def _main():
     parser.add_argument(
         "--min-confidence",
         type=validate_confidence,
-        help="Minimum confidence level to report. Levels: CONFIRMED, HIGH, MODERATE, LOW (exclude UNKNOWN)",
+        help="Minimum confidence level to report. Levels: CONFIRMED, HIGH, MEDIUM, LOW (exclude UNKNOWN)",
     )
 
     parser.add_argument(

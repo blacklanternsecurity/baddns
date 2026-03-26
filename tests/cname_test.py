@@ -68,7 +68,7 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",
@@ -160,7 +160,7 @@ async def test_cname_dnsnxdomain_generic_with_negative_loaded(fs, mock_dispatch_
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",
@@ -255,7 +255,7 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",
