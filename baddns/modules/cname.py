@@ -126,7 +126,7 @@ class BadDNS_cname(BadDNS_base):
                         {
                             "target": self.target_dnsmanager.target,
                             "description": f"Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-                            "confidence": "MODERATE",
+                            "confidence": "MEDIUM",
                             "severity": "MEDIUM",
                             "signature": "GENERIC",
                             "indicator": "Generic Dangling CNAME",

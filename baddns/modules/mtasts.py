@@ -195,7 +195,7 @@ class BadDNS_mtasts(BadDNS_base):
                     {
                         "target": self.target,
                         "description": f"Orphaned MTA-STS TXT record: _mta-sts.{self.target} exists but policy is unreachable ({self.policy_error})",
-                        "confidence": "MODERATE",
+                        "confidence": "MEDIUM",
                         "severity": "MEDIUM",
                         "signature": "MTA-STS",
                         "indicator": "MTA-STS Policy Unreachable",
@@ -220,7 +220,7 @@ class BadDNS_mtasts(BadDNS_base):
                             {
                                 "target": self.target,
                                 "description": f"MTA-STS policy MX mismatch in enforce mode: actual MX records [{', '.join(unmatched)}] not covered by policy mx lines",
-                                "confidence": "MODERATE",
+                                "confidence": "MEDIUM",
                                 "severity": "MEDIUM",
                                 "signature": "MTA-STS",
                                 "indicator": "MTA-STS MX Mismatch",

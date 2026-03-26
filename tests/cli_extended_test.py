@@ -186,7 +186,7 @@ identifiers:
 
 class TestValidateConfidence:
     def test_valid_levels(self):
-        for level in ("CONFIRMED", "HIGH", "MODERATE", "LOW"):
+        for level in ("CONFIRMED", "HIGH", "MEDIUM", "LOW"):
             assert cli.validate_confidence(level) == level
 
     def test_case_insensitive(self):
@@ -222,7 +222,7 @@ class TestValidateSeverity:
 
 class TestCLIMinConfidenceFilter:
     def test_min_confidence_filters_findings(self, monkeypatch, capsys, mocker, configure_mock_resolver):
-        """--min-confidence HIGH should exclude MODERATE findings from CNAME nxdomain."""
+        """--min-confidence HIGH should exclude MEDIUM findings from CNAME nxdomain."""
         monkeypatch.setattr("sys.argv", ["python", "-s", "--min-confidence", "HIGH", "-m", "CNAME", "bad.dns"])
         mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "_NXDOMAIN": ["baddns.azurewebsites.net"]}
         mock_resolver = configure_mock_resolver(mock_data)
