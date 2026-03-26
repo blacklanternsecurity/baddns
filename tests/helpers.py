@@ -91,7 +91,11 @@ class DnsWalkHarness:
         mock_response = DnsWalkHarness.generate_mock_response(domain, record_type, nameserver_ip)
         return mock_response, False
 
-    async def mock_a_resolve(dummy, domain):
+    async def mock_a_resolve(dummy, domain, glue=None):
+        if glue:
+            glue_ips = glue.get(domain.lower())
+            if glue_ips:
+                return glue_ips
         if domain in DnsWalkHarness.mock_data["a_records"]:
             return [DnsWalkHarness.mock_data["a_records"][domain]]  # Return as a list to match the expected structure
         return []  # Return empty list if domain not found in mock data
