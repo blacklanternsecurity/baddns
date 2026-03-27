@@ -5,7 +5,7 @@ import json
 
 log = logging.getLogger(__name__)
 
-CONFIDENCE_LEVELS = ("CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN")
+CONFIDENCE_LEVELS = ("CONFIRMED", "HIGH", "MEDIUM", "LOW", "UNKNOWN")
 SEVERITY_LEVELS = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
 
 
@@ -23,9 +23,9 @@ class Finding:
         self.finding_dict["description"] = description
 
         confidence = finding_dict.get("confidence", None)
-        if confidence == None or confidence not in ["CONFIRMED", "HIGH", "MODERATE", "LOW", "UNKNOWN"]:
+        if confidence == None or confidence not in ["CONFIRMED", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]:
             raise BadDNSFindingException(
-                "Confidence must be present and must be one of: CONFIRMED, HIGH, MODERATE, LOW, UNKNOWN"
+                "Confidence must be present and must be one of: CONFIRMED, HIGH, MEDIUM, LOW, UNKNOWN"
             )
         self.finding_dict["confidence"] = confidence
 

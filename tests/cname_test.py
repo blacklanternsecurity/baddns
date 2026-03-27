@@ -1,23 +1,10 @@
 import os
 import pytest
 import datetime
-import requests
 from unittest.mock import patch
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
-
-import ssl
-
-# Disable SSL certificate verification
-ssl._create_default_https_context = ssl._create_unverified_context
-
-import functools
-
-requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
-requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
-requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
-requests.request = functools.partial(requests.request, verify=False)
 
 
 @pytest.mark.asyncio
@@ -68,7 +55,7 @@ async def test_cname_dnsnxdomain_generic(fs, mock_dispatch_whois, configure_mock
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",
@@ -160,7 +147,7 @@ async def test_cname_dnsnxdomain_generic_with_negative_loaded(fs, mock_dispatch_
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",
@@ -189,7 +176,10 @@ async def test_cname_dnsnxdomain_generic_negative(fs, mock_dispatch_whois, confi
 
 @pytest.mark.asyncio
 async def test_cname_dnsnxdomain_azure_negative(fs, mock_dispatch_whois, configure_mock_resolver):
-    mock_data = {"bad.dns": {"CNAME": ["baddns.azurewebsites.net."]}, "baddns.azurewebsites.net.": {"A": "127.0.0.1"}}
+    mock_data = {
+        "bad.dns": {"CNAME": ["baddns.azurewebsites.net."]},
+        "baddns.azurewebsites.net.": {"A": ["127.0.0.1"]},
+    }
     mock_resolver = configure_mock_resolver(mock_data)
 
     target = "bad.dns"
@@ -255,7 +245,7 @@ async def test_cname_http_bigcartel_negative(fs, mock_dispatch_whois, httpx_mock
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",

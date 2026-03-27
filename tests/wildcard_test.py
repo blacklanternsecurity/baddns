@@ -1,17 +1,7 @@
-import functools
 import pytest
-import requests
-import ssl
 from baddns.modules.wildcard import BadDNS_wildcard
 from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
-
-ssl._create_default_https_context = ssl._create_unverified_context
-
-requests.adapters.BaseAdapter.send = functools.partialmethod(requests.adapters.BaseAdapter.send, verify=False)
-requests.adapters.HTTPAdapter.send = functools.partialmethod(requests.adapters.HTTPAdapter.send, verify=False)
-requests.Session.request = functools.partialmethod(requests.Session.request, verify=False)
-requests.request = functools.partial(requests.request, verify=False)
 
 
 _real_generate_random_label = BadDNS_wildcard._generate_random_label
@@ -198,7 +188,7 @@ async def test_wildcard_whois_unregistered(fs, mock_dispatch_whois, httpx_mock, 
 
 @pytest.mark.asyncio
 async def test_wildcard_generic_dangling_cname(fs, mock_dispatch_whois, configure_mock_resolver):
-    """Wildcard CNAME to unknown NXDOMAIN service (no signature) -> MODERATE confidence, GENERIC."""
+    """Wildcard CNAME to unknown NXDOMAIN service (no signature) -> MEDIUM confidence, GENERIC."""
     mock_data = {
         "baddns-test1234.bad.dns": {"CNAME": ["unknown.randomthing.net."]},
         "_NXDOMAIN": ["unknown.randomthing.net"],
@@ -218,7 +208,7 @@ async def test_wildcard_generic_dangling_cname(fs, mock_dispatch_whois, configur
     expected = {
         "target": "sub.bad.dns",
         "description": "Wildcard CNAME detected at *.bad.dns. ALL subdomains of bad.dns are affected. Original Event: [Dangling CNAME, possible subdomain takeover (NXDOMAIN technique)]",
-        "confidence": "MODERATE",
+        "confidence": "MEDIUM",
         "severity": "HIGH",
         "signature": "GENERIC",
         "indicator": "Generic Dangling CNAME",

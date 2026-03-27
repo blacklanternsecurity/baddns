@@ -10,6 +10,8 @@ import argparse
 import logging
 from pathlib import Path
 
+from blastdns import Client, get_system_resolvers
+
 from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 from .lib.logging import setup_logging
 from .lib.loader import load_signatures
@@ -103,6 +105,7 @@ async def execute_module(
     target,
     custom_nameservers,
     signatures,
+    dns_client=None,
     silent=False,
     direct_mode=False,
     min_confidence=None,
@@ -111,7 +114,12 @@ async def execute_module(
     findings = None
     try:
         module_instance = ModuleClass(
-            target, custom_nameservers=custom_nameservers, signatures=signatures, cli=True, direct_mode=direct_mode
+            target,
+            custom_nameservers=custom_nameservers,
+            signatures=signatures,
+            dns_client=dns_client,
+            cli=True,
+            direct_mode=direct_mode,
         )
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
@@ -171,7 +179,7 @@ async def _main():
     parser.add_argument(
         "--min-confidence",
         type=validate_confidence,
-        help="Minimum confidence level to report. Levels: CONFIRMED, HIGH, MODERATE, LOW (exclude UNKNOWN)",
+        help="Minimum confidence level to report. Levels: CONFIRMED, HIGH, MEDIUM, LOW (exclude UNKNOWN)",
     )
 
     parser.add_argument(
@@ -240,12 +248,15 @@ async def _main():
 
     signatures = load_signatures(signatures_dir=custom_signatures)
 
+    dns_client = Client(custom_nameservers if custom_nameservers else get_system_resolvers())
+
     for ModuleClass in modules_to_execute:
         await execute_module(
             ModuleClass,
             args.target,
             custom_nameservers,
             signatures,
+            dns_client=dns_client,
             silent=silent,
             direct_mode=direct_mode,
             min_confidence=args.min_confidence,
