@@ -59,7 +59,7 @@ class TestProcessAnswer:
     @pytest.mark.asyncio
     async def test_txt_record(self):
         mock_client = MockClient()
-        mock_client.mock_dns({"test.example.com": {"TXT": ["v=spf1 include:example.com ~all"]}})
+        mock_client.mock_dns({"test.example.com": {"TXT": ['"v=spf1 include:example.com ~all"']}})
         result = await mock_client.resolve_full("test.example.com", "TXT")
         processed = self.mgr.process_answer(result, "TXT")
         assert "v=spf1 include:example.com ~all" in processed

@@ -3,6 +3,7 @@ import site
 import pytest
 from baddns.lib.whoismanager import WhoisManager
 from baddns.lib.dnswalk import DnsWalk
+from baddns.lib.dnsmanager import DNSManager
 from .helpers import create_mock_client, DnsWalkHarness
 
 import dns.asyncquery
@@ -42,7 +43,38 @@ def configure_mock_resolver(monkeypatch):
         return mock_ns_trace
 
     def _configure(mock_data, mock_dnswalk_data=[]):
-        mock_client = create_mock_client(mock_data)
+        # Extract NSEC data before passing to MockClient — hickory's zone-file
+        # parser refuses to construct NSEC records ("should be dynamically generated"),
+        # so we handle NSEC via monkeypatch on DNSManager instead.
+        nsec_data = {}
+        filtered_data = {}
+        for host, records in mock_data.items():
+            if isinstance(records, dict) and "NSEC" in records:
+                nsec_data[host] = records["NSEC"]
+                remaining = {k: v for k, v in records.items() if k != "NSEC"}
+                if remaining:
+                    filtered_data[host] = remaining
+            else:
+                filtered_data[host] = records
+
+        mock_client = create_mock_client(filtered_data)
+
+        if nsec_data:
+            original_do_resolve = DNSManager.do_resolve
+            original_dispatch = DNSManager.dispatchDNS
+
+            async def patched_do_resolve(self, target, rdatatype):
+                if rdatatype == "NSEC" and target in nsec_data:
+                    return nsec_data[target]
+                return await original_do_resolve(self, target, rdatatype)
+
+            async def patched_dispatch(self, omit_types=[]):
+                await original_dispatch(self, omit_types=omit_types)
+                if "NSEC" not in omit_types and self.target in nsec_data:
+                    self.answers["NSEC"] = nsec_data[self.target]
+
+            monkeypatch.setattr(DNSManager, "do_resolve", patched_do_resolve)
+            monkeypatch.setattr(DNSManager, "dispatchDNS", patched_dispatch)
 
         # Mock DNSWalk
         monkeypatch.setattr(DnsWalk, "ns_trace", mock_ns_trace_method_generator(mock_dnswalk_data))

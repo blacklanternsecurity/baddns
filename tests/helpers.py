@@ -29,10 +29,50 @@ class MockDNSWalk:
         self.mock_dnswalk_data
 
 
+def _to_zone_format(rtype, value):
+    """Normalize a mock DNS value to zone-file format for MockClient.
+
+    blastdns MockClient uses hickory's zone-file parser internally, so
+    values must be in zone-file syntax. This lets test authors write
+    natural values (e.g. "v=spf1 ~all", "mail.example.com") without
+    worrying about quoting, chunk splitting, or priority prefixes.
+    """
+    if rtype == "TXT":
+        if not value.startswith('"'):
+            # DNS TXT character-strings are limited to 255 bytes each;
+            # split into multiple quoted chunks for zone-file compatibility
+            if len(value) > 255:
+                chunks = [value[i : i + 255] for i in range(0, len(value), 255)]
+                return " ".join(f'"{c}"' for c in chunks)
+            return f'"{value}"'
+    elif rtype == "MX":
+        if not value:
+            return "0 ."
+        if not value[0].isdigit():
+            fqdn = value if value.endswith(".") else f"{value}."
+            return f"10 {fqdn}"
+    return value
+
+
 def create_mock_client(mock_data):
-    """Create a blastdns MockClient configured with the given mock data."""
+    """Create a blastdns MockClient configured with the given mock data.
+
+    Automatically normalizes values to zone-file format for compatibility
+    with blastdns MockClient (which uses hickory's zone-file parser):
+    - TXT strings are wrapped in quotes to preserve spaces and semicolons
+    - MX bare hostnames get a default priority prefix and trailing dot
+    """
+    normalized = {}
+    for host, records in mock_data.items():
+        if not isinstance(records, dict):
+            normalized[host] = records
+            continue
+        norm_records = {}
+        for rtype, values in records.items():
+            norm_records[rtype] = [_to_zone_format(rtype, v) for v in values]
+        normalized[host] = norm_records
     client = MockClient()
-    client.mock_dns(mock_data)
+    client.mock_dns(normalized)
     return client
 
 
