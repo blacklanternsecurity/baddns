@@ -9,13 +9,13 @@ requires-python = ">=3.10"
 dependencies = [
     "pyyaml>=6.0.1",
     "dnspython>=2.4.2",
-    "blastdns==1.9.1",
+    "blastdns>=1.9.1,<1.10",
     "colorama>=0.4.6",
     "python-whois>=0.9.6",
     "tldextract>=5.1.1",
-    "python-dateutil==2.9.0.post0",
-    "blasthttp>=0.2.0",
-    "cloudcheck>=10,<11",
+    "python-dateutil>=2.9.0,<3",
+    "blasthttp>=0.9.0",
+    "cloudcheck>=11,<12",
 ]
 
 [project.urls]
