@@ -76,9 +76,7 @@ class WordMatcher:
                     body_yara_src.append(rule_src)
 
         self._compiled_body = _yara_helper.compile(source="\n".join(body_yara_src)) if body_yara_src else None
-        self._compiled_header = (
-            _yara_helper.compile(source="\n".join(header_yara_src)) if header_yara_src else None
-        )
+        self._compiled_header = _yara_helper.compile(source="\n".join(header_yara_src)) if header_yara_src else None
 
     def match(self, response):
         """Return dict of (sig_idx, matcher_idx) -> bool for all word matchers."""

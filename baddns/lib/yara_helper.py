@@ -5,7 +5,13 @@ class YaraHelper:
     def compile_strings(self, strings, nocase=False):
         yara_strings = []
         for i, s in enumerate(strings):
-            s = s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+            s = (
+                s.replace("\\", "\\\\")
+                .replace('"', '\\"')
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+            )
             yara_string = f'$s{i} = "{s}"'
             if nocase:
                 yara_string += " nocase"
