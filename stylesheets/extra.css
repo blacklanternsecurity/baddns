@@ -1,0 +1,23 @@
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:       #000000;
+  --md-accent-fg-color:        #FF00FF;
+  --md-typeset-mark-color:        #FF00FF;
+}
+
+[data-md-color-scheme="slate"] .md-header__title .md-ellipsis {
+    color: #66FF66; /* Dark grey color */
+}
+
+[data-md-color-scheme="slate"] .md-header svg {
+    fill: #FF00FF; /* Dark grey color for all SVG icons in the header */
+}
+
+/* Change color of GitHub link text */
+[data-md-color-scheme="slate"] .md-header__source .md-source__repository {
+    color: #66FF66; /* Dark grey color for GitHub link */
+}
+
+[data-md-color-scheme="slate"] .md-nav__item .md-nav__link--active {
+    color: #FF00FF; /* Bright magenta color for active navigation link */
+}
