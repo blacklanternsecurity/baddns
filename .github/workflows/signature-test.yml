@@ -24,20 +24,19 @@ jobs:
         run: uv sync --group dev
 
       - name: Check for specific string in PR title and creator
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_CREATOR: ${{ github.event.pull_request.user.login }}
         run: |
-          pr_title=$(printf '%q' "${{ github.event.pull_request.title }}")
-          pr_creator="${{ github.event.pull_request.user.login }}"
-          echo "Pull Request title: $pr_title" > signaturetest.log
-          echo "Pull Request creator: $pr_creator" >> signaturetest.log
-          if [[ "$pr_title" == "[SignatureBot]"* ]]; then
+          echo "Pull Request title: $PR_TITLE" > signaturetest.log
+          echo "Pull Request creator: $PR_CREATOR" >> signaturetest.log
+          if [[ "$PR_TITLE" == "[SignatureBot]"* ]]; then
             echo "IS_NEW_SIGNATURE_PR=true" >> "$GITHUB_ENV"
-            echo "PR $pr_title Qualified" >> signaturetest.log
+            echo "PR $PR_TITLE Qualified" >> signaturetest.log
           else
             echo "IS_NEW_SIGNATURE_PR=false" >> "$GITHUB_ENV"
-            echo "PR $pr_title NOT Qualified" >> signaturetest.log
+            echo "PR $PR_TITLE NOT Qualified" >> signaturetest.log
           fi
-        env:
-          GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
 
       - name: Run signature test
         if: env.IS_NEW_SIGNATURE_PR == 'true'
