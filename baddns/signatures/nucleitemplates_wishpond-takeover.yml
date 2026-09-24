@@ -5,9 +5,6 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
   - condition: or
     part: body
     type: word

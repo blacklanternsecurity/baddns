@@ -103,6 +103,49 @@ class TestSignatureOutput:
 
     def test_summarize_no_matchers(self):
         sig = BadDNSSignature()
-        sig.initialize(**_make_sig(matcher_rule={"matchers-condition": "and"}))
+        sig.initialize(**_make_sig())
+        # a matcher-less rule is rejected at load, so set it after initialize to exercise the summary fallback
+        sig.signature["matcher_rule"] = {"matchers-condition": "and"}
         summary = sig.summarize_matcher_rule()
         assert summary == "No matchers in signature"
+
+
+def _rule(*matchers, condition="and"):
+    return {"matchers": list(matchers), "matchers-condition": condition}
+
+
+class TestSignatureMatcherValidation:
+    @pytest.mark.parametrize(
+        "matcher_rule, message",
+        [
+            (_rule({"type": "dsl", "dsl": ["Host != ip"]}), "Unsupported matcher type"),
+            (_rule({"type": "word", "words": ["x"], "part": "content_type"}), "Unsupported matcher part"),
+            (_rule({"type": "word", "words": ["x"], "part": "host"}), "Unsupported matcher part"),
+            (_rule({"type": "word", "words": []}), "non-empty"),
+            (_rule({"type": "regex", "regex": ["(unclosed"]}), "Invalid regex"),
+            (_rule({"type": "status", "status": [404]}), "integer status"),
+            (_rule({"type": "word", "words": ["x"], "condition": "xor"}), "Invalid matcher condition"),
+            (_rule({"type": "word", "words": ["x"]}, condition="xor"), "Invalid matchers-condition"),
+            ({"matchers": [], "matchers-condition": "and"}, "at least one matcher"),
+        ],
+    )
+    def test_rejects_unsupported(self, matcher_rule, message):
+        with pytest.raises(BadDNSSignatureException, match=message):
+            BadDNSSignature().initialize(**_make_sig(matcher_rule=matcher_rule))
+
+    def test_accepts_supported(self):
+        rule = _rule(
+            {"type": "word", "words": ["x"], "part": "header", "condition": "or"},
+            {"type": "regex", "regex": ["^ok$"], "part": "body"},
+            {"type": "status", "status": 404},
+            condition="or",
+        )
+        BadDNSSignature().initialize(**_make_sig(matcher_rule=rule))
+
+    def test_all_shipped_signatures_valid(self):
+        from pathlib import Path
+        import yaml
+
+        sig_dir = Path(__file__).resolve().parent.parent / "baddns" / "signatures"
+        for f in sorted(sig_dir.glob("*.yml")):
+            BadDNSSignature().initialize(**yaml.safe_load(f.read_text()))
