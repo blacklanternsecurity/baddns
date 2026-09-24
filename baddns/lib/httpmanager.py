@@ -9,6 +9,19 @@ log = logging.getLogger(__name__)
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 Firefox/117.0"
 
 
+def header_items(headers):
+    """Return headers as a list of (name, value) pairs, keeping duplicates.
+
+    Accepts blasthttp's ``Headers`` object (iterating it yields names only; ``.items()`` yields pairs),
+    a dict, or an iterable of (name, value) tuples.
+    """
+    if headers is None:
+        return []
+    if hasattr(headers, "items"):
+        return list(headers.items())
+    return list(headers)
+
+
 def headers_to_dict(headers):
     """Normalize a blasthttp-style header iterable (list of (k, v) tuples) to a dict.
 

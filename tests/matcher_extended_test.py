@@ -79,8 +79,8 @@ class TestMatcherWord:
         }
         m = Matcher(rules)
         r = _response(status=200, body="body")
-        with pytest.raises(ValueError, match="Unknown part"):
-            m.is_match(r)
+        # unknown parts are rejected at signature load; the matcher itself treats them as a non-match
+        assert not m.is_match(r)
 
     def test_word_negative_and(self):
         rules = {
@@ -200,3 +200,81 @@ class TestMatcherIsMatch:
         m = Matcher(rules)
         r = _response(status=200, body="hello")
         assert not m.is_match(r)
+
+
+class TestMatcherConditionLocation:
+    def test_or_condition_inside_matcher_rule(self):
+        """Real signatures put matchers-condition inside matcher_rule; it must be honored."""
+        rules = {
+            "matcher_rule": {
+                "matchers-condition": "or",
+                "matchers": [
+                    {"type": "status", "status": 404},
+                    {"type": "word", "words": ["hello"], "part": "body"},
+                ],
+            },
+        }
+        m = Matcher(rules)
+        assert m.is_match(_response(status=200, body="hello"))
+        assert m.is_match(_response(status=404, body="nope"))
+        assert not m.is_match(_response(status=200, body="nope"))
+
+    def test_and_condition_inside_matcher_rule(self):
+        rules = {
+            "matcher_rule": {
+                "matchers-condition": "and",
+                "matchers": [
+                    {"type": "status", "status": 404},
+                    {"type": "word", "words": ["hello"], "part": "body"},
+                ],
+            },
+        }
+        m = Matcher(rules)
+        assert not m.is_match(_response(status=200, body="hello"))
+        assert m.is_match(_response(status=404, body="hello"))
+
+
+class TestMatcherHeaderWords:
+    def test_header_name_value_line(self):
+        """Header words match 'name: value' lines, as in nuclei templates."""
+        rules = {
+            "matcher_rule": {
+                "matchers-condition": "and",
+                "matchers": [{"type": "word", "words": ["location: https://gemfury.com/404"], "part": "header"}],
+            }
+        }
+        m = Matcher(rules)
+        r = _response(status=302, headers=[("Location", "https://gemfury.com/404")])
+        assert m.is_match(r)
+
+    def test_header_bare_value_still_matches(self):
+        rules = {
+            "matcher_rule": {
+                "matchers-condition": "and",
+                "matchers": [{"type": "word", "words": ["x-intercom-version"], "part": "header"}],
+            }
+        }
+        m = Matcher(rules)
+        assert m.is_match(_response(headers=[("x-intercom-version", "abc123")]))
+
+    def test_header_duplicates_kept(self):
+        rules = {
+            "matcher_rule": {
+                "matchers-condition": "and",
+                "matchers": [{"type": "word", "words": ["set-cookie: first=1"], "part": "header"}],
+            }
+        }
+        m = Matcher(rules)
+        r = _response(headers=[("Set-Cookie", "first=1"), ("Set-Cookie", "second=2")])
+        assert m.is_match(r)
+
+    def test_header_regex_sees_duplicates(self):
+        rules = {
+            "matcher_rule": {
+                "matchers-condition": "and",
+                "matchers": [{"type": "regex", "regex": ["^first=1$"], "part": "header"}],
+            }
+        }
+        m = Matcher(rules)
+        r = _response(headers=[("Set-Cookie", "first=1"), ("Set-Cookie", "second=2")])
+        assert m.is_match(r)
