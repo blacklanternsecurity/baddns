@@ -1,14 +1,17 @@
 identifiers:
   cnames:
   - type: word
-    value: agilecrm.com
+    value: cname.agilecrm.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - status: 302
-    type: status
+  - condition: or
+    part: body
+    type: word
+    words:
+    - No landing page found.
   matchers-condition: and
 mode: http
 service_name: agilecrm.com

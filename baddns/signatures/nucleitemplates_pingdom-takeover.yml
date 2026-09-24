@@ -1,19 +1,19 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: stats.pingdom.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - Public Report Not Activated
-    - This public report page has not been activated by the user
+    - 404 - Status Page not Found
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Pingdom Takeover Detection

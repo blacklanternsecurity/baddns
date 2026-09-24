@@ -1,19 +1,22 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: custom.vsco.page
+  - type: word
+    value: tave.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - '<h1>Error 404: Page Not Found</h1>'
+    - Unable to locate an active brand or account for this URL.
+  - status: 410
+    type: status
   matchers-condition: and
 mode: http
 service_name: tave takeover detection
-source: nucleitemplates
+source: self

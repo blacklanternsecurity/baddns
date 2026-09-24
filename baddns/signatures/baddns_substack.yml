@@ -7,13 +7,12 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - status: 409
-    type: status
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - something is wrong with this site's configuration
+    - 'error code: 1001'
+    - 'error code: 1014'
   matchers-condition: and
 mode: http
 service_name: Substack Takeover Detection

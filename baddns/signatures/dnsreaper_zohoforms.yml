@@ -1,19 +1,23 @@
 identifiers:
   cnames:
   - type: word
-    value: zohohost.com
+    value: forms.cs.zohohost.com
   - type: word
-    value: zohohost.eu
+    value: forms.cs.zohohost.eu
+  - type: word
+    value: forms.cs.zohohost.com.au
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
     - <center><h1>400 Bad Request</h1></center>
+  - status: 400
+    type: status
   matchers-condition: and
 mode: http
 service_name: zoho forms

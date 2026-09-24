@@ -52,17 +52,17 @@ async def test_txt_dontmatchip(fs, mock_dispatch_whois, configure_mock_resolver)
 
 @pytest.mark.asyncio
 async def test_txt_direct_mode_service_domain_fp(fs, mock_dispatch_whois, mock_http, configure_mock_resolver):
-    """TXT module should not flag service root domains (e.g. mailgun.org from SPF) as vulnerable."""
+    """TXT module should not flag service root domains (e.g. teamwork.com from SPF) as vulnerable."""
     mock_data = {
-        "bad.dns": {"TXT": ["v=spf1 include:mailgun.org ~all"]},
-        "mailgun.org": {"A": ["127.0.0.1"]},
+        "bad.dns": {"TXT": ["v=spf1 include:teamwork.com ~all"]},
+        "teamwork.com": {"A": ["127.0.0.1"]},
     }
     mock_resolver = configure_mock_resolver(mock_data)
 
-    mock_http.add_response(url="http://mailgun.org/", status=404)
+    mock_http.add_response(url="http://teamwork.com/", status=403, body="The request could not be satisfied.")
 
     target = "bad.dns"
-    mock_signature_load(fs, "nucleitemplates_mailgun-takeover.yml")
+    mock_signature_load(fs, "dnsreaper_teamwork.yml")
     signatures = load_signatures("/tmp/signatures")
     baddns_txt = BadDNS_txt(target, signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
 
