@@ -1,0 +1,18 @@
+confidence: MEDIUM
+identifiers:
+  cnames:
+  - type: word
+    value: stats.uptimerobot.com
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    type: tls_error
+    words:
+    - tlsv1 alert internal error
+  matchers-condition: and
+mode: http
+service_name: UptimeRobot (TLS refusal)
+source: self

@@ -165,3 +165,17 @@ class TestSignatureConfidence:
     def test_invalid_confidence(self):
         with pytest.raises(BadDNSSignatureException, match="Invalid confidence"):
             BadDNSSignature().initialize(**_make_sig(confidence="POSSIBLE"))
+
+
+class TestSignatureTlsError:
+    def test_tls_error_matcher_valid(self):
+        rule = {
+            "matchers-condition": "and",
+            "matchers": [{"type": "tls_error", "words": ["tlsv1 alert internal error"]}],
+        }
+        BadDNSSignature().initialize(**_make_sig(matcher_rule=rule))
+
+    def test_tls_error_requires_words(self):
+        rule = {"matchers-condition": "and", "matchers": [{"type": "tls_error", "words": []}]}
+        with pytest.raises(BadDNSSignatureException, match="tls_error matcher requires"):
+            BadDNSSignature().initialize(**_make_sig(matcher_rule=rule))
