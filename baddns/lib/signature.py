@@ -2,6 +2,7 @@ import re
 import logging
 
 from .errors import BadDNSSignatureException
+from .findings import CONFIDENCE_LEVELS
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +36,15 @@ class BadDNSSignature:
         self.signature["identifiers"]["nameservers"] = identifiers.get("nameservers", [])
         self.signature["matcher_rule"] = kwargs.get("matcher_rule", None)
         self.signature["negative_signature"] = kwargs.get("negative_signature", False)
+        # Optional per-signature confidence for findings it produces (default is the module's own level).
+        # Only stored when set, so existing signature files and importer output are unchanged.
+        confidence = kwargs.get("confidence", None)
+        if confidence is not None:
+            if confidence not in CONFIDENCE_LEVELS:
+                raise BadDNSSignatureException(
+                    f"Invalid confidence [{confidence}] (must be one of: {', '.join(CONFIDENCE_LEVELS)})"
+                )
+            self.signature["confidence"] = confidence
 
         if not self.signature["mode"]:
             raise BadDNSSignatureException(f"mode is a required attribute")

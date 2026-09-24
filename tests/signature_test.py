@@ -149,3 +149,19 @@ class TestSignatureMatcherValidation:
         sig_dir = Path(__file__).resolve().parent.parent / "baddns" / "signatures"
         for f in sorted(sig_dir.glob("*.yml")):
             BadDNSSignature().initialize(**yaml.safe_load(f.read_text()))
+
+
+class TestSignatureConfidence:
+    def test_confidence_optional_and_not_stored_by_default(self):
+        sig = BadDNSSignature()
+        sig.initialize(**_make_sig())
+        assert "confidence" not in sig.signature
+
+    def test_valid_confidence(self):
+        sig = BadDNSSignature()
+        sig.initialize(**_make_sig(confidence="MEDIUM"))
+        assert sig.signature["confidence"] == "MEDIUM"
+
+    def test_invalid_confidence(self):
+        with pytest.raises(BadDNSSignatureException, match="Invalid confidence"):
+            BadDNSSignature().initialize(**_make_sig(confidence="POSSIBLE"))
