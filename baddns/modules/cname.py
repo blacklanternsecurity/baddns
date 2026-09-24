@@ -9,6 +9,7 @@ from baddns.lib.matcher import Matcher
 from baddns.lib.findings import Finding
 
 import logging
+import types
 
 log = logging.getLogger(__name__)
 
@@ -149,6 +150,12 @@ class BadDNS_cname(BadDNS_base):
                 self.target_httpmanager.https_allowredirects_results,
                 self.target_httpmanager.https_denyredirects_results,
             ]
+            # HTTPS attempts refused at the TLS layer, as matcher-compatible stand-ins. Only offered to
+            # signatures with a tls_error matcher, so other signatures never see these empty responses.
+            tls_failures = [
+                types.SimpleNamespace(status=0, headers=[], body="", text="", tls_error=error)
+                for error in getattr(self.target_httpmanager, "tls_errors", {}).values()
+            ]
 
             for sig in self.signatures:
                 if sig.signature["mode"] == "http":
@@ -196,7 +203,10 @@ class BadDNS_cname(BadDNS_base):
 
                     m = Matcher(sig.signature)
                     log.debug("Checking for HTTP matches")
-                    if any(m.is_match(hr) for hr in http_results if hr is not None):
+                    candidates = [hr for hr in http_results if hr is not None]
+                    if any(mt.get("type") == "tls_error" for mt in sig.signature["matcher_rule"].get("matchers", [])):
+                        candidates += tls_failures
+                    if any(m.is_match(hr) for hr in candidates):
                         log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
                         log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
                         findings.append(

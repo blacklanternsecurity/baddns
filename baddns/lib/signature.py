@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 class BadDNSSignature:
     validModes = ["http", "dns_nxdomain", "dns_nosoa"]
     validSources = ["dnsreaper", "nucleitemplates", "self"]
-    validMatcherTypes = ["word", "regex", "status"]
+    validMatcherTypes = ["word", "regex", "status", "tls_error"]
     validMatcherParts = ["body", "header"]
     validConditions = ["and", "or"]
 
@@ -93,6 +93,12 @@ class BadDNSSignature:
                         f"status matcher requires an integer status, got [{matcher.get('status')}]"
                     )
                 continue
+            if matcher_type == "tls_error":
+                if not matcher.get("words"):
+                    raise BadDNSSignatureException("tls_error matcher requires a non-empty [words] list")
+                if matcher.get("condition", "and") not in self.validConditions:
+                    raise BadDNSSignatureException(f"Invalid matcher condition [{matcher.get('condition')}]")
+                continue
             part = matcher.get("part", "body")
             if part not in self.validMatcherParts:
                 raise BadDNSSignatureException(
@@ -123,6 +129,8 @@ class BadDNSSignature:
                     condition = matcher.get("condition", "")
                     part = matcher.get("part", "")
                     summary.append(f"[Words: {words} | Condition: {condition} | Part: {part}]")
+                elif matcher["type"] == "tls_error":
+                    summary.append(f"[TLS handshake error: {', '.join(matcher['words'])}]")
             return ", ".join(summary) + f" Matchers-Condition: {self.signature['matcher_rule']['matchers-condition']}"
         else:
             return "No matchers in signature"

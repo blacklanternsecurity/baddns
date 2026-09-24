@@ -785,3 +785,95 @@ async def test_cname_http_aws_bucket_account_regional_excluded(
         findings = baddns_cname.analyze()
 
     assert not any(f.to_dict()["signature"] == "AWS Bucket Takeover Detection" for f in (findings or []))
+
+
+_TLS_SIG_YAML = """
+service_name: TLS Refusal Test
+source: self
+mode: http
+identifiers:
+  cnames:
+  - type: word
+    value: domains.tlsplatform.test
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers-condition: and
+  matchers:
+  - type: tls_error
+    condition: and
+    words:
+    - tlsv1 alert internal error
+"""
+
+
+class _TLSFailingHTTP:
+    """HTTP client stub: plain HTTP 308-redirects, HTTPS fails the TLS handshake with the given error."""
+
+    def __init__(self, https_error):
+        self.https_error = https_error
+
+    async def request(self, url, **kwargs):
+        from baddns.mock_blasthttp import MockResponse
+
+        if url.startswith("https://"):
+            raise RuntimeError(self.https_error)
+        return MockResponse(url=url, status=308, headers=[("location", url.replace("http://", "https://"))])
+
+
+async def _run_tls(fs, configure_mock_resolver, https_error, sig_yaml=_TLS_SIG_YAML):
+    mock_data = {"bad.dns": {"CNAME": ["domains.tlsplatform.test"]}, "domains.tlsplatform.test": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    fs.create_file("/tmp/signatures/test_tls.yml", contents=sig_yaml)
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(
+        "bad.dns", signatures=signatures, dns_client=mock_resolver, http_client=_TLSFailingHTTP(https_error)
+    )
+    findings = []
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze() or []
+    return [f.to_dict() for f in findings]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_signature_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    findings = await _run_tls(
+        fs,
+        configure_mock_resolver,
+        "TLS handshake failed: error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error",
+    )
+    tls = [f for f in findings if f["signature"] == "TLS Refusal Test"]
+    assert tls
+    assert "TLS handshake error: tlsv1 alert internal error" in tls[0]["indicator"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_different_alert_no_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    findings = await _run_tls(
+        fs, configure_mock_resolver, "TLS handshake failed: error:0A000410:ssl/tls alert handshake failure"
+    )
+    assert not [f for f in findings if f["signature"] == "TLS Refusal Test"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_connection_failure_no_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    findings = await _run_tls(fs, configure_mock_resolver, "request failed: client error (Connect)")
+    assert not [f for f in findings if f["signature"] == "TLS Refusal Test"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_failures_not_offered_to_other_signatures(fs, mock_dispatch_whois, configure_mock_resolver):
+    """The TLS-failure stand-in has status 0; a signature without a tls_error matcher must never see it."""
+    status_zero = _TLS_SIG_YAML.replace("TLS Refusal Test", "Status Zero").replace(
+        """  - type: tls_error
+    condition: and
+    words:
+    - tlsv1 alert internal error""",
+        """  - type: status
+    status: 0""",
+    )
+    findings = await _run_tls(
+        fs, configure_mock_resolver, "TLS handshake failed: tlsv1 alert internal error", sig_yaml=status_zero
+    )
+    assert not [f for f in findings if f["signature"] == "Status Zero"]

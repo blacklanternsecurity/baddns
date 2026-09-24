@@ -53,6 +53,8 @@ class HttpManager:
             "https_denyredirects_results",
         ]:
             setattr(self, attr, None)
+        # attr name -> TLS handshake error text, for HTTPS attempts the server refused at the TLS layer
+        self.tls_errors = {}
 
     async def dispatchHttp(self):
         protocols = ["http", "https"]
@@ -92,6 +94,8 @@ class HttpManager:
             except Exception as e:
                 log.debug(f"Error occurred while fetching {base_url} (follow_redirects={follow_redirects}): {e}")
                 setattr(self, attr_name, None)
+                if protocol == "https" and "TLS handshake failed" in str(e):
+                    self.tls_errors[attr_name] = str(e)
 
     async def close(self):
         """No-op. blasthttp clients are shared and don't need per-consumer teardown."""

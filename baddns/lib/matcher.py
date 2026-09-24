@@ -60,6 +60,15 @@ class Matcher:
         elif condition == "or":
             return not any(word in text for word in words) if negative else any(word in text for word in words)
 
+    def _tls_error(self, criteria):
+        """Match words against the TLS handshake error for a failed HTTPS attempt (empty for normal responses)."""
+        text = getattr(self.response, "tls_error", "") or ""
+        words = criteria["words"]
+        negative = criteria.get("negative", False)
+        condition = criteria.get("condition", "and")
+        hit = all(w in text for w in words) if condition == "and" else any(w in text for w in words)
+        return not hit if negative else hit
+
     def _regex(self, criteria):
         matches = []
         negative = criteria.get("negative", False)
