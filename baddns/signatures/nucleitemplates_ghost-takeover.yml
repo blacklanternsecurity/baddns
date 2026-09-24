@@ -1,20 +1,18 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: ghost.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
   - condition: or
-    part: header
+    part: body
     type: word
     words:
-    - error.ghost.org
-    - offline.ghost.org
-  - status: 302
+    - Failed to resolve DNS path for this host
+  - status: 404
     type: status
   matchers-condition: and
 mode: http

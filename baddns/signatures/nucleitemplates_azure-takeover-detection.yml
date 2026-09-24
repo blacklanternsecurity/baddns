@@ -3,11 +3,21 @@ identifiers:
   - type: word
     value: azure-api.net
   - type: word
+    value: azure-mobile.net
+  - type: word
     value: azurecontainer.io
+  - type: word
+    value: azurecr.io
+  - type: word
+    value: azuredatalakestore.net
+  - type: word
+    value: azurefd.net
   - type: word
     value: azurehdinsight.net
   - type: word
     value: azurewebsites.net
+  - type: word
+    value: azurewebsites.windows.net
   - type: word
     value: blob.core.windows.net
   - type: word
@@ -23,8 +33,6 @@ identifiers:
   - type: word
     value: trafficmanager.net
   - type: word
-    value: visualstudio.com
-  - type: word
     value: web.core.windows.net
   ips: []
   nameservers: []
@@ -32,4 +40,4 @@ identifiers:
 matcher_rule: null
 mode: dns_nxdomain
 service_name: Microsoft Azure Takeover Detection
-source: nucleitemplates
+source: self

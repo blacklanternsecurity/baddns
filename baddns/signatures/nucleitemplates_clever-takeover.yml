@@ -1,19 +1,21 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: clever-cloud.com
+  - type: word
+    value: cleverapps.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
     - The application you're trying to access doesn't seem to exist
-    - support@clever-cloud.com
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Clever Cloud - Subdomain Takeover Detection

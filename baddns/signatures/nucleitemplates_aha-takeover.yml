@@ -1,18 +1,19 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: aha.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - There is no portal here ... sending you back to Aha!
+    - invalid-portal
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Aha - Subdomain Takeover Detection

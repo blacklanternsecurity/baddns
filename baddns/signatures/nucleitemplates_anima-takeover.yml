@@ -1,18 +1,18 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: animaapp.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
   - condition: and
     part: body
     type: word
     words:
-    - If this is your website and you've just created it, try refreshing in a minute
+    - Anima - Page Not Found
+    - The page you were looking for does not exist.
   matchers-condition: and
 mode: http
 service_name: Anima Takeover Detection

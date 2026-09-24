@@ -1,5 +1,7 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: createsend.com
   ips: []
   nameservers: []
   not_cnames: []

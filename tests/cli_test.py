@@ -77,8 +77,8 @@ def test_cli_cname_http(monkeypatch, capsys, mocker, mock_http, configure_mock_r
 
     mock_http.add_response(
         url="http://bad.dns/",
-        status=200,
-        body="<h1>Oops! We couldn&#8217;t find that page.</h1>",
+        status=409,
+        body="error code: 1001",
     )
 
     cli.main()
@@ -93,10 +93,10 @@ def test_cli_direct(monkeypatch, capsys, mocker, mock_http, configure_mock_resol
         [
             "python",
             "--direct",
-            "bad.dns",
+            "baddns.s3.amazonaws.com",
         ],
     )
-    mock_data = {"bad.dns": {"A": ["127.0.0.1"]}}
+    mock_data = {"baddns.s3.amazonaws.com": {"A": ["127.0.0.1"]}}
     mock_resolver = configure_mock_resolver(mock_data)
     mocker.patch("baddns.cli.Client", return_value=mock_resolver)
     mocker.patch("baddns.lib.dnsmanager.Client", return_value=mock_resolver)
@@ -108,9 +108,9 @@ def test_cli_direct(monkeypatch, capsys, mocker, mock_http, configure_mock_resol
     monkeypatch.setattr(_httpmanager, "BlastHTTP", lambda *a, **k: mock_http)
 
     mock_http.add_response(
-        url="http://bad.dns/",
-        status=200,
-        body="<li>BucketName: bad.dns</li>The specified bucket does not exist",
+        url="http://baddns.s3.amazonaws.com/",
+        status=404,
+        body="<li>BucketName: baddns</li>The specified bucket does not exist",
     )
 
     cli.main()

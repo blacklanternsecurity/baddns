@@ -7,11 +7,13 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: or
+  - condition: and
     part: body
     type: word
     words:
-    - '<title>DNS resolution error '
+    - Account not found.
+    - ouch!
+    - SurveySparrow
   matchers-condition: and
 mode: http
 service_name: survey sparrow

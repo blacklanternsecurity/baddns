@@ -1,18 +1,19 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: smugmug.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
     - '{"text":"Page Not Found"'
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Smugmug Takeover Detection

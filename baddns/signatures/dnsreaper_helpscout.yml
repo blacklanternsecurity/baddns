@@ -7,7 +7,12 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - status: 0
+  - condition: or
+    part: body
+    type: word
+    words:
+    - 'No settings were found for this company:'
+  - status: 404
     type: status
   matchers-condition: and
 mode: http

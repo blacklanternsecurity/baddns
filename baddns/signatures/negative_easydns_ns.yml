@@ -1,0 +1,14 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - .easydns.com
+  - .easydns.net
+  - .easydns.org
+  - .easydns.info
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+negative_signature: true
+service_name: EasyDNS
+source: self

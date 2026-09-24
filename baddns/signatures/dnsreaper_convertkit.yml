@@ -13,6 +13,8 @@ matcher_rule:
     type: word
     words:
     - The page you were looking for doesn
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Convert Pages

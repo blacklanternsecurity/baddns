@@ -1,24 +1,21 @@
 identifiers:
   cnames:
   - type: word
-    value: pantheonsite.io
+    value: b-cdn.net
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
   - condition: and
     part: body
     type: word
     words:
-    - Unknown site
-    - The page could not be loaded properly.
-  - status: 404
+    - Domain suspended or not configured
+    - BunnyCDN
+  - status: 403
     type: status
   matchers-condition: and
 mode: http
-service_name: Pantheon Takeover Detection
-source: nucleitemplates
+service_name: Bunny CDN Takeover Detection
+source: self

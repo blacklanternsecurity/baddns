@@ -2,6 +2,8 @@ identifiers:
   cnames:
   - type: word
     value: myjetbrains.com
+  - type: word
+    value: youtrack.cloud
   ips: []
   nameservers: []
   not_cnames: []

@@ -1,0 +1,12 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - .registrar-servers.com
+  - .namecheaphosting.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+negative_signature: true
+service_name: Namecheap
+source: self

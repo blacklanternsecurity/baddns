@@ -1,19 +1,22 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: strikingly.com
+  - type: word
+    value: strikinglydns.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
   - condition: and
     part: body
     type: word
     words:
     - But if you're looking to build your own website
     - you've come to the right place.
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Strikingly Takeover Detection

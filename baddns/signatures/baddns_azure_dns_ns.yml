@@ -1,0 +1,13 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - azure-dns.com
+  - azure-dns.net
+  - azure-dns.org
+  - azure-dns.info
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: Azure DNS
+source: self

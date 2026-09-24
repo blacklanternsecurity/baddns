@@ -1,20 +1,21 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: helprace.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
+  - status: 301
+    type: status
   - condition: and
-    part: body
-    type: word
-    words:
-    - Alias not configured!
-    - Admin of this Helprace account needs to set up domain alias
+    part: header
+    regex:
+    - ^https?://helprace\.com/?$
+    - ^Helprace$
+    type: regex
   matchers-condition: and
 mode: http
 service_name: Helprace Takeover Detection
-source: nucleitemplates
+source: self
