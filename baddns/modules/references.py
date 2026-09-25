@@ -3,7 +3,7 @@ import asyncio
 
 from baddns.base import BadDNS_base
 from baddns.lib.dnsmanager import DNSManager
-from baddns.lib.httpmanager import HttpManager, headers_to_dict, USER_AGENT
+from baddns.lib.httpmanager import HttpManager, headers_to_dict
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.findings import Finding
 
@@ -243,23 +243,15 @@ class BadDNS_references(BadDNS_base):
     async def _check_buckets(self, bucket_refs):
         """Probe each unique bucket. Return findings for claimable ones."""
         findings = []
-        client = self.http_client
         probed = 0
         for ref in bucket_refs:
             if probed >= self.MAX_BUCKET_PROBES:
                 log.debug(f"Reached bucket probe cap ({self.MAX_BUCKET_PROBES}), stopping")
                 break
-            probe_url = self._probe_url(ref["provider"], ref["bucket"])
             probed += 1
+            probe_url = self._probe_url(ref["provider"], ref["bucket"])
             try:
-                resp = await client.request(
-                    probe_url,
-                    method="GET",
-                    headers=[("User-Agent", USER_AGENT)],
-                    timeout=5,
-                    verify_certs=False,
-                    follow_redirects=False,
-                )
+                resp = await self.target_httpmanager.fetch(probe_url)
                 if self._is_claimable(ref["provider"], resp.status, resp.body):
                     provider_label = "S3" if ref["provider"] == "aws-s3" else "GCS"
                     findings.append(
