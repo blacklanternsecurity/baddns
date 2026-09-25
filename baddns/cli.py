@@ -15,6 +15,7 @@ from .lib.errors import BadDNSSignatureException, BadDNSCLIException
 from .lib.logging import setup_logging
 from .lib.loader import load_signatures
 from .lib.findings import CONFIDENCE_LEVELS, SEVERITY_LEVELS
+from .lib.matcher import WordMatcher
 
 from baddns.base import get_all_modules
 
@@ -111,6 +112,7 @@ async def execute_module(
     min_severity=None,
     disable_mx_gate=False,
     disable_negative_signatures=False,
+    word_matcher=None,
 ):
     findings = None
     try:
@@ -123,6 +125,7 @@ async def execute_module(
             direct_mode=direct_mode,
             disable_mx_gate=disable_mx_gate,
             disable_negative_signatures=disable_negative_signatures,
+            word_matcher=word_matcher,
         )
     except BadDNSSignatureException as e:
         log.error(f"Error loading signatures: {e}")
@@ -262,6 +265,7 @@ async def _main():
         log.info(f"Using custom nameservers: [{', '.join(custom_nameservers)}]")
 
     signatures = load_signatures(signatures_dir=custom_signatures)
+    word_matcher = WordMatcher(signatures)
 
     dns_client = Client(custom_nameservers if custom_nameservers else get_system_resolvers())
 
@@ -278,6 +282,7 @@ async def _main():
             min_severity=args.min_severity,
             disable_mx_gate=args.disable_mx_gate,
             disable_negative_signatures=args.disable_negative_signatures,
+            word_matcher=word_matcher,
         )
 
 
