@@ -3,7 +3,7 @@ import asyncio
 
 from baddns.base import BadDNS_base
 from baddns.lib.dnsmanager import DNSManager
-from baddns.lib.httpmanager import HttpManager, headers_to_dict
+from baddns.lib.httpmanager import HttpManager, headers_to_dict, USER_AGENT
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.findings import Finding
 
@@ -19,12 +19,32 @@ class BadDNS_references(BadDNS_base):
 
     regex_jssrc = re.compile(r'<script[^>]*src\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
     regex_csssrc = re.compile(r'<link[^>]*href\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE)
+    regex_mediasrc = re.compile(
+        r'<(?:img|iframe|source|video|audio|embed)[^>]*src\s*=\s*[\'"]([^\'">]+)[\'"]', re.IGNORECASE
+    )
     regex_csp = re.compile(r"Content-Security-Policy: (.+?)\|", re.IGNORECASE)
     regex_cors = re.compile(r"Access-Control-Allow-Origin: (.+?)\|", re.IGNORECASE)
     regex_domain_url = re.compile(
         r"\b((?:https?:\/\/)?(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:[xX][nN]--)?[a-zA-Z0-9-]{2,63})\b",
         re.IGNORECASE,
     )
+
+    # S3 path-style:  https://s3.amazonaws.com/BUCKET/...
+    #                  https://s3.us-east-1.amazonaws.com/BUCKET/...
+    #                  https://s3-us-west-2.amazonaws.com/BUCKET/...
+    regex_s3_path = re.compile(
+        r"https?://s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com/([a-zA-Z0-9._-]{3,63})(?:/|$)", re.IGNORECASE
+    )
+    # S3 vhost-style: https://BUCKET.s3.amazonaws.com/...
+    #                  https://BUCKET.s3.us-east-1.amazonaws.com/...
+    #                  https://BUCKET.s3-us-west-2.amazonaws.com/...
+    regex_s3_vhost = re.compile(
+        r"https?://([a-zA-Z0-9._-]{3,63})\.s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com", re.IGNORECASE
+    )
+    # GCS path-style: https://storage.googleapis.com/BUCKET/...
+    regex_gcs_path = re.compile(r"https?://storage\.googleapis\.com/([a-zA-Z0-9._-]{3,63})(?:/|$)", re.IGNORECASE)
+
+    MAX_BUCKET_PROBES = 25
 
     def __init__(self, target, **kwargs):
         super().__init__(target, **kwargs)
@@ -35,6 +55,7 @@ class BadDNS_references(BadDNS_base):
         self.target_httpmanager = HttpManager(self.target, http_client=self.http_client, skip_redirects=True)
         self.cname_findings = None
         self.cname_findings_direct = None
+        self.bucket_findings = []
         self.reference_data = {}
 
     def extract_domains_headers(self, header_name, regex, headers_str, description):
@@ -137,6 +158,13 @@ class BadDNS_references(BadDNS_base):
             log.debug(f"Found {len(css_results)} domain(s) in CSS includes.")
         results.extend(css_results)
 
+        # Extract domains from media tags (img, iframe, source, video, audio, embed)
+        log.debug("Looking for media tag sources...")
+        media_results = self.extract_domains_body(body, self.regex_mediasrc, "Media Reference", "Media Source")
+        if media_results:
+            log.debug(f"Found {len(media_results)} domain(s) in media tags.")
+        results.extend(media_results)
+
         log.debug(f"Completed parsing body content. Total results: {len(results)}")
         return results
 
@@ -182,6 +210,78 @@ class BadDNS_references(BadDNS_base):
             cname_findings.extend(result)
         return cname_findings
 
+    def extract_bucket_refs(self, body):
+        """Pull unique (provider, bucket, source_url) tuples from HTML body."""
+        seen = set()
+        results = []
+        for regex, provider in [
+            (self.regex_s3_path, "aws-s3"),
+            (self.regex_s3_vhost, "aws-s3"),
+            (self.regex_gcs_path, "gcs"),
+        ]:
+            for m in regex.finditer(body):
+                bucket = m.group(1)
+                url = m.group(0)
+                key = (provider, bucket)
+                if key not in seen:
+                    seen.add(key)
+                    results.append({"provider": provider, "bucket": bucket, "url": url})
+        return results
+
+    @staticmethod
+    def _probe_url(provider, bucket):
+        if provider == "aws-s3":
+            return f"https://s3.amazonaws.com/{bucket}/"
+        return f"https://storage.googleapis.com/{bucket}/"
+
+    @staticmethod
+    def _is_claimable(provider, status, body_text):
+        if provider == "aws-s3":
+            return status == 404 and "NoSuchBucket" in body_text
+        return status == 404 and "BucketNotFound" in body_text
+
+    async def _check_buckets(self, bucket_refs):
+        """Probe each unique bucket. Return findings for claimable ones."""
+        findings = []
+        client = self.http_client
+        probed = 0
+        for ref in bucket_refs:
+            if probed >= self.MAX_BUCKET_PROBES:
+                log.debug(f"Reached bucket probe cap ({self.MAX_BUCKET_PROBES}), stopping")
+                break
+            probe_url = self._probe_url(ref["provider"], ref["bucket"])
+            probed += 1
+            try:
+                resp = await client.request(
+                    probe_url,
+                    method="GET",
+                    headers=[("User-Agent", USER_AGENT)],
+                    timeout=5,
+                    verify_certs=False,
+                    follow_redirects=False,
+                )
+                if self._is_claimable(ref["provider"], resp.status, resp.body):
+                    provider_label = "S3" if ref["provider"] == "aws-s3" else "GCS"
+                    findings.append(
+                        Finding(
+                            {
+                                "target": self.target,
+                                "description": f"Hijackable {provider_label} bucket [{ref['bucket']}] referenced in page content",
+                                "confidence": "CONFIRMED",
+                                "severity": "MEDIUM",
+                                "signature": f"{provider_label} Bucket Takeover",
+                                "indicator": ref["bucket"],
+                                "trigger": f"Media Source: [{ref['url']}]",
+                                "module": type(self),
+                            }
+                        )
+                    )
+                else:
+                    log.debug(f"Bucket {ref['bucket']} exists (status={resp.status}), skipping")
+            except Exception as e:
+                log.debug(f"Error probing bucket {ref['bucket']}: {e}")
+        return findings
+
     async def _dispatch(self):
         log.debug("in references dispatch")
         await self.target_httpmanager.dispatchHttp()
@@ -194,9 +294,16 @@ class BadDNS_references(BadDNS_base):
         ]
 
         parsed_results = []
+        all_body_text = ""
         for r in live_results:
             parsed_results.extend(self.parse_headers(headers_to_dict(r.headers)))
             parsed_results.extend(self.parse_body(r.body))
+            all_body_text += r.body + "\n"
+
+        bucket_refs = self.extract_bucket_refs(all_body_text)
+        if bucket_refs:
+            log.debug(f"Found {len(bucket_refs)} unique bucket reference(s), probing...")
+            self.bucket_findings = await self._check_buckets(bucket_refs)
 
         self.cname_findings_direct = await self.process_cname_analysis(parsed_results)
         return True
@@ -228,6 +335,8 @@ class BadDNS_references(BadDNS_base):
         log.debug("in references analyze")
         if self.cname_findings_direct:
             findings.extend(self._convert_findings(self.cname_findings_direct))
+        if self.bucket_findings:
+            findings.extend(self.bucket_findings)
         return findings
 
     async def cleanup(self):
