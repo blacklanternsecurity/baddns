@@ -17,7 +17,7 @@ concurrency:
 jobs:
   lint:
     if: contains(github.event.pull_request.title, 'SignatureBot') == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -31,7 +31,7 @@ jobs:
 
   test:
     if: contains(github.event.pull_request.title, 'SignatureBot') == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -60,7 +60,7 @@ jobs:
           verbose: true
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
