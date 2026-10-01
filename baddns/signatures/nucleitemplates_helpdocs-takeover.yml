@@ -1,18 +1,19 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: helpdocs.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - You've tried to access an account/page that does not exist
+    - This HelpDocs page doesn't exist
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: HelpDocs Takeover Detection

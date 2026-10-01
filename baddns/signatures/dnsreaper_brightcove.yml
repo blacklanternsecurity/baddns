@@ -11,11 +11,14 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: or
+  - condition: and
     part: body
     type: word
     words:
-    - Page Not Found
+    - Sorry, we can't find the page you requested
+    - 'Error Code: 404'
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: BrightCove
