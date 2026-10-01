@@ -7,17 +7,13 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - <h1>Oops! We couldn&#8217;t find that page.</h1>
-  - dsl:
-    - '!contains(host,"bigcartel.com")'
-    type: dsl
+    - 'error code: 1001'
+  - status: 409
+    type: status
   matchers-condition: and
 mode: http
 service_name: Bigcartel Takeover Detection

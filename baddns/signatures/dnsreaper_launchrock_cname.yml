@@ -1,12 +1,17 @@
 identifiers:
   cnames:
   - type: word
-    value: launchrock.com
+    value: host.launchrock.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - It looks like you may have taken a wrong turn somewhere
   - status: 404
     type: status
   matchers-condition: and
