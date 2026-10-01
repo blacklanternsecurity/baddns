@@ -105,17 +105,22 @@ jobs:
             fi
 
             sleep 5
-            # Encode the PR title for use in a URL
-            ENCODED_PR_TITLE=$(echo "$PR_TITLE" | jq -sRr @uri)
+            # A block applies to the exact content that was blocked: skip only if a closed
+            # 'signature-blocked' PR with this title contained this same file. If upstream has
+            # changed the template since, open a new PR and reference the earlier block.
+            BLOCKED_SAME=false
+            PREVIOUS_BLOCKS=""
+            for pr_number in $(gh pr list --repo ${{ github.repository }} --state closed --label signature-blocked --search "in:title \"$PR_TITLE\"" --json number,title --jq ".[] | select(.title == \"$PR_TITLE\") | .number"); do
+              blocked_hash=$(gh api "repos/${{ github.repository }}/contents/baddns/signatures/$file?ref=refs/pull/$pr_number/head" --jq .content 2>/dev/null | base64 -d 2>/dev/null | sha256sum | cut -d ' ' -f 1)
+              if [[ "$blocked_hash" == "$new_hash" ]]; then
+                BLOCKED_SAME=true
+              else
+                PREVIOUS_BLOCKS="$PREVIOUS_BLOCKS #$pr_number"
+              fi
+            done
 
-            # Check for existing closed PRs with the same title and label 'signature-blocked'
-            SEARCH_RESULT=$(curl -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/search/issues?q=repo:${{ github.repository }}+type:pr+state:closed+label:signature-blocked+in:title+$ENCODED_PR_TITLE")
-
-            # Use jq to determine if any matching PRs are found. If so, skip processing this signature.
-            MATCHING_CLOSED_BLOCKED_PR_COUNT=$(echo "$SEARCH_RESULT" | jq '.total_count')
-
-            if [[ $MATCHING_CLOSED_BLOCKED_PR_COUNT -gt 0 ]]; then
-                echo "Found a closed PR with title '$PR_TITLE' and label 'signature-blocked', skipping this signature" >> readsources_action.log
+            if [[ "$BLOCKED_SAME" == "true" ]]; then
+                echo "Identical content for $file was previously blocked, skipping" >> readsources_action.log
                 continue
             fi
 
@@ -177,6 +182,17 @@ jobs:
               echo "Attempting to read baddns/signatures/$file" >> readsources_action.log
               cat baddns/signatures/$file >> pr_message
               echo '```' >> pr_message
+              notes_file="signatures_to_test/${file%.yml}.notes"
+              if [[ -s "$notes_file" ]]; then
+                echo "" >> pr_message
+                echo "### NOTE: upstream logic that could not be converted" >> pr_message
+                echo "This signature may be weaker than the upstream template:" >> pr_message
+                cat "$notes_file" >> pr_message
+              fi
+              if [[ -n "$PREVIOUS_BLOCKS" ]]; then
+                echo "" >> pr_message
+                echo "An earlier version of this signature was blocked in:$PREVIOUS_BLOCKS. Upstream has changed since." >> pr_message
+              fi
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
               sleep 5
               gh pr create --base dev --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head new-signature-$file --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
@@ -188,6 +204,44 @@ jobs:
         done
 
         echo "completed read sources" >> readsources_action.log
+
+    - name: Report signatures removed upstream
+      env:
+        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+      run: |
+        # Shipped upstream-derived signatures whose template no longer exists upstream.
+        # Reported for review, never deleted automatically (upstream is sometimes wrong).
+        git checkout -q dev
+        missing=""
+        for f in baddns/signatures/nucleitemplates_*.yml baddns/signatures/dnsreaper_*.yml; do
+          name=$(basename "$f")
+          if ! grep -qx "$name" upstream_manifest.txt; then
+            missing="$missing"$'\n'"- \`$name\`"
+          fi
+        done
+
+        ISSUE_TITLE="[SignatureBot] Signatures removed upstream"
+        EXISTING=$(gh issue list --repo ${{ github.repository }} --state open --search "in:title \"$ISSUE_TITLE\"" --json number,title --jq ".[] | select(.title == \"$ISSUE_TITLE\") | .number" | head -1)
+
+        if [[ -z "$missing" ]]; then
+          echo "No shipped signatures missing upstream"
+          if [[ -n "$EXISTING" ]]; then
+            gh issue close "$EXISTING" --repo ${{ github.repository }} --comment "All previously listed signatures are resolved."
+          fi
+          exit 0
+        fi
+
+        {
+          echo "These shipped signatures have no counterpart in the current nuclei-templates / dnsReaper checkout."
+          echo "Upstream may have removed them as not vulnerable. Review each before removing: upstream is not always right."
+          echo "$missing"
+        } > missing_body.md
+
+        if [[ -n "$EXISTING" ]]; then
+          gh issue edit "$EXISTING" --repo ${{ github.repository }} --body-file missing_body.md
+        else
+          gh issue create --repo ${{ github.repository }} --title "$ISSUE_TITLE" --body-file missing_body.md
+        fi
 
 
     - name: Upload readsources.py log

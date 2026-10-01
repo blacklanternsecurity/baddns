@@ -4,7 +4,8 @@ import sys
 import yaml
 import logging
 
-from baddns.lib.httpmanager import headers_to_dict
+from baddns.lib.httpmanager import header_items
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -30,13 +31,18 @@ class Matcher:
         negative = criteria.get("negative", False)
         return self.response.status != criteria["status"] if negative else self.response.status == criteria["status"]
 
+    @staticmethod
+    def _header_text(headers):
+        """Render headers as 'name: value' lines (names lowercased, duplicates kept) for word matching."""
+        return "\n".join(f"{name.lower()}: {value}" for name, value in header_items(headers))
+
     def _word(self, criteria):
         words = criteria["words"]
         part = criteria.get("part", "body").lower()
         negative = criteria.get("negative", False)
 
         if part == "header":
-            text = str(headers_to_dict(self.response.headers))
+            text = self._header_text(self.response.headers)
         elif part == "body":
             text = self.response.body
 
@@ -44,7 +50,9 @@ class Matcher:
         elif part in ("host", "cname"):
             return True
         else:
-            raise ValueError(f"Unknown part: {part}")
+            # Signature validation rejects unknown parts at load time; never crash a scan over one
+            log.warning(f"Unknown matcher part [{part}], treating as non-match")
+            return False
 
         condition = criteria.get("condition", "and")
         if condition == "and":
@@ -58,7 +66,7 @@ class Matcher:
         for pattern in criteria["regex"]:
             regex = re.compile(pattern)
             if "part" in criteria and criteria["part"].lower() == "header":
-                header_values = headers_to_dict(self.response.headers).values()
+                header_values = [value for _, value in header_items(self.response.headers)]
                 match = any(regex.search(header_value) for header_value in header_values)
             else:
                 match = bool(regex.search(self.response.body))
@@ -71,9 +79,10 @@ class Matcher:
 
     def is_match(self, response):
         self.response = response
-        matchers_condition = self.rules.get("matchers-condition", "and")
+        matcher_rule = self.rules.get("matcher_rule", {}) or {}
+        # Signatures put matchers-condition inside matcher_rule; fall back to the top level for older callers
+        matchers_condition = matcher_rule.get("matchers-condition", self.rules.get("matchers-condition", "and"))
         results = []
-        matcher_rule = self.rules.get("matcher_rule", {})
         for matcher in matcher_rule.get("matchers", []):
             match_type = matcher["type"]
             match_func = getattr(self, f"_{match_type}", None)
