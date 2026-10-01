@@ -93,7 +93,7 @@ class BadDNS_cname(BadDNS_base):
                                     {
                                         "target": self.target_dnsmanager.target,
                                         "description": f"Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
-                                        "confidence": "HIGH",
+                                        "confidence": sig.signature.get("confidence", "HIGH"),
                                         "severity": "MEDIUM",
                                         "signature": sig.signature["service_name"],
                                         "indicator": indicator,
@@ -204,7 +204,7 @@ class BadDNS_cname(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": f"Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-                                    "confidence": "HIGH",
+                                    "confidence": sig.signature.get("confidence", "HIGH"),
                                     "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": sig.summarize_matcher_rule(),
