@@ -80,6 +80,17 @@ class HttpManager:
                 log.debug(f"Error occurred while fetching {base_url} (follow_redirects={follow_redirects}): {e}")
                 setattr(self, attr_name, None)
 
+    async def fetch(self, url, follow_redirects=False):
+        """Single GET request using the same settings as dispatchHttp."""
+        return await self.http_client.request(
+            url,
+            method="GET",
+            headers=[("User-Agent", USER_AGENT)],
+            timeout=5,
+            verify_certs=False,
+            follow_redirects=follow_redirects,
+        )
+
     async def close(self):
         """No-op. blasthttp clients are shared and don't need per-consumer teardown."""
         pass
