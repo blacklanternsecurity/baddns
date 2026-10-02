@@ -1,8 +1,7 @@
-import uuid
 import logging
 
 from baddns.base import BadDNS_base
-from baddns.lib.dnsmanager import DNSManager
+from baddns.lib.dnsmanager import DNSManager, probe_wildcard_cname
 from baddns.lib.httpmanager import HttpManager
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.findings import Finding
@@ -25,10 +24,6 @@ class BadDNS_wildcard(BadDNS_base):
         self.cname_findings_direct = None
         self.parent_domain = None
 
-    @staticmethod
-    def _generate_random_label():
-        return f"baddns-{uuid.uuid4().hex[:8]}"
-
     def _get_parent_domain(self):
         parts = self.target.split(".")
         if len(parts) < 3:
@@ -44,24 +39,12 @@ class BadDNS_wildcard(BadDNS_base):
             log.debug(f"Target {self.target} has no suitable parent domain for wildcard check, skipping")
             return False
 
-        random_label = self._generate_random_label()
-        probe_target = f"{random_label}.{self.parent_domain}"
-        log.debug(f"Probing wildcard with random subdomain: {probe_target}")
-
-        probe_dnsmanager = DNSManager(
-            probe_target, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+        probe_target, wildcard_cname = await probe_wildcard_cname(
+            self.parent_domain, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
         )
-        await probe_dnsmanager.dispatchDNS(omit_types=["MX", "NS", "SOA", "TXT", "NSEC"])
-
-        if probe_dnsmanager.answers["NXDOMAIN"]:
-            log.debug(f"No wildcard DNS record found for *.{self.parent_domain}")
+        if wildcard_cname is None:
             return False
 
-        if not probe_dnsmanager.answers["CNAME"]:
-            log.debug(f"Wildcard exists for *.{self.parent_domain} but has no CNAME (A/AAAA only), skipping")
-            return False
-
-        wildcard_cname = probe_dnsmanager.answers["CNAME"][-1]
         self.infomsg(f"Wildcard CNAME detected: *.{self.parent_domain} -> {wildcard_cname}")
 
         cname_instance_direct = BadDNS_cname(

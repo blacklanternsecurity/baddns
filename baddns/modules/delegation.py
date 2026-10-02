@@ -1,7 +1,7 @@
 import logging
 
 from baddns.base import BadDNS_base
-from baddns.lib.dnsmanager import DNSManager
+from baddns.lib.dnsmanager import DNSManager, probe_wildcard_cname, resolve_cname
 from baddns.lib.findings import Finding
 from baddns.modules.cname import BadDNS_cname
 
@@ -49,13 +49,30 @@ class BadDNS_delegation(BadDNS_base):
         self.label_findings = []
 
     def _labels(self):
-        yield "acme", f"{ACME_LABEL}.{self.target}"
-        yield "dmarc", f"{DMARC_LABEL}.{self.target}"
+        yield "acme", f"{ACME_LABEL}.{self.target}", self.target
+        yield "dmarc", f"{DMARC_LABEL}.{self.target}", self.target
         for selector in DKIM_SELECTORS:
-            yield "dkim", f"{selector}._domainkey.{self.target}"
+            yield "dkim", f"{selector}._domainkey.{self.target}", f"_domainkey.{self.target}"
 
     async def _dispatch(self):
-        for kind, host in self._labels():
+        # A wildcard answers for every label we probe, so a label landing on the wildcard target was
+        # never delegated - the service just serves its generic 404 there, which matches its own
+        # takeover signature. Probe once per depth and drop anything the wildcard already covers.
+        wildcard_cnames = {}
+        for parent in {parent for _, _, parent in self._labels()}:
+            _, wildcard_cnames[parent] = await probe_wildcard_cname(
+                parent, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+            )
+
+        for kind, host, parent in self._labels():
+            wildcard_cname = wildcard_cnames.get(parent)
+            if wildcard_cname is not None:
+                host_cname = await resolve_cname(
+                    host, dns_client=self.dns_client, custom_nameservers=self.custom_nameservers
+                )
+                if host_cname is None or host_cname == wildcard_cname:
+                    log.debug(f"Skipping [{host}]: covered by wildcard *.{parent}, not a real delegation")
+                    continue
             cname_instance = BadDNS_cname(
                 host,
                 custom_nameservers=self.custom_nameservers,

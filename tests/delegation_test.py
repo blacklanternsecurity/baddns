@@ -1,8 +1,12 @@
 import pytest
 
+from baddns.lib import dnsmanager
 from baddns.lib.loader import load_signatures
 from baddns.modules.delegation import BadDNS_delegation
 from .helpers import mock_signature_load
+
+
+WILDCARD_LABEL = "baddns-fixedprobe"
 
 
 async def _run(fs, configure_mock_resolver, mock_data):
@@ -105,3 +109,40 @@ async def test_delegation_rotating_dkim_selector_not_reported(fs, mock_dispatch_
         },
     )
     assert findings == []
+
+
+@pytest.mark.asyncio
+async def test_delegation_wildcard_covered_labels_ignored(
+    fs, mock_dispatch_whois, configure_mock_resolver, monkeypatch
+):
+    """A wildcard CNAME answers for every probed label, so none of them is a real delegation."""
+    monkeypatch.setattr(dnsmanager, "generate_random_label", lambda: WILDCARD_LABEL)
+    wildcard_target = "baddns-wildcard.azurewebsites.net."
+    mock_data = {
+        f"{WILDCARD_LABEL}.bad.dns": {"CNAME": [wildcard_target]},
+        f"{WILDCARD_LABEL}._domainkey.bad.dns": {"CNAME": [wildcard_target]},
+        "_acme-challenge.bad.dns": {"CNAME": [wildcard_target]},
+        "_dmarc.bad.dns": {"CNAME": [wildcard_target]},
+        "selector1._domainkey.bad.dns": {"CNAME": [wildcard_target]},
+        "_NXDOMAIN": ["baddns-wildcard.azurewebsites.net"],
+    }
+    assert await _run(fs, configure_mock_resolver, mock_data) == []
+
+
+@pytest.mark.asyncio
+async def test_delegation_real_delegation_under_wildcard_still_reported(
+    fs, mock_dispatch_whois, configure_mock_resolver, monkeypatch
+):
+    """A label whose CNAME differs from the wildcard target is a genuine delegation and still fires."""
+    monkeypatch.setattr(dnsmanager, "generate_random_label", lambda: WILDCARD_LABEL)
+    wildcard_target = "baddns-wildcard.azurewebsites.net."
+    mock_data = {
+        f"{WILDCARD_LABEL}.bad.dns": {"CNAME": [wildcard_target]},
+        f"{WILDCARD_LABEL}._domainkey.bad.dns": {"CNAME": [wildcard_target]},
+        "_acme-challenge.bad.dns": {"CNAME": ["baddns-acme.azurewebsites.net."]},
+        "selector1._domainkey.bad.dns": {"CNAME": [wildcard_target]},
+        "_NXDOMAIN": ["baddns-wildcard.azurewebsites.net", "baddns-acme.azurewebsites.net"],
+    }
+    findings = await _run(fs, configure_mock_resolver, mock_data)
+    triggers = [f["trigger"] for f in findings]
+    assert triggers == ["_acme-challenge.bad.dns"]
