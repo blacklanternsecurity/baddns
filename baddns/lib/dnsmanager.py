@@ -28,7 +28,9 @@ class DNSManager:
 
     def reset_answers(self):
         self.answers = {key: None for key in self.dns_record_types}
-        self.answers.update({"NoAnswer": False, "NXDOMAIN": False})
+        # NoAnswer means the nameserver answered and had nothing; ERROR means we never got an answer
+        # at all. Callers that report on a record being absent must not treat ERROR as absence.
+        self.answers.update({"NoAnswer": False, "NXDOMAIN": False, "ERROR": False})
 
     @staticmethod
     def get_ipv4(a_records):
@@ -137,16 +139,17 @@ class DNSManager:
             result = await self.dns_client.resolve_full(target, rdatatype)
         except ResolverError as e:
             log.debug(f"DNS resolver error for {target} {rdatatype}: {e}")
-            self.answers["NoAnswer"] = True
+            self.answers["ERROR"] = True
             return
         except BlastDNSError as e:
             log.warning(f"DNS error for {target} {rdatatype}: {e}")
+            self.answers["ERROR"] = True
             return
 
         # Check for error responses
         if isinstance(result, DNSError):
             log.debug(f"DNS error: {result.error}")
-            self.answers["NoAnswer"] = True
+            self.answers["ERROR"] = True
             return
 
         # Check response code for NXDOMAIN
@@ -202,10 +205,11 @@ class DNSManager:
             multi_results = await self.dns_client.resolve_multi_full(self.target, record_types)
         except ResolverError as e:
             log.debug(f"DNS resolver error for {self.target}: {e}")
-            self.answers["NoAnswer"] = True
+            self.answers["ERROR"] = True
             return
         except BlastDNSError as e:
             log.warning(f"DNS error for {self.target}: {e}")
+            self.answers["ERROR"] = True
             return
 
         for rdatatype in record_types:
@@ -213,7 +217,9 @@ class DNSManager:
             if result is None or isinstance(result, DNSError):
                 if result is not None:
                     log.debug(f"DNS error for {rdatatype}: {result.error}")
-                self.answers["NoAnswer"] = True
+                else:
+                    log.debug(f"No result returned for {rdatatype}")
+                self.answers["ERROR"] = True
                 continue
 
             response_code = result.response.header.response_code

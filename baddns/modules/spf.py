@@ -28,6 +28,8 @@ class BadDNS_spf(BadDNS_email_base):
         self.is_subdomain = False
         self.org_spf_records = []
         self.org_parsed_spf = None
+        # a TXT lookup that never got an answer cannot support a claim that no SPF record exists
+        self.lookup_failed = False
 
     @staticmethod
     def parse_spf_record(record):
@@ -97,6 +99,7 @@ class BadDNS_spf(BadDNS_email_base):
             return False
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "NSEC"])
         txt_records = self.target_dnsmanager.answers["TXT"]
+        self.lookup_failed = self.target_dnsmanager.answers["ERROR"]
 
         if txt_records:
             for record in txt_records:
@@ -115,6 +118,8 @@ class BadDNS_spf(BadDNS_email_base):
                 )
                 await org_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "NSEC"])
                 org_txt = org_dnsmanager.answers["TXT"]
+                if org_dnsmanager.answers["ERROR"]:
+                    self.lookup_failed = True
                 if org_txt:
                     for record in org_txt:
                         parsed = self.parse_spf_record(record)
@@ -241,6 +246,9 @@ class BadDNS_spf(BadDNS_email_base):
                 # Org domain has SPF — analyze it for policy issues (they propagate)
                 findings.extend(self._analyze_spf(self.org_parsed_spf, self.org_spf_records))
                 # Don't report "No SPF record" — org domain covers subdomains
+            elif self.lookup_failed:
+                # The TXT lookup never got an answer, so we cannot say the record is absent
+                log.debug(f"Skipping 'No SPF record' for {self.target}: TXT lookup failed")
             else:
                 # No SPF anywhere
                 findings.append(
