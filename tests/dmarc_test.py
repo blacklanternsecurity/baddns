@@ -383,3 +383,31 @@ async def test_dmarc_mx_gate_disabled_runs_without_mx(configure_mock_resolver):
     assert await m.dispatch() is True
     findings = m.analyze()
     assert any(f.to_dict()["indicator"] == "p=none" for f in findings)
+
+
+@pytest.mark.asyncio
+async def test_dmarc_lookup_failure_reports_nothing(configure_mock_resolver):
+    """A TXT lookup that errors is not evidence the record is absent (DNSError from the resolver)."""
+    from blastdns import DNSError
+
+    mock_client = AsyncMock()
+    mock_client.resolvers = ["127.0.0.1:53"]
+    mock_client.resolve_multi_full.return_value = {"TXT": DNSError(error="server failure")}
+    m = BadDNS_dmarc("bad.com", dns_client=mock_client, disable_mx_gate=True)
+    assert await m.dispatch()
+    assert m.lookup_failed is True
+    assert m.analyze() == []
+
+
+@pytest.mark.asyncio
+async def test_dmarc_resolver_exception_reports_nothing(configure_mock_resolver):
+    """Same for a raised ResolverError (the timeout case seen under load)."""
+    from blastdns import ResolverError
+
+    mock_client = AsyncMock()
+    mock_client.resolvers = ["127.0.0.1:53"]
+    mock_client.resolve_multi_full.side_effect = ResolverError("DNS timeout")
+    m = BadDNS_dmarc("bad.com", dns_client=mock_client, disable_mx_gate=True)
+    assert await m.dispatch()
+    assert m.lookup_failed is True
+    assert m.analyze() == []
