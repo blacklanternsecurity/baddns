@@ -26,6 +26,8 @@ class BadDNS_base:
         self.parent_class = kwargs.get("parent_class", "self")
         self.cli = cli
         self.disable_negative_signatures = kwargs.get("disable_negative_signatures", False)
+        # Set only by the DELEGATION module for the labels it builds itself; never for incoming targets
+        self.allow_delegation_labels = kwargs.get("allow_delegation_labels", False)
 
     # hook to allow external manipulation of target assignment
     def set_target(self, target):
@@ -37,8 +39,18 @@ class BadDNS_base:
         else:
             log.debug(msg)
 
+    @staticmethod
+    def is_delegation_label(target):
+        """True for _acme-challenge.<domain>, _dmarc.<domain> and <selector>._domainkey.<domain>, with no other underscore labels."""
+        labels = target.split(".")
+        underscored = [i for i, label in enumerate(labels) if label.startswith("_")]
+        if underscored == [0] and labels[0] in ("_acme-challenge", "_dmarc"):
+            return True
+        return underscored == [1] and labels[1] == "_domainkey" and not labels[0].startswith("_")
+
     async def dispatch(self):
-        if any(label.startswith("_") for label in self.target.split(".")):
+        delegation_ok = self.allow_delegation_labels and self.is_delegation_label(self.target)
+        if not delegation_ok and any(label.startswith("_") for label in self.target.split(".")):
             log.debug(f"Skipping SRV-style target [{self.target}], SRV-style subdomains are not supported")
             return False
         if self.skip_cloud_targets and await CloudCheck().lookup(self.target):
