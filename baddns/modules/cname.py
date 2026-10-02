@@ -150,7 +150,13 @@ class BadDNS_cname(BadDNS_base):
                 self.target_httpmanager.https_denyredirects_results,
             ]
 
-            for sig in self.signatures:
+            word_results_per_response = {}
+            if self.word_matcher is not None:
+                for hr in http_results:
+                    if hr is not None:
+                        word_results_per_response[id(hr)] = self.word_matcher.match(hr)
+
+            for sig_idx, sig in enumerate(self.signatures):
                 if sig.signature["mode"] == "http":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
                     if len(sig.signature["identifiers"]["cnames"]) > 0:
@@ -196,7 +202,16 @@ class BadDNS_cname(BadDNS_base):
 
                     m = Matcher(sig.signature)
                     log.debug("Checking for HTTP matches")
-                    if any(m.is_match(hr) for hr in http_results if hr is not None):
+                    matched = False
+                    for hr in http_results:
+                        if hr is None:
+                            continue
+                        word_results = word_results_per_response.get(id(hr))
+                        if m.is_match(hr, word_results=word_results, sig_idx=sig_idx):
+                            matched = True
+                            break
+
+                    if matched:
                         log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
                         log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
                         findings.append(
