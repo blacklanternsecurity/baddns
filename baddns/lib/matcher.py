@@ -4,7 +4,7 @@ import sys
 import yaml
 import logging
 
-from baddns.lib.httpmanager import headers_to_dict
+from baddns.lib.httpmanager import header_items
 from baddns.lib.yara_helper import YaraHelper
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +13,11 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 log = logging.getLogger(__name__)
 
 _yara_helper = YaraHelper()
+
+
+def header_text(headers):
+    """Render headers as 'name: value' lines (names lowercased, duplicates kept) for word matching."""
+    return "\n".join(f"{name.lower()}: {value}" for name, value in header_items(headers))
 
 
 class WordMatcher:
@@ -34,6 +39,10 @@ class WordMatcher:
                     continue
                 part = matcher.get("part", "body").lower()
                 if part in ("host", "cname"):
+                    continue
+                # Signature validation rejects unknown parts at load time; skip anything else so the
+                # fallback path in Matcher._word decides it instead of YARA silently answering False
+                if part not in ("body", "header"):
                     continue
 
                 words = matcher["words"]
@@ -86,8 +95,7 @@ class WordMatcher:
             self._eval_rules(self._compiled_body, self._body_rules, response.body, results)
 
         if self._compiled_header and response.headers:
-            header_text = str(headers_to_dict(response.headers))
-            self._eval_rules(self._compiled_header, self._header_rules, header_text, results)
+            self._eval_rules(self._compiled_header, self._header_rules, header_text(response.headers), results)
 
         return results
 
@@ -123,13 +131,18 @@ class Matcher:
         negative = criteria.get("negative", False)
         return self.response.status != criteria["status"] if negative else self.response.status == criteria["status"]
 
+    @staticmethod
+    def _header_text(headers):
+        """Render headers as 'name: value' lines (names lowercased, duplicates kept) for word matching."""
+        return header_text(headers)
+
     def _word(self, criteria):
         words = criteria["words"]
         part = criteria.get("part", "body").lower()
         negative = criteria.get("negative", False)
 
         if part == "header":
-            text = str(headers_to_dict(self.response.headers))
+            text = self._header_text(self.response.headers)
         elif part == "body":
             text = self.response.body
 
@@ -137,7 +150,9 @@ class Matcher:
         elif part in ("host", "cname"):
             return True
         else:
-            raise ValueError(f"Unknown part: {part}")
+            # Signature validation rejects unknown parts at load time; never crash a scan over one
+            log.warning(f"Unknown matcher part [{part}], treating as non-match")
+            return False
 
         condition = criteria.get("condition", "and")
         if condition == "and":
@@ -151,7 +166,7 @@ class Matcher:
         for pattern in criteria["regex"]:
             regex = re.compile(pattern)
             if "part" in criteria and criteria["part"].lower() == "header":
-                header_values = headers_to_dict(self.response.headers).values()
+                header_values = [value for _, value in header_items(self.response.headers)]
                 match = any(regex.search(header_value) for header_value in header_values)
             else:
                 match = bool(regex.search(self.response.body))
@@ -164,21 +179,25 @@ class Matcher:
 
     def is_match(self, response, word_results=None, sig_idx=None):
         self.response = response
-        matchers_condition = self.rules.get("matchers-condition", "and")
+        matcher_rule = self.rules.get("matcher_rule", {}) or {}
+        # Signatures put matchers-condition inside matcher_rule; fall back to the top level for older callers
+        matchers_condition = matcher_rule.get("matchers-condition", self.rules.get("matchers-condition", "and"))
         results = []
-        matcher_rule = self.rules.get("matcher_rule", {})
         for matcher_idx, matcher in enumerate(matcher_rule.get("matchers", [])):
             match_type = matcher["type"]
+
+            # word matchers are pre-evaluated in one batched YARA pass when the caller supplies results
             if match_type == "word" and word_results is not None and sig_idx is not None:
                 key = (sig_idx, matcher_idx)
                 part = matcher.get("part", "body").lower()
                 if part in ("host", "cname"):
                     results.append(True)
-                elif key in word_results:
+                    continue
+                if key in word_results:
                     results.append(word_results[key])
-                else:
-                    results.append(False)
-                continue
+                    continue
+                # part the YARA pass does not cover (or an empty body/headers): fall through to _word
+
             match_func = getattr(self, f"_{match_type}", None)
             if match_func:
                 result = match_func(matcher)

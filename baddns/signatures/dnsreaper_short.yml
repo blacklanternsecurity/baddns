@@ -1,7 +1,7 @@
 identifiers:
   cnames:
   - type: word
-    value: short.io
+    value: cname.short.io
   ips: []
   nameservers: []
   not_cnames: []
@@ -11,7 +11,9 @@ matcher_rule:
     part: body
     type: word
     words:
-    - This domain is not configured on Short.io.
+    - This domain is not configured for link redirection.
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: short

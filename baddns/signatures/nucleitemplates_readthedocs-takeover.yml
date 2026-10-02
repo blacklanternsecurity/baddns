@@ -1,18 +1,19 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: readthedocs.io
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
-    - unknown to Read the Docs
+    - The project you requested does not exist or may have been removed.
+  - status: 404
+    type: status
   matchers-condition: and
 mode: http
 service_name: Read the Docs Takeover Detection

@@ -2,10 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ns1.mediatemple.net
-  - ns2.mediatemple.net
+  - .worldnic.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
-service_name: mediatemple.net
-source: dnsreaper
+negative_signature: true
+service_name: Network Solutions
+source: self

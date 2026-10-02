@@ -7,6 +7,11 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
+  - condition: or
+    part: body
+    type: word
+    words:
+    - 'error code: 1001'
   - status: 409
     type: status
   matchers-condition: and

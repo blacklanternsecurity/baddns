@@ -236,8 +236,8 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, mock_http, co
 
     mock_http.add_response(
         url="http://bad.dns/",
-        status=200,
-        body="<h1>Oops! We couldn&#8217;t find that page.</h1>",
+        status=409,
+        body="error code: 1001",
     )
 
     target = "bad.dns"
@@ -256,7 +256,7 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, mock_http, co
         "confidence": "HIGH",
         "severity": "MEDIUM",
         "signature": "Bigcartel Takeover Detection",
-        "indicator": "[Words: <h1>Oops! We couldn&#8217;t find that page.</h1> | Condition: and | Part: body] Matchers-Condition: and",
+        "indicator": "[Words: error code: 1001 | Condition: or | Part: body] Matchers-Condition: and",
         "trigger": "baddns.bigcartel.com",
         "module": "CNAME",
     }
@@ -662,7 +662,7 @@ async def test_cname_http_lovable_match(fs, mock_dispatch_whois, mock_http, conf
     mock_http.add_response(
         url="http://bad.dns/",
         status=404,
-        body="Publish or update your Lovable project for it to appear here.",
+        body="<title>Project not found</title>No Lovable project found at this address.",
     )
 
     target = "bad.dns"
@@ -681,7 +681,7 @@ async def test_cname_http_lovable_match(fs, mock_dispatch_whois, mock_http, conf
         "confidence": "HIGH",
         "severity": "MEDIUM",
         "signature": "Lovable Takeover Detection",
-        "indicator": "[Words: Publish or update your Lovable project for it to appear here | Condition: and | Part: body] Matchers-Condition: and",
+        "indicator": "[Words: No Lovable project found at this address. | Condition: and | Part: body] Matchers-Condition: and",
         "trigger": "baddns.lovable.app",
         "module": "CNAME",
     }
@@ -728,3 +728,60 @@ async def test_cname_srv_style_target_skipped(fs, mock_dispatch_whois, configure
 
     result = await baddns_cname.dispatch()
     assert result is False
+
+
+@pytest.mark.asyncio
+async def test_cname_http_aws_bucket_match(fs, mock_dispatch_whois, mock_http, configure_mock_resolver):
+    """CNAME to a deleted S3 bucket must be flagged (regression: amazonaws.com was once excluded via not_cnames)."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["baddns-bucket.s3.amazonaws.com"]},
+        "baddns-bucket.s3.amazonaws.com": {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_http.add_response(
+        url="http://bad.dns/",
+        status=404,
+        body="<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>baddns-bucket</BucketName></Error>",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_aws-bucket-takeover.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "AWS Bucket Takeover Detection" for f in findings)
+
+
+@pytest.mark.asyncio
+async def test_cname_http_aws_bucket_account_regional_excluded(
+    fs, mock_dispatch_whois, mock_http, configure_mock_resolver
+):
+    """S3 account-regional bucket names can't be claimed by other accounts, so they are excluded."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["baddns-bucket-123456789012-us-east-1-an.s3.us-east-1.amazonaws.com"]},
+        "baddns-bucket-123456789012-us-east-1-an.s3.us-east-1.amazonaws.com": {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_http.add_response(
+        url="http://bad.dns/",
+        status=404,
+        body="<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>baddns-bucket</BucketName></Error>",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_aws-bucket-takeover.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not any(f.to_dict()["signature"] == "AWS Bucket Takeover Detection" for f in (findings or []))

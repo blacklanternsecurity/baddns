@@ -24,20 +24,19 @@ jobs:
         run: uv sync --group dev
 
       - name: Check for specific string in PR title and creator
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_CREATOR: ${{ github.event.pull_request.user.login }}
         run: |
-          pr_title=$(printf '%q' "${{ github.event.pull_request.title }}")
-          pr_creator="${{ github.event.pull_request.user.login }}"
-          echo "Pull Request title: $pr_title" > signaturetest.log
-          echo "Pull Request creator: $pr_creator" >> signaturetest.log
-          if [[ "$pr_title" == "[SignatureBot]"* ]]; then
+          echo "Pull Request title: $PR_TITLE" > signaturetest.log
+          echo "Pull Request creator: $PR_CREATOR" >> signaturetest.log
+          if [[ "$PR_TITLE" == "[SignatureBot]"* ]]; then
             echo "IS_NEW_SIGNATURE_PR=true" >> "$GITHUB_ENV"
-            echo "PR $pr_title Qualified" >> signaturetest.log
+            echo "PR $PR_TITLE Qualified" >> signaturetest.log
           else
             echo "IS_NEW_SIGNATURE_PR=false" >> "$GITHUB_ENV"
-            echo "PR $pr_title NOT Qualified" >> signaturetest.log
+            echo "PR $PR_TITLE NOT Qualified" >> signaturetest.log
           fi
-        env:
-          GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
 
       - name: Run signature test
         if: env.IS_NEW_SIGNATURE_PR == 'true'
@@ -57,12 +56,21 @@ jobs:
           echo "SIGNATURE_TEST_RESULT=$OUTPUT" >> "$GITHUB_ENV"
 
           SIGNATURE_PASS=$(echo "$OUTPUT" | jq -r '.signature_pass')
+          UNTESTABLE=$(echo "$OUTPUT" | jq -r '.untestable')
 
-          if [[ "$SIGNATURE_PASS" == "true" ]]; then
-            gh pr edit "$PR_NUMBER" --remove-label "tests-failed" --add-label "tests-passed"
+          # gh pr edit hits a deprecated Projects GraphQL field; set labels via REST instead
+          REPO="${{ github.repository }}"
+          for label in tests-passed tests-failed tests-untestable; do
+            gh api -X DELETE "repos/$REPO/issues/$PR_NUMBER/labels/$label" >/dev/null 2>&1 || true
+          done
+          if [[ "$UNTESTABLE" == "true" ]]; then
+            NEW_LABEL="tests-untestable"
+          elif [[ "$SIGNATURE_PASS" == "true" ]]; then
+            NEW_LABEL="tests-passed"
           else
-            gh pr edit "$PR_NUMBER" --remove-label "tests-passed" --add-label "tests-failed"
+            NEW_LABEL="tests-failed"
           fi
+          gh api -X POST "repos/$REPO/issues/$PR_NUMBER/labels" -f "labels[]=$NEW_LABEL" >/dev/null
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -71,10 +79,14 @@ jobs:
         run: |
           output=$(cat output.json)
           signature_pass=$(echo "$output" | jq -r '.signature_pass')
+          untestable=$(echo "$output" | jq -r '.untestable')
           match_table=$(echo "$output" | jq -r '.match_table')
           error=$(echo "$output" | jq -r '.error')
 
-          if [[ "$signature_pass" == "true" ]]; then
+          if [[ "$untestable" == "true" ]]; then
+            emoji=":grey_question:"
+            signature_pass="untestable"
+          elif [[ "$signature_pass" == "true" ]]; then
             emoji=":heavy_check_mark:"
           else
             emoji=":x:"
@@ -92,7 +104,7 @@ jobs:
               done < <(echo "$match_table" | jq -r 'to_entries[] | "\(.key)|\(.value)"')
           fi
 
-          if [[ "$signature_pass" == "false" ]]; then
+          if [[ "$signature_pass" != "true" ]]; then
               comment+="
               Error: **$error**"
           fi
