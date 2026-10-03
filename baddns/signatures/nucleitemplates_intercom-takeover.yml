@@ -1,20 +1,29 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: custom.intercom.help
+  - type: word
+    value: custom.eu.intercom.help
+  - type: word
+    value: custom.au.intercom.help
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
+  - status: 404
+    type: status
   - condition: and
     part: body
+    regex:
+    - ^Not found\s*$
+    type: regex
+  - condition: or
+    part: header
     type: word
     words:
-    - "<h1 class=\"headline\">Uh oh. That page doesn\\\u2019t exist.</h1>"
-    - This page is reserved for artistic dogs.
+    - x-intercom-version
   matchers-condition: and
 mode: http
 service_name: Intercom Takeover Detection
-source: nucleitemplates
+source: self

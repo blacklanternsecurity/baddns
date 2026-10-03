@@ -1,20 +1,19 @@
 identifiers:
-  cnames: []
+  cnames:
+  - type: word
+    value: zendesk.com
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - dsl:
-    - Host != ip
-    type: dsl
-  - case-insensitive: true
-    condition: or
-    part: body
+  - condition: or
+    part: header
     type: word
     words:
-    - this help centre no longer exists
-    - Help Centre Closed
+    - zendesk.com/app/help-center-closed
+  - status: 301
+    type: status
   matchers-condition: and
 mode: http
 service_name: Zendesk Takeover Detection

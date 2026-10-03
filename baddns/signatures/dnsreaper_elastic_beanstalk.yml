@@ -31,8 +31,6 @@ identifiers:
   - type: word
     value: eu-south-1.elasticbeanstalk.com
   - type: word
-    value: eu-west-2.elasticbeanstalk.com
-  - type: word
     value: eu-west-3.elasticbeanstalk.com
   - type: word
     value: eu-north-1.elasticbeanstalk.com
@@ -40,6 +38,28 @@ identifiers:
     value: me-south-1.elasticbeanstalk.com
   - type: word
     value: sa-east-1.elasticbeanstalk.com
+  - type: word
+    value: us-west-1.elasticbeanstalk.com
+  - type: word
+    value: ap-southeast-1.elasticbeanstalk.com
+  - type: word
+    value: ap-southeast-2.elasticbeanstalk.com
+  - type: word
+    value: ap-south-2.elasticbeanstalk.com
+  - type: word
+    value: ap-southeast-4.elasticbeanstalk.com
+  - type: word
+    value: ap-southeast-5.elasticbeanstalk.com
+  - type: word
+    value: eu-central-2.elasticbeanstalk.com
+  - type: word
+    value: eu-south-2.elasticbeanstalk.com
+  - type: word
+    value: me-central-1.elasticbeanstalk.com
+  - type: word
+    value: il-central-1.elasticbeanstalk.com
+  - type: word
+    value: ca-west-1.elasticbeanstalk.com
   ips: []
   nameservers: []
   not_cnames: []

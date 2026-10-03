@@ -1,0 +1,22 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - .activision.com
+  - .adobe.com
+  - .ns.apple.com
+  - .automattic.com
+  - .capitalone.com
+  - .twdcns.com
+  - .twdcns.info
+  - .twdcns.co.uk
+  - .google.com
+  - .lowes.com
+  - .tmobileus.com
+  - .tmobileus.net
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+negative_signature: true
+service_name: Private company nameservers
+source: self

@@ -2,10 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - dnsmadeeasy
-  - digicertdns.com
+  - .dns.gandi.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
-service_name: dnsmadeeasy.com
-source: dnsreaper
+negative_signature: true
+service_name: Gandi
+source: self
