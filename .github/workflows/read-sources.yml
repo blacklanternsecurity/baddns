@@ -18,10 +18,7 @@ jobs:
         ref: dev
 
     - name: Install uv
-      uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
-
-    - name: Set up Python
-      run: uv python install 3.10
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
     - name: Install dependencies
       run: uv sync --group dev
@@ -37,7 +34,6 @@ jobs:
       with:
         repository: projectdiscovery/nuclei-templates
         path: nuclei-templates
-
 
     - name: Read Sources
       run: |
@@ -188,7 +184,6 @@ jobs:
         done
 
         echo "completed read sources" >> readsources_action.log
-
 
     - name: Upload readsources.py log
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

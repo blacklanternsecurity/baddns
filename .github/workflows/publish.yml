@@ -2,7 +2,7 @@ name: publish
 
 on:
   push:
-    tags: ["v*", "!archive/**"]
+    tags: ["v*"]
 
 permissions:
   contents: read
@@ -12,66 +12,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  version:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
-      - name: Tag matches the declared version
-        run: |
-          if ! [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
-            echo "::error::tag $GITHUB_REF_NAME is not vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-rc.N"
-            exit 1
-          fi
-          VERSION=$(uvx hatch version)
-          EXPECTED=$(python3 -c "import re,sys; v=sys.argv[1]; m=re.fullmatch(r'(\d+\.\d+\.\d+)rc(\d+)', v); print(f'v{m[1]}-rc.{m[2]}' if m else f'v{v}')" "$VERSION")
-          if [ "$EXPECTED" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::tag $GITHUB_REF_NAME does not match baddns/__version__.py $VERSION"
-            exit 1
-          fi
+  check:
+    uses: blacklanternsecurity/CLA/.github/workflows/release-check.yml@883bfbc89464cadbeb10307b2b82891ba7853f56 # 2026-10-03
 
   tests:
-    needs: version
+    needs: check
     uses: ./.github/workflows/tests.yml
     secrets: inherit
 
   pypi:
+    needs: tests
     environment: pypi
-    needs: [version, tests]
     runs-on: ubuntu-24.04
     permissions:
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - run: uv build
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
 
   release:
-    needs: [pypi]
-    runs-on: ubuntu-24.04
+    needs: [check, pypi]
     permissions:
       contents: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
-        with:
-          path: .
-          format: spdx-json
-          output-file: ${{ github.event.repository.name }}-${{ github.ref_name }}.spdx.json
-          upload-artifact: false
-          upload-release-assets: false
-      - name: GitHub Release with SBOM
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          PRERELEASE=()
-          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then PRERELEASE=(--prerelease); fi
-          gh release create "$GITHUB_REF_NAME" "${{ github.event.repository.name }}-$GITHUB_REF_NAME.spdx.json" \
-            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes "${PRERELEASE[@]}"
+    uses: blacklanternsecurity/CLA/.github/workflows/publish.yml@883bfbc89464cadbeb10307b2b82891ba7853f56 # 2026-10-03
+    with:
+      version: ${{ needs.check.outputs.version }}
+      prerelease: ${{ needs.check.outputs.prerelease }}
