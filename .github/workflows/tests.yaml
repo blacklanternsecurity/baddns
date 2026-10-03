@@ -3,11 +3,11 @@ on:
   push:
     branches:
       - main
-      - dev
   pull_request:
+  workflow_call:
 
 permissions:
-  contents: write # needed to publish tags
+  contents: read
   pull-requests: read
 
 concurrency:
@@ -19,9 +19,11 @@ jobs:
     if: contains(github.event.pull_request.title, 'SignatureBot') == false
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
       - name: Set up Python
         run: uv python install 3.10
       - name: ruff format
@@ -37,15 +39,17 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
         run: uv sync --group dev
       - name: Run tests with pytest
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           max_attempts: 3
           timeout_minutes: 20
@@ -53,65 +57,9 @@ jobs:
           command: |
             uv run pytest --exitfirst --disable-warnings --log-cli-level=DEBUG --cov-report xml:cov.xml --cov=baddns --cov=examples
       - name: Upload Code Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./cov.xml
           verbose: true
 
-  publish:
-    runs-on: ubuntu-24.04
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-      - name: Set up Python
-        run: uv python install 3.12
-      - name: Get current version
-        id: get_version
-        run: |
-          VERSION=$(uv run python -c "from baddns.__version__ import __version__; print(__version__)")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Fetch latest tag
-        run: |
-          git fetch --tags
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
-      - name: Check for Version Update
-        run: |
-          CURRENT_VERSION="${{ env.VERSION }}"
-          LATEST_VERSION="${{ env.LATEST_TAG }}"
-
-          if [ "$CURRENT_VERSION" == "$LATEST_VERSION" ]; then
-            echo "VERSION_CHANGE=false" >> $GITHUB_ENV
-          else
-            echo "VERSION_CHANGE=true" >> $GITHUB_ENV
-          fi
-        shell: bash
-        env:
-          VERSION: ${{ env.VERSION }}
-          LATEST_TAG: ${{ env.LATEST_TAG }}
-
-      - name: Build PyPi package
-        if: github.ref == 'refs/heads/main' && env.VERSION_CHANGE == 'true'
-        run: uv build
-
-      - name: Publish PyPi package
-        if: github.ref == 'refs/heads/main' && env.VERSION_CHANGE == 'true'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Tag the release if version changed
-        if: github.ref == 'refs/heads/main' && env.VERSION_CHANGE == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ env.VERSION }}" -m "Release ${{ env.VERSION }}"
-          git push origin "refs/tags/${{ env.VERSION }}"
