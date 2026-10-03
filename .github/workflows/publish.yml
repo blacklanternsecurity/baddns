@@ -1,0 +1,87 @@
+name: publish
+
+on:
+  push:
+    tags: ["v*", "!archive/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      major: ${{ steps.version.outputs.major }}
+      minor: ${{ steps.version.outputs.minor }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      - name: Tag matches the declared version
+        id: version
+        run: |
+          uv run --no-project --with packaging python - <<'EOF' >> "$GITHUB_OUTPUT"
+          import os, subprocess, sys
+          from packaging.version import Version
+          declared = Version(subprocess.check_output(["uvx", "hatch", "version"], text=True).strip())
+          # org tag convention: vX.Y.Z or vX.Y.Z-rc.N, which must spell exactly the declared version
+          base = declared.base_version
+          expected = f"v{base}-rc.{declared.pre[1]}" if declared.pre and declared.pre[0] == "rc" else f"v{declared}"
+          if os.environ["GITHUB_REF_NAME"] != expected or declared.dev is not None or declared.local:
+              sys.exit(f"tag {os.environ['GITHUB_REF_NAME']} does not match baddns/__version__.py {declared} (expected {expected})")
+          print(f"version={declared}")
+          print(f"prerelease={str(declared.is_prerelease).lower()}")
+          print(f"major={declared.major}")
+          print(f"minor={declared.major}.{declared.minor}")
+          EOF
+
+  tests:
+    needs: version
+    uses: ./.github/workflows/tests.yaml
+    secrets: inherit
+
+  pypi:
+    environment: pypi
+    needs: [version, tests]
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      - run: uv build
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+
+  release:
+    needs: [pypi]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          output-file: ${{ github.event.repository.name }}-${{ github.ref_name }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - name: GitHub Release with SBOM
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE=()
+          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then PRERELEASE=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" "${{ github.event.repository.name }}-$GITHUB_REF_NAME.spdx.json" \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes "${PRERELEASE[@]}"
