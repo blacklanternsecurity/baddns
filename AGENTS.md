@@ -6,10 +6,10 @@ BadDNS detects subdomain takeovers and DNS misconfigurations. It also runs as a 
 
 | Concern | This repository |
 |---|---|
-| Language | Python 3.10 through 3.14 |
+| Language | Python, `requires-python` in pyproject.toml |
 | Package manager | uv |
-| Lint and format | ruff, pinned in pyproject.toml |
-| Tests | pytest with pytest-asyncio, pytest-httpx, pyfakefs |
+| Lint and format | ruff, version in the `dev` group of pyproject.toml |
+| Tests | pytest, plugins in the `dev` group of pyproject.toml |
 
 ## Setup
 
@@ -43,35 +43,8 @@ Never restate a standard here. If this file and a standard disagree, the standar
 
 ## Repository specifics
 
-
-
-### Module System
-
-All detection logic lives in `baddns/modules/`. Each module is a class inheriting from `BadDNS_base` (defined in `baddns/base.py`). Modules are auto-discovered and dynamically imported by `baddns/__init__.py`: just drop a new `.py` file in `modules/` and it's available.
-
-The 10 modules: **CNAME** (dangling CNAMEs), **NS** (dangling nameservers), **MX** (dangling mail exchangers), **NSEC** (NSEC walking for subdomain enumeration), **TXT** (hijackable domains in TXT records), **references** (hijackable domains in HTML/headers), **zonetransfer** (AXFR vulnerability), **DMARC** (missing/misconfigured DMARC records), **MTA-STS** (MTA-STS misconfigurations and dangling mta-sts subdomains), **WILDCARD** (wildcard DNS records enabling domain-wide takeover).
-
-### Signature-Driven Detection
-
-Signatures are YAML files in `baddns/signatures/` (~100 files). Each signature defines a service name, detection mode (`http`, `dns_nxdomain`, `dns_nosoa`), identifier patterns (cnames, IPs, nameservers), and HTTP matcher rules. The `Signature` class (`baddns/lib/signature.py`) loads them, and `Matcher` (`baddns/lib/matcher.py`) evaluates HTTP responses against matcher rules.
-
-### Core Libraries (`baddns/lib/`)
-
-- **DNSManager** (`dnsmanager.py`): async DNS resolution with retry, CNAME chain following, multi-record-type dispatch
-- **HttpManager** (`httpmanager.py`): fires 4 async HTTP requests per target (http/https × follow/deny redirects)
-- **WhoisManager** (`whoismanager.py`): async WHOIS lookups, checks domain registration/expiration
-- **DnsWalk** (`dnswalk.py`): recursive nameserver tracing from root servers, used by NS module
-- **Finding** (`findings.py`): structured output with confidence levels (CONFIRMED/PROBABLE/POSSIBLE/UNLIKELY)
-
-### Execution Flow
-
-CLI (`baddns/cli.py`) -> validates args -> loads signatures -> instantiates selected modules -> calls each module's async `dispatch()` -> collects `Finding` objects -> outputs JSON.
-
-### Test infrastructure
-
-Tests are in `tests/` and heavily mock DNS/HTTP/WHOIS. Key test infrastructure:
-
-- `tests/conftest.py`: shared fixtures (`mock_dispatch_whois`, `cached_suffix_list`, `configure_mock_resolver`)
-- `tests/helpers.py`: `MockResolver`, `MockDNSWalk`, `DnsWalkHarness` for DNS mocking
-- Tests use `pytest-asyncio` for async, `pytest-httpx` for HTTP mocking, `pyfakefs` for filesystem mocking
-
+- Modules live in `baddns/modules/`, subclass `BadDNS_base` (`baddns/base.py`), and are auto-discovered by `baddns/__init__.py`. Adding a file there registers it. `baddns -l` lists them.
+- Signatures are YAML in `baddns/signatures/`, loaded by `baddns/lib/signature.py` (valid modes in `Signature.validModes`) and matched by `baddns/lib/matcher.py`.
+- Finding confidence levels: `CONFIDENCE_LEVELS` in `baddns/lib/findings.py`.
+- Flow: `baddns/cli.py` loads signatures, instantiates modules, awaits each `dispatch()`, prints `Finding` objects as JSON.
+- Tests mock DNS, HTTP, and WHOIS. Shared fixtures are in `tests/conftest.py`, DNS mocks in `tests/helpers.py`.
