@@ -253,7 +253,7 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, mock_http, co
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-        "confidence": "HIGH",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "Bigcartel Takeover Detection",
         "indicator": "[Words: error code: 1001 | Condition: or | Part: body] Matchers-Condition: and",

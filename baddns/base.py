@@ -26,6 +26,7 @@ class BadDNS_base:
         self.parent_class = kwargs.get("parent_class", "self")
         self.cli = cli
         self.disable_negative_signatures = kwargs.get("disable_negative_signatures", False)
+        self.word_matcher = kwargs.get("word_matcher", None)
         # Set only by the DELEGATION module for the labels it builds itself; never for incoming targets
         self.allow_delegation_labels = kwargs.get("allow_delegation_labels", False)
 
