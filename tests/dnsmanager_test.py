@@ -328,7 +328,9 @@ class TestDoResolve:
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         result = await mgr.do_resolve("test.example.com", "A")
         assert result is None
-        assert mgr.answers["NoAnswer"] is True
+        # a failed lookup is not an authoritative "no such record"
+        assert mgr.answers["ERROR"] is True
+        assert mgr.answers["NoAnswer"] is False
 
     @pytest.mark.asyncio
     async def test_blastdns_error(self):
@@ -396,7 +398,8 @@ class TestDoResolve:
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         result = await mgr.do_resolve("test.example.com", "A")
         assert result is None
-        assert mgr.answers["NoAnswer"] is True
+        assert mgr.answers["ERROR"] is True
+        assert mgr.answers["NoAnswer"] is False
 
     @pytest.mark.asyncio
     async def test_cname_chain_dns_error(self):
@@ -450,8 +453,9 @@ class TestDispatchDNS:
         mock_client.resolve_multi_full.side_effect = ResolverError("DNS timeout")
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         await mgr.dispatchDNS()
-        # dispatchDNS catches ResolverError and sets NoAnswer, all type answers stay None
-        assert mgr.answers["NoAnswer"] is True
+        # dispatchDNS catches ResolverError and sets ERROR, all type answers stay None
+        assert mgr.answers["ERROR"] is True
+        assert mgr.answers["NoAnswer"] is False
         for rtype in DNSManager.dns_record_types:
             assert mgr.answers[rtype] is None
 
@@ -543,14 +547,15 @@ class TestDispatchDNS:
 
     @pytest.mark.asyncio
     async def test_dispatch_dns_error_result(self):
-        """DNSError in resolve_multi_full results sets NoAnswer."""
+        """DNSError in resolve_multi_full results sets ERROR, not NoAnswer."""
         mock_client = AsyncMock()
         mock_client.resolvers = ["127.0.0.1:53"]
         multi = {rt: DNSError(error="server failure") for rt in DNSManager.dns_record_types}
         mock_client.resolve_multi_full.return_value = multi
         mgr = DNSManager("test.example.com", dns_client=mock_client)
         await mgr.dispatchDNS()
-        assert mgr.answers["NoAnswer"] is True
+        assert mgr.answers["ERROR"] is True
+        assert mgr.answers["NoAnswer"] is False
 
 
 class TestDNSManagerInit:
