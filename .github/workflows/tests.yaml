@@ -53,7 +53,7 @@ jobs:
           command: |
             uv run pytest --exitfirst --disable-warnings --log-cli-level=DEBUG --cov-report xml:cov.xml --cov=baddns --cov=examples
       - name: Upload Code Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./cov.xml
