@@ -6,7 +6,7 @@ identifiers:
   nameservers: []
   not_cnames:
   - type: word
-    value: -an.s3.
+    value: -an.s3
 matcher_rule:
   matchers:
   - condition: and

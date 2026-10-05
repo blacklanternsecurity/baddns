@@ -188,7 +188,13 @@ class BadDNS_cname(BadDNS_base):
                 else []
             )
 
-            for sig in self.signatures:
+            word_results_per_response = {}
+            if self.word_matcher is not None:
+                for hr in http_results:
+                    if hr is not None:
+                        word_results_per_response[id(hr)] = self.word_matcher.match(hr)
+
+            for sig_idx, sig in enumerate(self.signatures):
                 if sig.signature["mode"] == "http":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
                     if len(sig.signature["identifiers"]["cnames"]) > 0:
@@ -237,7 +243,17 @@ class BadDNS_cname(BadDNS_base):
                     candidates = [hr for hr in http_results if hr is not None]
                     if _tls_error_signature(sig):
                         candidates += tls_failures
-                    if any(m.is_match(hr) for hr in candidates):
+
+                    matched = False
+                    for hr in candidates:
+                        # TLS stand-ins aren't in the batched word-match results, so this is None for
+                        # them and is_match falls back to plain matching — which is all they need.
+                        word_results = word_results_per_response.get(id(hr))
+                        if m.is_match(hr, word_results=word_results, sig_idx=sig_idx):
+                            matched = True
+                            break
+
+                    if matched:
                         log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
                         log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
                         findings.append(
