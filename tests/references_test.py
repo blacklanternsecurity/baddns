@@ -452,11 +452,21 @@ class TestBucketClaimable:
     def test_s3_exists_200(self):
         assert not BadDNS_references._is_claimable("aws-s3", 200, "ListBucketResult")
 
-    def test_gcs_bucketnotfound(self):
-        assert BadDNS_references._is_claimable("gcs", 404, "BucketNotFound")
+    def test_gcs_nosuchbucket(self):
+        assert BadDNS_references._is_claimable(
+            "gcs",
+            404,
+            "<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist.</Message></Error>",
+        )
 
     def test_gcs_exists(self):
         assert not BadDNS_references._is_claimable("gcs", 200, "OK")
+
+    def test_gcs_private_bucket_not_claimable(self):
+        """A private bucket exists; GCS answers 403 AccessDenied and it must not be reported."""
+        assert not BadDNS_references._is_claimable(
+            "gcs", 403, "<Error><Code>AccessDenied</Code><Message>Access denied.</Message></Error>"
+        )
 
 
 @pytest.mark.asyncio
@@ -521,7 +531,8 @@ async def test_references_bucket_gcs_claimable(
     mock_http.add_response(
         url="https://storage.googleapis.com/dead-gcs-bucket/",
         status=404,
-        body='{"error": {"code": 404, "message": "BucketNotFound"}}',
+        body="<?xml version='1.0' encoding='UTF-8'?><Error><Code>NoSuchBucket</Code>"
+        "<Message>The specified bucket does not exist.</Message></Error>",
     )
 
     baddns_ref = BadDNS_references("bad.dns", signatures=[], dns_client=mock_resolver, http_client=mock_http)

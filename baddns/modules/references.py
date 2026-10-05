@@ -236,9 +236,9 @@ class BadDNS_references(BadDNS_base):
 
     @staticmethod
     def _is_claimable(provider, status, body_text):
-        if provider == "aws-s3":
-            return status == 404 and "NoSuchBucket" in body_text
-        return status == 404 and "BucketNotFound" in body_text
+        # GCS serves an S3-compatible XML API, so both providers report a missing bucket the same way.
+        # An existing bucket answers 200, or 403 AccessDenied when it's private, so 404 is unambiguous.
+        return status == 404 and "NoSuchBucket" in body_text
 
     async def _check_buckets(self, bucket_refs):
         """Probe each unique bucket. Return findings for claimable ones."""
