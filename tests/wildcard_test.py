@@ -1,19 +1,20 @@
 import pytest
 from baddns.modules.wildcard import BadDNS_wildcard
+from baddns.lib import dnsmanager
 from baddns.lib.loader import load_signatures
 from .helpers import mock_signature_load
 
 
-_real_generate_random_label = BadDNS_wildcard._generate_random_label
+_real_generate_random_label = dnsmanager.generate_random_label
 
 
 @pytest.fixture(autouse=True)
 def patch_random_label(monkeypatch):
-    monkeypatch.setattr(BadDNS_wildcard, "_generate_random_label", staticmethod(lambda: "baddns-test1234"))
+    monkeypatch.setattr(dnsmanager, "generate_random_label", lambda: "baddns-test1234")
 
 
 def test_generate_random_label():
-    """The real _generate_random_label returns a baddns- prefixed string."""
+    """The real generate_random_label returns a baddns- prefixed string."""
     label = _real_generate_random_label()
     assert label.startswith("baddns-")
     assert len(label) == 15
