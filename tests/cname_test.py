@@ -759,13 +759,27 @@ async def test_cname_http_aws_bucket_match(fs, mock_dispatch_whois, mock_http, c
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname",
+    [
+        "baddns-bucket-123456789012-us-east-1-an.s3.us-east-1.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3-website-us-east-1.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3-us-east-1.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3-accesspoint.us-east-1.amazonaws.com",
+    ],
+)
 async def test_cname_http_aws_bucket_account_regional_excluded(
-    fs, mock_dispatch_whois, mock_http, configure_mock_resolver
+    fs, mock_dispatch_whois, mock_http, configure_mock_resolver, cname
 ):
-    """S3 account-regional bucket names can't be claimed by other accounts, so they are excluded."""
+    """S3 account-regional bucket names can't be claimed by other accounts, so every endpoint form is excluded.
+
+    The website and legacy dash-region endpoints serve the same NoSuchBucket text as the REST endpoint, so
+    the exclusion is the only thing keeping them from matching.
+    """
     mock_data = {
-        "bad.dns": {"CNAME": ["baddns-bucket-123456789012-us-east-1-an.s3.us-east-1.amazonaws.com"]},
-        "baddns-bucket-123456789012-us-east-1-an.s3.us-east-1.amazonaws.com": {"A": ["127.0.0.1"]},
+        "bad.dns": {"CNAME": [cname]},
+        cname: {"A": ["127.0.0.1"]},
     }
     mock_resolver = configure_mock_resolver(mock_data)
 

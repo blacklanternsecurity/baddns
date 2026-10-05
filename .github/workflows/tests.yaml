@@ -17,7 +17,7 @@ concurrency:
 jobs:
   lint:
     if: contains(github.event.pull_request.title, 'SignatureBot') == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -31,7 +31,7 @@ jobs:
 
   test:
     if: contains(github.event.pull_request.title, 'SignatureBot') == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -53,14 +53,14 @@ jobs:
           command: |
             uv run pytest --exitfirst --disable-warnings --log-cli-level=DEBUG --cov-report xml:cov.xml --cov=baddns --cov=examples
       - name: Upload Code Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./cov.xml
           verbose: true
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
