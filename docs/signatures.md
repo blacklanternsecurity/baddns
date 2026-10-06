@@ -40,10 +40,32 @@ identifiers:
   - type: word
     value: netlify.app
   not_cnames: []     # CNAME patterns that exclude a match
-  ips: []            # IP addresses to match
-  nameservers:       # Nameserver substrings to match (used by dns_nosoa mode)
+  ips: []            # IP addresses to match (exact, word only)
+  nameservers:       # Nameserver patterns to match (used by dns_nosoa mode)
   - awsdns
 ```
+
+`cnames`, `not_cnames` and `nameservers` each take `word` or `regex` identifiers:
+
+- **`word`** — a plain string. In `dns_nxdomain` mode it matches as a suffix of the CNAME target; in
+  `http` mode and for nameservers it matches as a substring.
+- **`regex`** — a Python regular expression, matched with `re.search` against the whole name, so it can
+  anchor with `^` and `$`. Patterns are compiled when the signature loads, and one that doesn't compile
+  is rejected there rather than silently never matching.
+
+Use `regex` when a substring is too loose to express the shape of a claimable name:
+
+```yaml
+not_cnames:
+# an Elastic Beanstalk name with a dotted prefix carries a hash label, so it can't be
+# recreated in another account
+- type: regex
+  value: ^[^.]+\.[^.]+\..+\.elasticbeanstalk\.com$
+```
+
+A bare string is accepted anywhere an identifier is expected and is treated as `word`, which is how
+`nameservers` and dnsReaper-sourced `ips` are written. `ips` are compared exactly, so `regex` is
+rejected there.
 
 ### Examples
 

@@ -176,7 +176,9 @@ class NucleiTemplatesTransformer:
                     else:
                         self._add_cname(word)
             elif mtype == "regex":
-                self.notes.append(f"dropped regex CNAME identifiers (not supported yet, #934): {matcher.get('regex')}")
+                # regex identifiers are supported now, but a nuclei DNS regex matches the whole
+                # rendered response, not just the CNAME, so these still need a human to convert.
+                self.notes.append(f"dropped regex DNS matcher (needs manual review): {matcher.get('regex')}")
 
     def map_values(self):
         values = {

@@ -7,6 +7,7 @@ from baddns.lib.httpmanager import HttpManager
 from baddns.lib.whoismanager import WhoisManager
 from baddns.lib.matcher import Matcher
 from baddns.lib.findings import Finding
+from baddns.lib.signature import any_identifier_matches, identifier_matches
 
 import ipaddress
 import logging
@@ -65,7 +66,7 @@ class BadDNS_cname(BadDNS_base):
             # claims this subject. Reuse an already-resolved IP so the probe hits what we fingerprinted.
             if any(
                 _tls_error_signature(sig)
-                and any(c["value"] in self.subject for c in sig.signature["identifiers"]["cnames"])
+                and any_identifier_matches(sig.signature["identifiers"]["cnames"], self.subject)
                 for sig in (self.signatures or [])
             ):
                 log.debug("tls_error signature matches subject, probing for TLS handshake error")
@@ -105,19 +106,17 @@ class BadDNS_cname(BadDNS_base):
             for sig in self.signatures:
                 if sig.signature["mode"] == "dns_nxdomain" and not sig.signature.get("negative_signature", False):
                     log.debug(f"Trying signature {sig.signature['service_name']}")
-                    if any(
-                        self.cname_dnsmanager.target.endswith(nc["value"])
-                        for nc in sig.signature["identifiers"]["not_cnames"]
+                    if any_identifier_matches(
+                        sig.signature["identifiers"]["not_cnames"], self.cname_dnsmanager.target, mode="suffix"
                     ):
                         log.debug(f"not_cnames exclusion matched, skipping {sig.signature['service_name']}")
                         continue
-                    sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
-                    for sig_cname in sig_cnames:
-                        log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname}")
-                        if self.cname_dnsmanager.target.endswith(sig_cname):
+                    for sig_cname in sig.signature["identifiers"]["cnames"]:
+                        log.debug(f"Checking CNAME {self.cname_dnsmanager.target} against {sig_cname['value']}")
+                        if identifier_matches(sig_cname, self.cname_dnsmanager.target, mode="suffix"):
                             signature_match = True
-                            log.debug(f"CNAME {self.cname_dnsmanager.target} vulnerable ({sig_cname})")
-                            indicator = sig_cname
+                            log.debug(f"CNAME {self.cname_dnsmanager.target} vulnerable ({sig_cname['value']})")
+                            indicator = sig_cname["value"]
                             findings.append(
                                 Finding(
                                     {
@@ -137,13 +136,13 @@ class BadDNS_cname(BadDNS_base):
             if not signature_match and not self.disable_negative_signatures:
                 for sig in self.signatures:
                     if sig.signature["mode"] == "dns_nxdomain" and sig.signature.get("negative_signature", False):
-                        sig_cnames = [c["value"] for c in sig.signature["identifiers"]["cnames"]]
-                        for sig_cname in sig_cnames:
-                            if self.cname_dnsmanager.target.endswith(sig_cname):
-                                log.debug(
-                                    f"Negative signature match [{sig.signature['service_name']}] for CNAME {self.cname_dnsmanager.target}, suppressing generic finding"
-                                )
-                                return findings
+                        if any_identifier_matches(
+                            sig.signature["identifiers"]["cnames"], self.cname_dnsmanager.target, mode="suffix"
+                        ):
+                            log.debug(
+                                f"Negative signature match [{sig.signature['service_name']}] for CNAME {self.cname_dnsmanager.target}, suppressing generic finding"
+                            )
+                            return findings
 
             if (
                 signature_match == False
@@ -201,16 +200,15 @@ class BadDNS_cname(BadDNS_base):
                         log.debug(
                             f"Signature contains cnames [{sig.signature['identifiers']['cnames']}], checking them"
                         )
-                        if not any(
-                            cname_dict["value"] in self.subject
-                            for cname_dict in sig.signature["identifiers"]["cnames"]
-                        ):
+                        if not any_identifier_matches(sig.signature["identifiers"]["cnames"], self.subject):
                             log.debug(f"no match for {sig.signature['identifiers']['cnames']} for in {self.subject}")
                             continue
                         log.debug("passed CNAME check")
 
+                        # A regex identifier has no exact-equality form, so this stays word-only. An
+                        # anchored pattern can't match a bare service domain anyway.
                         if self.direct_mode and any(
-                            self.subject == cname_dict["value"]
+                            cname_dict["type"] == "word" and self.subject == cname_dict["value"]
                             for cname_dict in sig.signature["identifiers"]["cnames"]
                         ):
                             log.debug(
@@ -221,8 +219,8 @@ class BadDNS_cname(BadDNS_base):
                     if len(sig.signature["identifiers"]["ips"]) > 0:
                         log.debug(f"Signature contains ips [{sig.signature['identifiers']['ips']}], checking them")
                         if not any(
-                            ip_signature in self.cname_dnsmanager.ips
-                            for ip_signature in sig.signature["identifiers"]["ips"]
+                            ip_identifier["value"] in self.cname_dnsmanager.ips
+                            for ip_identifier in sig.signature["identifiers"]["ips"]
                         ):
                             log.debug(
                                 f"no match for {sig.signature['identifiers']['ips']} for in {self.cname_dnsmanager.ips}"
@@ -231,10 +229,7 @@ class BadDNS_cname(BadDNS_base):
                         log.debug("passed IPS")
 
                     if len(sig.signature["identifiers"]["not_cnames"]) > 0:
-                        if any(
-                            not_cname_dict["value"] in self.subject
-                            for not_cname_dict in sig.signature["identifiers"]["not_cnames"]
-                        ):
+                        if any_identifier_matches(sig.signature["identifiers"]["not_cnames"], self.subject):
                             log.debug(f"not_cnames exclusion matched for {self.subject}, skipping")
                             continue
 

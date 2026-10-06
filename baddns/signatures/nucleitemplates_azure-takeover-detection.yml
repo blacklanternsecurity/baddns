@@ -36,7 +36,9 @@ identifiers:
     value: web.core.windows.net
   ips: []
   nameservers: []
-  not_cnames: []
+  not_cnames:
+  - type: regex
+    value: \.[a-z0-9]+-\d+\.azurewebsites\.net$
 matcher_rule: null
 mode: dns_nxdomain
 service_name: Microsoft Azure Takeover Detection

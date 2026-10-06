@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 class BadDNSSignature:
     validModes = ["http", "dns_nxdomain", "dns_nosoa"]
     validSources = ["dnsreaper", "nucleitemplates", "self"]
+    validIdentifierTypes = ["word", "regex"]
     validMatcherTypes = ["word", "regex", "status", "tls_error"]
     validMatcherParts = ["body", "header"]
     validConditions = ["and", "or"]
@@ -29,11 +30,10 @@ class BadDNSSignature:
         self.signature["source"] = kwargs.get("source", None)
         self.signature["service_name"] = kwargs.get("service_name", None)
         identifiers = kwargs.get("identifiers", {})
-        self.signature["identifiers"] = {}
-        self.signature["identifiers"]["cnames"] = identifiers.get("cnames", [])
-        self.signature["identifiers"]["not_cnames"] = identifiers.get("not_cnames", [])
-        self.signature["identifiers"]["ips"] = identifiers.get("ips", [])
-        self.signature["identifiers"]["nameservers"] = identifiers.get("nameservers", [])
+        self.signature["identifiers"] = {
+            key: self._normalize_identifiers(key, identifiers.get(key, []))
+            for key in ("cnames", "not_cnames", "ips", "nameservers")
+        }
         self.signature["matcher_rule"] = kwargs.get("matcher_rule", None)
         self.signature["negative_signature"] = kwargs.get("negative_signature", False)
         # Optional per-signature confidence for findings it produces (default is the module's own level).
@@ -73,6 +73,42 @@ class BadDNSSignature:
         if self.signature["mode"] == "dns_nosoa":
             if len(self.signature["identifiers"]["nameservers"]) == 0:
                 raise BadDNSSignatureException(f"In dns_nosoa mode, nameservers are required")
+
+    def _normalize_identifiers(self, key, identifiers):
+        """Bring one identifier list into the {type, value} form the modules match against.
+
+        Bare strings are accepted as ``word`` identifiers: dns_nosoa signatures have always written
+        nameservers that way, and the dnsReaper importer writes IPs that way. ``regex`` identifiers are
+        compiled here so a bad pattern fails at load instead of silently never matching at scan time.
+        """
+        normalized = []
+        for identifier in identifiers:
+            if isinstance(identifier, str):
+                identifier = {"type": "word", "value": identifier}
+            if not isinstance(identifier, dict):
+                raise BadDNSSignatureException(
+                    f"Identifier in [{key}] must be a string or a mapping, got [{identifier!r}]"
+                )
+            identifier_type = identifier.get("type", "word")
+            value = identifier.get("value")
+            if identifier_type not in self.validIdentifierTypes:
+                raise BadDNSSignatureException(
+                    f"Unsupported identifier type [{identifier_type}] in [{key}] "
+                    f"(supported: {', '.join(self.validIdentifierTypes)})"
+                )
+            if not isinstance(value, str) or not value:
+                raise BadDNSSignatureException(f"Identifier in [{key}] requires a non-empty string value")
+            if identifier_type == "regex":
+                # An IP identifier is exact membership against resolved addresses, so a pattern there
+                # would never match. Reject it rather than let it fail silently.
+                if key == "ips":
+                    raise BadDNSSignatureException("regex identifiers are not supported for [ips]")
+                try:
+                    re.compile(value)
+                except re.error as e:
+                    raise BadDNSSignatureException(f"Invalid identifier regex [{value}] in [{key}]: {e}")
+            normalized.append({"type": identifier_type, "value": value})
+        return normalized
 
     def _validate_matchers(self, matcher_rule):
         """Reject matcher constructs the Matcher can't evaluate, so a signature never silently loses logic."""
@@ -134,3 +170,23 @@ class BadDNSSignature:
             return ", ".join(summary) + f" Matchers-Condition: {self.signature['matcher_rule']['matchers-condition']}"
         else:
             return "No matchers in signature"
+
+
+def identifier_matches(identifier, name, mode="substring"):
+    """True if one identifier matches a DNS name.
+
+    ``regex`` identifiers are always ``re.search`` against the whole name, so a pattern can anchor
+    itself with ``^``/``$`` and express shapes a substring can't. ``word`` identifiers keep whatever
+    comparison the call site has always used: ``suffix`` on the NXDOMAIN paths, ``substring`` on the
+    HTTP and nameserver paths.
+    """
+    value = identifier["value"]
+    if identifier["type"] == "regex":
+        return re.search(value, name) is not None
+    if mode == "suffix":
+        return name.endswith(value)
+    return value in name
+
+
+def any_identifier_matches(identifiers, name, mode="substring"):
+    return any(identifier_matches(identifier, name, mode) for identifier in identifiers)
