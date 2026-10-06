@@ -1,0 +1,18 @@
+confidence: MEDIUM
+identifiers:
+  cnames:
+  - type: word
+    value: public.kb.help
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    type: tls_error
+    words:
+    - tlsv1 alert internal error
+  matchers-condition: and
+mode: http
+service_name: knowledgebase.com (TLS refusal)
+source: self

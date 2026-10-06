@@ -1,6 +1,7 @@
 import os
 import pytest
 import datetime
+import types
 from unittest.mock import patch
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.loader import load_signatures
@@ -799,3 +800,156 @@ async def test_cname_http_aws_bucket_account_regional_excluded(
         findings = baddns_cname.analyze()
 
     assert not any(f.to_dict()["signature"] == "AWS Bucket Takeover Detection" for f in (findings or []))
+
+
+_TLS_SIG_YAML = """
+service_name: TLS Refusal Test
+source: self
+mode: http
+identifiers:
+  cnames:
+  - type: word
+    value: domains.tlsplatform.test
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers-condition: and
+  matchers:
+  - type: tls_error
+    condition: and
+    words:
+    - tlsv1 alert internal error
+"""
+
+# Same platform, but decided on an HTTP response rather than a handshake error.
+_STATUS_SIG_YAML = """
+service_name: Status Zero
+source: self
+mode: http
+identifiers:
+  cnames:
+  - type: word
+    value: domains.tlsplatform.test
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers-condition: and
+  matchers:
+  - type: status
+    status: 0
+"""
+
+
+class _TLSFailingHTTP:
+    """HTTP client stub: plain HTTP 308-redirects, HTTPS fails the TLS handshake with the given error.
+
+    Records each call so tests can assert whether the unpooled TLS probe was fired at all. Real
+    blasthttp behaviour for the probe is covered in tests/tls_probe_test.py.
+    """
+
+    def __init__(self, https_error):
+        self.https_error = https_error
+        self.calls = []
+
+    async def request(self, url, **kwargs):
+        from baddns.mock_blasthttp import MockResponse
+
+        self.calls.append((url, kwargs))
+        if url.startswith("https://"):
+            raise RuntimeError(self.https_error)
+        return MockResponse(url=url, status=308, headers=[("location", url.replace("http://", "https://"))])
+
+    @property
+    def probes(self):
+        return [c for c in self.calls if "resolve_ip" in c[1]]
+
+
+async def _run_tls(fs, configure_mock_resolver, https_error, sig_yamls=(_TLS_SIG_YAML,)):
+    mock_data = {"bad.dns": {"CNAME": ["domains.tlsplatform.test"]}, "domains.tlsplatform.test": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    for n, yaml_text in enumerate(sig_yamls):
+        fs.create_file(f"/tmp/signatures/test_tls_{n}.yml", contents=yaml_text)
+    signatures = load_signatures("/tmp/signatures")
+    http_client = _TLSFailingHTTP(https_error)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver, http_client=http_client)
+    findings = []
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze() or []
+    return [f.to_dict() for f in findings], http_client
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_signature_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    findings, http_client = await _run_tls(
+        fs,
+        configure_mock_resolver,
+        "TLS handshake failed: error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error",
+    )
+    tls = [f for f in findings if f["signature"] == "TLS Refusal Test"]
+    assert tls
+    assert "TLS handshake error: tlsv1 alert internal error" in tls[0]["indicator"]
+    # the probe must go to the IP we already resolved for the CNAME target
+    assert [kwargs["resolve_ip"] for _, kwargs in http_client.probes] == ["127.0.0.1"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_different_alert_no_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    findings, _ = await _run_tls(
+        fs, configure_mock_resolver, "TLS handshake failed: error:0A000410:ssl/tls alert handshake failure"
+    )
+    assert not [f for f in findings if f["signature"] == "TLS Refusal Test"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_connection_failure_no_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    """A generic connect error is not a handshake refusal, even on the unpooled probe."""
+    findings, _ = await _run_tls(fs, configure_mock_resolver, "request failed: client error (Connect)")
+    assert not [f for f in findings if f["signature"] == "TLS Refusal Test"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_failure_not_offered_to_other_signatures(fs, mock_dispatch_whois, configure_mock_resolver):
+    """The TLS-failure stand-in has status 0; a signature without a tls_error matcher must never see it.
+
+    Both signatures claim the same CNAME, so the probe does run and tls_error is set — the status-0
+    signature still must not match it.
+    """
+    findings, http_client = await _run_tls(
+        fs,
+        configure_mock_resolver,
+        "TLS handshake failed: tlsv1 alert internal error",
+        sig_yamls=(_TLS_SIG_YAML, _STATUS_SIG_YAML),
+    )
+    assert [f for f in findings if f["signature"] == "TLS Refusal Test"], "probe did not run, gate untested"
+    assert not [f for f in findings if f["signature"] == "Status Zero"]
+
+
+@pytest.mark.asyncio
+async def test_cname_no_tls_probe_without_a_tls_signature(fs, mock_dispatch_whois, configure_mock_resolver):
+    """The extra unpooled request is only worth making for a platform we have a tls_error signature for."""
+    findings, http_client = await _run_tls(
+        fs,
+        configure_mock_resolver,
+        "TLS handshake failed: tlsv1 alert internal error",
+        sig_yamls=(_STATUS_SIG_YAML,),
+    )
+    assert http_client.probes == []
+    assert not [f for f in findings if f["signature"] == "Status Zero"]
+
+
+@pytest.mark.parametrize(
+    "ips, expected",
+    [
+        (["1.2.3.4"], "1.2.3.4"),
+        (["2001:db8::1", "1.2.3.4"], "1.2.3.4"),  # IPv4 wins however the async answers landed
+        (["2001:db8::1"], "2001:db8::1"),  # IPv6-only: nothing else to try
+        (["not-an-ip", "1.2.3.4"], "1.2.3.4"),
+        ([], None),
+    ],
+)
+def test_cname_probe_ip_prefers_ipv4(ips, expected):
+    cname = BadDNS_cname("bad.dns")
+    cname.cname_dnsmanager = types.SimpleNamespace(ips=ips)
+    assert cname._probe_ip() == expected
