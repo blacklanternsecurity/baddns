@@ -953,3 +953,202 @@ def test_cname_probe_ip_prefers_ipv4(ips, expected):
     cname = BadDNS_cname("bad.dns")
     cname.cname_dnsmanager = types.SimpleNamespace(ips=ips)
     assert cname._probe_ip() == expected
+
+
+# --- regex identifiers (#934) ---
+
+_REGEX_CNAME_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: regex
+    value: ^[a-z0-9-]+\\.regex-service\\.com$
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "Bucket does not exist"
+  matchers-condition: and
+mode: http
+service_name: Regex Cnames Test Service
+source: self
+"""
+
+_REGEX_NOT_CNAMES_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: word
+    value: regex-service.com
+  ips: []
+  nameservers: []
+  not_cnames:
+  - type: regex
+    value: ^excluded-[0-9]+\\.regex-service\\.com$
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "Bucket does not exist"
+  matchers-condition: and
+mode: http
+service_name: Regex Not-Cnames Test Service
+source: self
+"""
+
+_REGEX_NXDOMAIN_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: regex
+    value: ^[a-z0-9-]+\\.regex-service\\.com$
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+mode: dns_nxdomain
+service_name: Regex NXDOMAIN Test Service
+source: self
+"""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("tenant.regex-service.com", True),
+        ("a.b.regex-service.com", False),  # anchored pattern rejects the dotted prefix
+        ("regex-service.com", False),  # anchored pattern requires a label
+    ],
+)
+async def test_cname_http_regex_cnames(fs, mock_dispatch_whois, mock_http, configure_mock_resolver, cname, expected):
+    """A regex cname identifier matches with re.search against the full name, so it can anchor."""
+    mock_data = {"bad.dns": {"CNAME": [cname]}, cname: {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    mock_http.add_response(url="http://bad.dns/", status=200, body="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _REGEX_CNAME_SIG_YAML, filename="test_regex_cnames.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "Regex Cnames Test Service" for f in (findings or []))
+    assert matched is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("excluded-123.regex-service.com", False),
+        ("other.regex-service.com", True),
+        ("excluded-abc.regex-service.com", True),  # pattern requires digits, so this is not excluded
+    ],
+)
+async def test_cname_http_regex_not_cnames(
+    fs, mock_dispatch_whois, mock_http, configure_mock_resolver, cname, expected
+):
+    mock_data = {"bad.dns": {"CNAME": [cname]}, cname: {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    mock_http.add_response(url="http://bad.dns/", status=200, body="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _REGEX_NOT_CNAMES_SIG_YAML, filename="test_regex_not_cnames.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "Regex Not-Cnames Test Service" for f in (findings or []))
+    assert matched is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("tenant.regex-service.com", True),
+        ("a.b.regex-service.com", False),
+    ],
+)
+async def test_cname_nxdomain_regex_cnames(fs, mock_dispatch_whois, configure_mock_resolver, cname, expected):
+    mock_data = {"bad.dns": {"CNAME": [f"{cname}."]}, "_NXDOMAIN": [cname]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    sig_dir = _write_sig(fs, _REGEX_NXDOMAIN_SIG_YAML, filename="test_regex_nxdomain.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    sig_findings = [f.to_dict() for f in (findings or []) if f.to_dict()["signature"] == "Regex NXDOMAIN Test Service"]
+    assert bool(sig_findings) is expected
+    if expected:
+        # the pattern itself is the indicator, since there is no single matched string
+        assert sig_findings[0]["indicator"] == "^[a-z0-9-]+\\.regex-service\\.com$"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("myenv.us-east-1.elasticbeanstalk.com", True),
+        ("my-env-prod.eu-west-1.elasticbeanstalk.com", True),
+        # a dotted prefix means the name carries a hash label or an extra level, and can't be
+        # recreated in another account
+        ("staging.x.us-east-1.elasticbeanstalk.com", False),
+        ("myenv.eba-pmc3dmbx.us-east-1.elasticbeanstalk.com", False),
+    ],
+)
+async def test_cname_nxdomain_elastic_beanstalk_dotted_prefix(
+    fs, mock_dispatch_whois, configure_mock_resolver, cname, expected
+):
+    mock_data = {"bad.dns": {"CNAME": [f"{cname}."]}, "_NXDOMAIN": [cname]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_signature_load(fs, "dnsreaper_elastic_beanstalk.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "AWS Elastic Beanstalk" for f in (findings or []))
+    assert matched is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("baddns.azurewebsites.net", True),
+        # secure unique default hostnames are scoped to the owning tenant, so they aren't claimable
+        ("contoso-a6gqaeashthkhkeu.eastus-01.azurewebsites.net", False),
+        ("app.westeurope-01.azurewebsites.net", False),
+    ],
+)
+async def test_cname_nxdomain_azure_unique_hostname(fs, mock_dispatch_whois, configure_mock_resolver, cname, expected):
+    mock_data = {"bad.dns": {"CNAME": [f"{cname}."]}, "_NXDOMAIN": [cname]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "Microsoft Azure Takeover Detection" for f in (findings or []))
+    assert matched is expected

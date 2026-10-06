@@ -62,7 +62,9 @@ identifiers:
     value: ca-west-1.elasticbeanstalk.com
   ips: []
   nameservers: []
-  not_cnames: []
+  not_cnames:
+  - type: regex
+    value: ^[^.]+\.[^.]+\..+\.elasticbeanstalk\.com$
 matcher_rule: null
 mode: dns_nxdomain
 service_name: AWS Elastic Beanstalk
