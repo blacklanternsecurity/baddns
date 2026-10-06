@@ -8,9 +8,18 @@ from baddns.lib.whoismanager import WhoisManager
 from baddns.lib.matcher import Matcher
 from baddns.lib.findings import Finding
 
+import ipaddress
 import logging
+import types
 
 log = logging.getLogger(__name__)
+
+
+def _tls_error_signature(sig):
+    """True if the signature decides on a TLS handshake error rather than an HTTP response."""
+    if sig.signature["mode"] != "http":
+        return False
+    return any(m.get("type") == "tls_error" for m in sig.signature["matcher_rule"].get("matchers", []))
 
 
 class BadDNS_cname(BadDNS_base):
@@ -52,6 +61,15 @@ class BadDNS_cname(BadDNS_base):
             self.target_httpmanager = HttpManager(self.target, http_client=self.http_client)
             await self.target_httpmanager.dispatchHttp()
             log.debug("HTTP dispatch complete")
+            # An unpooled TLS probe costs an extra request, so only run it when a tls_error signature
+            # claims this subject. Reuse an already-resolved IP so the probe hits what we fingerprinted.
+            if any(
+                _tls_error_signature(sig)
+                and any(c["value"] in self.subject for c in sig.signature["identifiers"]["cnames"])
+                for sig in (self.signatures or [])
+            ):
+                log.debug("tls_error signature matches subject, probing for TLS handshake error")
+                await self.target_httpmanager.probe_tls_error(resolve_ip=self._probe_ip())
         # if the cname doesn't resolve, we still need to see if the base domain is unregistered
         # even if it is registered, we still use whois to check for expired domains
         log.debug("performing WHOIS lookup")
@@ -60,6 +78,18 @@ class BadDNS_cname(BadDNS_base):
         await self.cname_whoismanager.dispatchWHOIS()
         log.debug("WHOIS dispatch complete")
         return True
+
+    def _probe_ip(self):
+        """Pick the IP for the TLS probe. Pinning an address loses the resolver's IPv4/IPv6 fallback,
+        so prefer IPv4, which a scanning host is far more likely to be able to reach."""
+        ips = self.cname_dnsmanager.ips
+        for ip in ips:
+            try:
+                if ipaddress.ip_address(ip).version == 4:
+                    return ip
+            except ValueError:
+                continue
+        return ips[0] if ips else None
 
     def analyze(self):
         findings = []
@@ -93,7 +123,7 @@ class BadDNS_cname(BadDNS_base):
                                     {
                                         "target": self.target_dnsmanager.target,
                                         "description": f"Dangling CNAME, probable subdomain takeover (NXDOMAIN technique)",
-                                        "confidence": "HIGH",
+                                        "confidence": sig.signature.get("confidence", "HIGH"),
                                         "severity": "MEDIUM",
                                         "signature": sig.signature["service_name"],
                                         "indicator": indicator,
@@ -149,8 +179,22 @@ class BadDNS_cname(BadDNS_base):
                 self.target_httpmanager.https_allowredirects_results,
                 self.target_httpmanager.https_denyredirects_results,
             ]
+            # A refused TLS handshake, as a matcher-compatible stand-in. Only offered to signatures with
+            # a tls_error matcher, so other signatures never see this empty response.
+            tls_error = getattr(self.target_httpmanager, "tls_error", None)
+            tls_failures = (
+                [types.SimpleNamespace(status=0, headers=[], body="", text="", tls_error=tls_error)]
+                if tls_error
+                else []
+            )
 
-            for sig in self.signatures:
+            word_results_per_response = {}
+            if self.word_matcher is not None:
+                for hr in http_results:
+                    if hr is not None:
+                        word_results_per_response[id(hr)] = self.word_matcher.match(hr)
+
+            for sig_idx, sig in enumerate(self.signatures):
                 if sig.signature["mode"] == "http":
                     log.debug(f"Trying signature {sig.signature['service_name']}")
                     if len(sig.signature["identifiers"]["cnames"]) > 0:
@@ -196,7 +240,20 @@ class BadDNS_cname(BadDNS_base):
 
                     m = Matcher(sig.signature)
                     log.debug("Checking for HTTP matches")
-                    if any(m.is_match(hr) for hr in http_results if hr is not None):
+                    candidates = [hr for hr in http_results if hr is not None]
+                    if _tls_error_signature(sig):
+                        candidates += tls_failures
+
+                    matched = False
+                    for hr in candidates:
+                        # TLS stand-ins aren't in the batched word-match results, so this is None for
+                        # them and is_match falls back to plain matching — which is all they need.
+                        word_results = word_results_per_response.get(id(hr))
+                        if m.is_match(hr, word_results=word_results, sig_idx=sig_idx):
+                            matched = True
+                            break
+
+                    if matched:
                         log.debug(f"CNAME {self.cname_dnsmanager.target} Vulnerable")
                         log.debug(f"With matcher_rule {sig.signature['matcher_rule']}")
                         findings.append(
@@ -204,7 +261,7 @@ class BadDNS_cname(BadDNS_base):
                                 {
                                     "target": self.target_dnsmanager.target,
                                     "description": f"Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-                                    "confidence": "HIGH",
+                                    "confidence": sig.signature.get("confidence", "HIGH"),
                                     "severity": "MEDIUM",
                                     "signature": sig.signature["service_name"],
                                     "indicator": sig.summarize_matcher_rule(),

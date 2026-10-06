@@ -9,6 +9,19 @@ log = logging.getLogger(__name__)
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 Firefox/117.0"
 
 
+def header_items(headers):
+    """Return headers as a list of (name, value) pairs, keeping duplicates.
+
+    Accepts blasthttp's ``Headers`` object (iterating it yields names only; ``.items()`` yields pairs),
+    a dict, or an iterable of (name, value) tuples.
+    """
+    if headers is None:
+        return []
+    if hasattr(headers, "items"):
+        return list(headers.items())
+    return list(headers)
+
+
 def headers_to_dict(headers):
     """Normalize a blasthttp-style header iterable (list of (k, v) tuples) to a dict.
 
@@ -40,6 +53,8 @@ class HttpManager:
             "https_denyredirects_results",
         ]:
             setattr(self, attr, None)
+        # TLS handshake error text, populated only by an explicit probe_tls_error() call
+        self.tls_error = None
 
     async def dispatchHttp(self):
         protocols = ["http", "https"]
@@ -79,6 +94,47 @@ class HttpManager:
             except Exception as e:
                 log.debug(f"Error occurred while fetching {base_url} (follow_redirects={follow_redirects}): {e}")
                 setattr(self, attr_name, None)
+
+    async def fetch(self, url, follow_redirects=False):
+        """Single GET request using the same settings as dispatchHttp."""
+        return await self.http_client.request(
+            url,
+            method="GET",
+            headers=[("User-Agent", USER_AGENT)],
+            timeout=5,
+            verify_certs=False,
+            follow_redirects=follow_redirects,
+        )
+
+    async def probe_tls_error(self, resolve_ip=None):
+        """Capture the TLS handshake error for this target, if the server refuses the handshake.
+
+        blasthttp only reports handshake detail for requests that skip its connection pool; the pooled
+        requests in ``dispatchHttp`` surface a generic connect error instead. ``resolve_ip`` takes that
+        unpooled path while still sending the target hostname as SNI, which is what the platforms this
+        detects key off of. Sets and returns ``tls_error``, or ``None`` if the handshake wasn't refused.
+        """
+        if self.https_allowredirects_results is not None or self.https_denyredirects_results is not None:
+            log.debug("HTTPS succeeded, skipping TLS probe")
+            return None
+
+        url = f"https://{self.target}/"
+        kwargs = {"resolve_ip": resolve_ip} if resolve_ip else {}
+        try:
+            await self.http_client.request(
+                url,
+                method="GET",
+                headers=[("User-Agent", USER_AGENT)],
+                timeout=5,
+                verify_certs=False,
+                follow_redirects=False,
+                **kwargs,
+            )
+        except Exception as e:
+            log.debug(f"TLS probe for {url} failed: {e}")
+            if "TLS handshake failed" in str(e):
+                self.tls_error = str(e)
+        return self.tls_error
 
     async def close(self):
         """No-op. blasthttp clients are shared and don't need per-consumer teardown."""

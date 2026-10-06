@@ -2,18 +2,17 @@ confidence: MEDIUM
 identifiers:
   cnames:
   - type: word
-    value: wordpress.com
+    value: public.kb.help
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: or
-    part: body
-    type: word
+  - condition: and
+    type: tls_error
     words:
-    - Do you want to register
+    - tlsv1 alert internal error
   matchers-condition: and
 mode: http
-service_name: wordpress.com
-source: dnsreaper
+service_name: knowledgebase.com (TLS refusal)
+source: self
