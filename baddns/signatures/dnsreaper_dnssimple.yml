@@ -1,0 +1,17 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - type: word
+    value: ns1.dnsimple.com
+  - type: word
+    value: ns2.dnsimple.com
+  - type: word
+    value: ns3.dnsimple.com
+  - type: word
+    value: ns4.dnsimple.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: dnsimple.com
+source: dnsreaper
