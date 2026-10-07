@@ -1,0 +1,17 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - type: word
+    value: ns1.000domains.com
+  - type: word
+    value: ns2.000domains.com
+  - type: word
+    value: fwns1.000domains.com
+  - type: word
+    value: fwns2.000domains.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: 000domains.com
+source: dnsreaper
