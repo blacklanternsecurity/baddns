@@ -1,0 +1,11 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - type: word
+    value: .nsone.net
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: ns1.com
+source: dnsreaper
