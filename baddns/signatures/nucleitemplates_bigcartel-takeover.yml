@@ -1,8 +1,6 @@
 confidence: MEDIUM
 identifiers:
-  cnames:
-  - type: word
-    value: bigcartel.com
+  cnames: []
   ips: []
   nameservers: []
   not_cnames: []
@@ -12,9 +10,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - 'error code: 1001'
-  - status: 409
-    type: status
+    - <h1>Oops! We couldn&#8217;t find that page.</h1>
   matchers-condition: and
 mode: http
 service_name: Bigcartel Takeover Detection
