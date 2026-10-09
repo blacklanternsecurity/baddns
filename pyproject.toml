@@ -1,6 +1,6 @@
 [project]
 name = "baddns"
-dynamic = ["version"]
+version = "2.5.0"
 description = "Check subdomains for subdomain takeovers and other DNS tomfoolery"
 authors = [{name = "liquidsec", email = "paul.mueller08@gmail.com"}]
 license = "GPL-3.0"
@@ -35,7 +35,7 @@ dev = [
     "pytest-mock>=3.11.1",
     "pyfakefs>=5.10,<7.0",
     "mock>=5.1.0",
-    "ruff>=0.15.4",
+    "ruff==0.16.9",
 ]
 docs = [
     "mkdocs>=1.5.3",
@@ -45,9 +45,6 @@ docs = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.version]
-path = "baddns/__version__.py"
 
 [tool.hatch.build.targets.sdist]
 include = ["baddns/**", "signatures/**"]
