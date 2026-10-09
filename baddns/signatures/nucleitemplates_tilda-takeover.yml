@@ -6,12 +6,12 @@ identifiers:
   not_cnames: []
 matcher_rule:
   matchers:
-  - condition: and
+  - condition: or
     part: body
     type: word
     words:
     - Please go to the site settings and put the domain name in the Domain tab.
-  - condition: and
+  - condition: or
     negative: true
     part: body
     type: word
