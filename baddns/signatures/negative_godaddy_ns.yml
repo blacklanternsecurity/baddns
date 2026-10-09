@@ -2,7 +2,8 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .domaincontrol.com
+  - type: word
+    value: .domaincontrol.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

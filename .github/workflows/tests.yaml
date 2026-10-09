@@ -16,7 +16,10 @@ concurrency:
 
 jobs:
   lint:
-    if: contains(github.event.pull_request.title, 'SignatureBot') == false
+    # SignatureBot PRs are one generated signature file each, covered by signature-test.yml instead.
+    # Matched on the title prefix the bot actually uses, not a substring: a plain `contains` also
+    # swallowed any human PR whose title merely mentioned the bot, silently skipping its whole run.
+    if: startsWith(github.event.pull_request.title, '[SignatureBot]') == false
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +33,8 @@ jobs:
         run: uvx ruff@0.15.10 check .
 
   test:
-    if: contains(github.event.pull_request.title, 'SignatureBot') == false
+    # see the note on `lint`
+    if: startsWith(github.event.pull_request.title, '[SignatureBot]') == false
     runs-on: ubuntu-24.04
     strategy:
       matrix:

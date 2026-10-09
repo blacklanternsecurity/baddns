@@ -2,7 +2,8 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .dnsimple.com
+  - type: word
+    value: .dnsimple.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

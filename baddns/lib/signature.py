@@ -1,4 +1,5 @@
 import re
+import yaml
 import logging
 
 from .errors import BadDNSSignatureException
@@ -154,6 +155,19 @@ class BadDNSSignature:
 
     def output(self):
         return self.signature
+
+    def canonical_yaml(self):
+        """The canonical on-disk form of this signature.
+
+        Signature files are compared byte for byte -- the SignatureBot decides whether to open a PR
+        by diffing a freshly imported signature against the shipped one -- so there is exactly one
+        serialization, and everything that writes a signature file goes through here. A shipped file
+        that drifts out of this form makes the bot re-propose every signature at once.
+        """
+        output = dict(self.signature)
+        if not output.get("negative_signature"):
+            output.pop("negative_signature", None)
+        return yaml.dump(output)
 
     def summarize_matcher_rule(self):
         summary = []

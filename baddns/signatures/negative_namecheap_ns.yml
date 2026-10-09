@@ -2,8 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .registrar-servers.com
-  - .namecheaphosting.com
+  - type: word
+    value: .registrar-servers.com
+  - type: word
+    value: .namecheaphosting.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

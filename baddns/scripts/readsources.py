@@ -27,6 +27,12 @@ logger.setLevel(logging.INFO)
 
 OUTPUT_DIRECTORY = "signatures_to_test"
 MANIFEST_FILE = "upstream_manifest.txt"
+SHIPPED_SIGNATURE_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "signatures")
+
+# Fields an operator tunes by hand after a signature is imported. Upstream has no concept of them,
+# so a regenerated signature has to carry them over from the shipped file or every bot update would
+# silently revert them.
+PRESERVED_FIELDS = ("confidence",)
 
 # Takeover-tagged nuclei templates that are generic detectors, not service fingerprints
 NUCLEI_SKIP = {
@@ -54,9 +60,21 @@ def empty_identifiers():
     return {"cnames": [], "not_cnames": [], "ips": [], "nameservers": []}
 
 
+def preserved_fields(filename):
+    """Hand-tuned fields to carry over from the shipped signature of the same name, if there is one."""
+    try:
+        with open(os.path.join(SHIPPED_SIGNATURE_DIR, filename)) as f:
+            shipped = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        return {}
+    return {field: shipped[field] for field in PRESERVED_FIELDS if field in shipped}
+
+
 def write_signature(shortname, signature_name, signature_data, notes):
     """Validate, then write the signature (and any conversion notes). Returns True if written."""
-    output_path = os.path.join(OUTPUT_DIRECTORY, f"{shortname}_{signature_name}.yml")
+    filename = f"{shortname}_{signature_name}.yml"
+    output_path = os.path.join(OUTPUT_DIRECTORY, filename)
+    signature_data = {**signature_data, **preserved_fields(filename)}
     candidate = BadDNSSignature()
     try:
         candidate.initialize(**signature_data)
@@ -64,12 +82,10 @@ def write_signature(shortname, signature_name, signature_data, notes):
         logger.info(f"Skipping [{output_path}]: failed validation: [{e}]")
         return False
 
-    output = candidate.output()
-    if not output.get("negative_signature"):
-        output.pop("negative_signature", None)
+    serialized = candidate.canonical_yaml()
     with open(output_path, "w") as f:
-        yaml.dump(output, f)
-    logger.info(f"Wrote [{output_path}]:\n{yaml.dump(output)}")
+        f.write(serialized)
+    logger.info(f"Wrote [{output_path}]:\n{serialized}")
 
     notes_path = os.path.join(OUTPUT_DIRECTORY, f"{shortname}_{signature_name}.notes")
     if notes:
