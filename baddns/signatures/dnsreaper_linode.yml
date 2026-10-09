@@ -6,12 +6,6 @@ identifiers:
     value: ns1.linode.com
   - type: word
     value: ns2.linode.com
-  - type: word
-    value: ns3.linode.com
-  - type: word
-    value: ns4.linode.com
-  - type: word
-    value: ns5.linode.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
