@@ -150,6 +150,41 @@ class TestSignatureMatcherValidation:
         for f in sorted(sig_dir.glob("*.yml")):
             BadDNSSignature().initialize(**yaml.safe_load(f.read_text()))
 
+    def test_all_shipped_signatures_canonical(self):
+        """A shipped signature that is not in canonical form makes the SignatureBot re-propose it.
+
+        The bot compares a freshly imported signature against the shipped file byte for byte, so
+        whenever the serialized form changes, every shipped file has to be rewritten with it.
+        """
+        from pathlib import Path
+        import yaml
+
+        sig_dir = Path(__file__).resolve().parent.parent / "baddns" / "signatures"
+        drifted = []
+        for f in sorted(sig_dir.glob("*.yml")):
+            candidate = BadDNSSignature()
+            candidate.initialize(**yaml.safe_load(f.read_text()))
+            if f.read_text() != candidate.canonical_yaml():
+                drifted.append(f.name)
+        assert not drifted, (
+            f"not in canonical form: {', '.join(drifted)}. Run: python3 baddns/scripts/normalize_signatures.py"
+        )
+
+    def test_blocked_signatures_are_not_shipped(self):
+        """blocked_signatures.txt names signatures we dropped, so none of them may also be shipped."""
+        from pathlib import Path
+
+        sig_dir = Path(__file__).resolve().parent.parent / "baddns" / "signatures"
+        blocklist = sig_dir / "blocked_signatures.txt"
+        blocked = [
+            line.strip()
+            for line in blocklist.read_text().splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        assert blocked, "blocked_signatures.txt parsed as empty"
+        conflicts = [name for name in blocked if (sig_dir / name).exists()]
+        assert not conflicts, f"blocked but still shipped: {', '.join(conflicts)}"
+
 
 class TestSignatureConfidence:
     def test_confidence_optional_and_not_stored_by_default(self):

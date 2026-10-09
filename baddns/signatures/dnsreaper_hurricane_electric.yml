@@ -2,11 +2,16 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ns5.he.net
-  - ns4.he.net
-  - ns3.he.net
-  - ns2.he.net
-  - ns1.he.net
+  - type: word
+    value: ns5.he.net
+  - type: word
+    value: ns4.he.net
+  - type: word
+    value: ns3.he.net
+  - type: word
+    value: ns2.he.net
+  - type: word
+    value: ns1.he.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

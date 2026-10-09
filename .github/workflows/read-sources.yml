@@ -65,6 +65,10 @@ jobs:
           prev_hashes=""
         fi
 
+        # Signatures we have deliberately dropped. Blocked by name, so the block survives both an
+        # upstream edit and a change to our own serialized format -- a content hash survives neither.
+        BLOCKED=$(grep -vE '^[[:space:]]*(#|$)' baddns/signatures/blocked_signatures.txt 2>/dev/null || true)
+
         # Get only the files in the signatures_to_test directory
         files=$(basename -a signatures_to_test/*.yml)
 
@@ -73,6 +77,11 @@ jobs:
 
           if [[ ! -s "signatures_to_test/$file" ]]; then
             echo "File $file is empty or doesn't exist, skipping" >> readsources_action.log
+            continue
+          fi
+
+          if echo "$BLOCKED" | grep -qxF -- "$file"; then
+            echo "File $file is blocked in blocked_signatures.txt, skipping" >> readsources_action.log
             continue
           fi
 

@@ -2,7 +2,8 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .mediatemple.net
+  - type: word
+    value: .mediatemple.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

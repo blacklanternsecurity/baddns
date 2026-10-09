@@ -2,18 +2,30 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .activision.com
-  - .adobe.com
-  - .ns.apple.com
-  - .automattic.com
-  - .capitalone.com
-  - .twdcns.com
-  - .twdcns.info
-  - .twdcns.co.uk
-  - .google.com
-  - .lowes.com
-  - .tmobileus.com
-  - .tmobileus.net
+  - type: word
+    value: .activision.com
+  - type: word
+    value: .adobe.com
+  - type: word
+    value: .ns.apple.com
+  - type: word
+    value: .automattic.com
+  - type: word
+    value: .capitalone.com
+  - type: word
+    value: .twdcns.com
+  - type: word
+    value: .twdcns.info
+  - type: word
+    value: .twdcns.co.uk
+  - type: word
+    value: .google.com
+  - type: word
+    value: .lowes.com
+  - type: word
+    value: .tmobileus.com
+  - type: word
+    value: .tmobileus.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

@@ -1,9 +1,12 @@
 identifiers:
   cnames: []
   ips:
-  - 3.13.222.255
-  - 3.13.246.91
-  - 3.130.60.26
+  - type: word
+    value: 3.13.222.255
+  - type: word
+    value: 3.13.246.91
+  - type: word
+    value: 3.130.60.26
   nameservers: []
   not_cnames: []
 matcher_rule:

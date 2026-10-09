@@ -3,10 +3,14 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - azure-dns.com
-  - azure-dns.net
-  - azure-dns.org
-  - azure-dns.info
+  - type: word
+    value: azure-dns.com
+  - type: word
+    value: azure-dns.net
+  - type: word
+    value: azure-dns.org
+  - type: word
+    value: azure-dns.info
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

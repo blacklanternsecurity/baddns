@@ -2,7 +2,8 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .cloudns.net
+  - type: word
+    value: .cloudns.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
