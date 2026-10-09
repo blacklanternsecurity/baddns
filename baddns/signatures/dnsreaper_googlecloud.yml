@@ -1,8 +1,10 @@
+confidence: MEDIUM
 identifiers:
   cnames: []
   ips: []
   nameservers:
-  - googledomains
+  - type: word
+    value: googledomains
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

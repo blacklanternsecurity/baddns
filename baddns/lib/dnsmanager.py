@@ -1,4 +1,5 @@
 import re
+import uuid
 import logging
 
 from blastdns import Client, DNSError, get_system_resolvers, BlastDNSError, ResolverError
@@ -28,7 +29,9 @@ class DNSManager:
 
     def reset_answers(self):
         self.answers = {key: None for key in self.dns_record_types}
-        self.answers.update({"NoAnswer": False, "NXDOMAIN": False})
+        # NoAnswer means the nameserver answered and had nothing; ERROR means we never got an answer
+        # at all. Callers that report on a record being absent must not treat ERROR as absence.
+        self.answers.update({"NoAnswer": False, "NXDOMAIN": False, "ERROR": False})
 
     @staticmethod
     def get_ipv4(a_records):
@@ -137,16 +140,17 @@ class DNSManager:
             result = await self.dns_client.resolve_full(target, rdatatype)
         except ResolverError as e:
             log.debug(f"DNS resolver error for {target} {rdatatype}: {e}")
-            self.answers["NoAnswer"] = True
+            self.answers["ERROR"] = True
             return
         except BlastDNSError as e:
             log.warning(f"DNS error for {target} {rdatatype}: {e}")
+            self.answers["ERROR"] = True
             return
 
         # Check for error responses
         if isinstance(result, DNSError):
             log.debug(f"DNS error: {result.error}")
-            self.answers["NoAnswer"] = True
+            self.answers["ERROR"] = True
             return
 
         # Check response code for NXDOMAIN
@@ -202,10 +206,11 @@ class DNSManager:
             multi_results = await self.dns_client.resolve_multi_full(self.target, record_types)
         except ResolverError as e:
             log.debug(f"DNS resolver error for {self.target}: {e}")
-            self.answers["NoAnswer"] = True
+            self.answers["ERROR"] = True
             return
         except BlastDNSError as e:
             log.warning(f"DNS error for {self.target}: {e}")
+            self.answers["ERROR"] = True
             return
 
         for rdatatype in record_types:
@@ -213,7 +218,9 @@ class DNSManager:
             if result is None or isinstance(result, DNSError):
                 if result is not None:
                     log.debug(f"DNS error for {rdatatype}: {result.error}")
-                self.answers["NoAnswer"] = True
+                else:
+                    log.debug(f"No result returned for {rdatatype}")
+                self.answers["ERROR"] = True
                 continue
 
             response_code = result.response.header.response_code
@@ -252,3 +259,34 @@ class DNSManager:
                     self.answers[rdatatype] = cname_chain
                     continue
                 self.answers[rdatatype] = r
+
+
+def generate_random_label():
+    """A label no one has registered, for probing whether a parent answers for anything."""
+    return f"baddns-{uuid.uuid4().hex[:8]}"
+
+
+async def resolve_cname(host, dns_client=None, custom_nameservers=None):
+    """Return the end of host's CNAME chain, or None if it has no CNAME (or doesn't resolve)."""
+    dnsmanager = DNSManager(host, dns_client=dns_client, custom_nameservers=custom_nameservers)
+    await dnsmanager.dispatchDNS(omit_types=["MX", "NS", "SOA", "TXT", "NSEC"])
+    if dnsmanager.answers["NXDOMAIN"]:
+        return None
+    cnames = dnsmanager.answers["CNAME"]
+    return cnames[-1] if cnames else None
+
+
+async def probe_wildcard_cname(parent, dns_client=None, custom_nameservers=None):
+    """Detect a wildcard CNAME under parent by resolving a label nobody could have registered.
+
+    Returns (probe_target, wildcard_cname). wildcard_cname is None when parent has no wildcard,
+    or has one answering with A/AAAA only -- neither of which can disguise a dangling CNAME.
+    """
+    probe_target = f"{generate_random_label()}.{parent}"
+    log.debug(f"Probing wildcard with random subdomain: {probe_target}")
+    wildcard_cname = await resolve_cname(probe_target, dns_client=dns_client, custom_nameservers=custom_nameservers)
+    if wildcard_cname is None:
+        log.debug(f"No wildcard CNAME found for *.{parent}")
+    else:
+        log.debug(f"Wildcard CNAME detected at *.{parent} -> {wildcard_cname}")
+    return probe_target, wildcard_cname

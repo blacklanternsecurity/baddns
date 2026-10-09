@@ -8,11 +8,6 @@ identifiers:
 matcher_rule:
   matchers:
   - condition: and
-    dsl:
-    - Host != ip
-    - contains(tolower(header), "wasabis3")
-    type: dsl
-  - condition: and
     part: body
     type: word
     words:

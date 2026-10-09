@@ -1,20 +1,18 @@
+confidence: MEDIUM
 identifiers:
   cnames:
   - type: word
-    value: campaignmonitor.com
+    value: public.kb.help
   ips: []
   nameservers: []
   not_cnames: []
 matcher_rule:
   matchers:
   - condition: and
-    part: body
-    type: word
+    type: tls_error
     words:
-    - <center>csw</center>
-  - status: 301
-    type: status
+    - tlsv1 alert internal error
   matchers-condition: and
 mode: http
-service_name: campaignmonitor.com
-source: dnsreaper
+service_name: knowledgebase.com (TLS refusal)
+source: self

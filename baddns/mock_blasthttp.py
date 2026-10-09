@@ -20,6 +20,40 @@ def _normalize(url):
     return url.rstrip("/") if url else url
 
 
+class MockHeaders:
+    """Mirrors blasthttp's ``Headers``: iterating yields names; ``items()`` yields (name, value) pairs incl. duplicates."""
+
+    def __init__(self, pairs):
+        self._pairs = list(pairs)
+
+    def items(self):
+        return list(self._pairs)
+
+    def keys(self):
+        return [k for k, _ in self._pairs]
+
+    def values(self):
+        return [v for _, v in self._pairs]
+
+    def get(self, name, default=None):
+        for k, v in reversed(self._pairs):
+            if k.lower() == name.lower():
+                return v
+        return default
+
+    def __getitem__(self, name):
+        value = self.get(name)
+        if value is None:
+            raise KeyError(name)
+        return value
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def __len__(self):
+        return len(self._pairs)
+
+
 class MockResponse:
     """Minimal shim matching the attributes baddns reads off blasthttp.Response."""
 
@@ -27,8 +61,8 @@ class MockResponse:
         self.status = status
         self.body = body if isinstance(body, str) else body.decode("utf-8", errors="replace")
         self.body_bytes = body.encode() if isinstance(body, str) else body
-        # real blasthttp.headers is an iterable of (k, v) tuples — match that
-        self.headers = list((headers or {}).items()) if isinstance(headers, dict) else list(headers or [])
+        pairs = (headers or {}).items() if isinstance(headers, dict) else (headers or [])
+        self.headers = MockHeaders(pairs)
         self.url = url
         self.elapsed_ms = 0
         self.redirect_chain = []

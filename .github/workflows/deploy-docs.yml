@@ -3,14 +3,14 @@ name: Deploy Docs
 on:
   push:
     branches:
-      - main
+      - stable
 
 permissions:
   contents: write
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v4

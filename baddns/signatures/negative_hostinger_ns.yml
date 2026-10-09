@@ -1,0 +1,14 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - type: word
+    value: .hostinger.com
+  - type: word
+    value: .dns-parking.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+negative_signature: true
+service_name: Hostinger
+source: self

@@ -1,0 +1,12 @@
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - type: word
+    value: .bigcommerce.com
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+negative_signature: true
+service_name: BigCommerce
+source: self

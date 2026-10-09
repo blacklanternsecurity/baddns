@@ -22,6 +22,8 @@ class BadDNS_dmarc(BadDNS_email_base):
         self.dmarc_tags = None
         self.org_dmarc_tags = None
         self.is_subdomain = False
+        # a TXT lookup that never got an answer cannot support a claim that no DMARC record exists
+        self.lookup_failed = False
 
     @staticmethod
     def parse_dmarc_record(record):
@@ -45,6 +47,7 @@ class BadDNS_dmarc(BadDNS_email_base):
         # Step 1: Check _dmarc.<target> (RFC 7489 Section 6.6.3)
         await self.target_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "NSEC"])
         txt_records = self.target_dnsmanager.answers["TXT"]
+        self.lookup_failed = self.target_dnsmanager.answers["ERROR"]
         if txt_records:
             for record in txt_records:
                 tags = self.parse_dmarc_record(record)
@@ -64,6 +67,8 @@ class BadDNS_dmarc(BadDNS_email_base):
                 )
                 await org_dnsmanager.dispatchDNS(omit_types=["A", "AAAA", "CNAME", "NS", "SOA", "MX", "NSEC"])
                 org_txt = org_dnsmanager.answers["TXT"]
+                if org_dnsmanager.answers["ERROR"]:
+                    self.lookup_failed = True
                 if org_txt:
                     for record in org_txt:
                         tags = self.parse_dmarc_record(record)
@@ -126,6 +131,11 @@ class BadDNS_dmarc(BadDNS_email_base):
                         log.debug(f"Invalid pct value in org DMARC record: {pct_raw}")
 
                 # Subdomain is covered by org domain — don't report "no DMARC"
+                return findings
+
+            if self.lookup_failed:
+                # The TXT lookup never got an answer, so we cannot say the record is absent
+                log.debug(f"Skipping 'No DMARC record' for {self.target}: TXT lookup failed")
                 return findings
 
             # No DMARC anywhere

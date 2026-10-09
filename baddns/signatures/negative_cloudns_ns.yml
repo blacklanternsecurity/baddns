@@ -2,10 +2,11 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ns1.domain.com
-  - ns2.domain.com
+  - type: word
+    value: .cloudns.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
-service_name: domain.com
-source: dnsreaper
+negative_signature: true
+service_name: ClouDNS
+source: self

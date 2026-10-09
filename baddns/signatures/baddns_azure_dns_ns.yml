@@ -1,0 +1,18 @@
+confidence: MEDIUM
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - type: word
+    value: azure-dns.com
+  - type: word
+    value: azure-dns.net
+  - type: word
+    value: azure-dns.org
+  - type: word
+    value: azure-dns.info
+  not_cnames: []
+matcher_rule: null
+mode: dns_nosoa
+service_name: Azure DNS
+source: self

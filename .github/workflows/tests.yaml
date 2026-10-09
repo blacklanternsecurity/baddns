@@ -2,7 +2,7 @@ name: tests
 on:
   push:
     branches:
-      - main
+      - stable
       - dev
   pull_request:
 
@@ -16,8 +16,11 @@ concurrency:
 
 jobs:
   lint:
-    if: contains(github.event.pull_request.title, 'SignatureBot') == false
-    runs-on: ubuntu-latest
+    # SignatureBot PRs are one generated signature file each, covered by signature-test.yml instead.
+    # Matched on the title prefix the bot actually uses, not a substring: a plain `contains` also
+    # swallowed any human PR whose title merely mentioned the bot, silently skipping its whole run.
+    if: startsWith(github.event.pull_request.title, '[SignatureBot]') == false
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -30,8 +33,9 @@ jobs:
         run: uvx ruff@0.15.10 check .
 
   test:
-    if: contains(github.event.pull_request.title, 'SignatureBot') == false
-    runs-on: ubuntu-latest
+    # see the note on `lint`
+    if: startsWith(github.event.pull_request.title, '[SignatureBot]') == false
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -53,16 +57,16 @@ jobs:
           command: |
             uv run pytest --exitfirst --disable-warnings --log-cli-level=DEBUG --cov-report xml:cov.xml --cov=baddns --cov=examples
       - name: Upload Code Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./cov.xml
           verbose: true
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/stable'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,17 +103,17 @@ jobs:
           LATEST_TAG: ${{ env.LATEST_TAG }}
 
       - name: Build PyPi package
-        if: github.ref == 'refs/heads/main' && env.VERSION_CHANGE == 'true'
+        if: github.ref == 'refs/heads/stable' && env.VERSION_CHANGE == 'true'
         run: uv build
 
       - name: Publish PyPi package
-        if: github.ref == 'refs/heads/main' && env.VERSION_CHANGE == 'true'
+        if: github.ref == 'refs/heads/stable' && env.VERSION_CHANGE == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Tag the release if version changed
-        if: github.ref == 'refs/heads/main' && env.VERSION_CHANGE == 'true'
+        if: github.ref == 'refs/heads/stable' && env.VERSION_CHANGE == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

@@ -40,10 +40,32 @@ identifiers:
   - type: word
     value: netlify.app
   not_cnames: []     # CNAME patterns that exclude a match
-  ips: []            # IP addresses to match
-  nameservers:       # Nameserver substrings to match (used by dns_nosoa mode)
+  ips: []            # IP addresses to match (exact, word only)
+  nameservers:       # Nameserver patterns to match (used by dns_nosoa mode)
   - awsdns
 ```
+
+`cnames`, `not_cnames` and `nameservers` each take `word` or `regex` identifiers:
+
+- **`word`** — a plain string. In `dns_nxdomain` mode it matches as a suffix of the CNAME target; in
+  `http` mode and for nameservers it matches as a substring.
+- **`regex`** — a Python regular expression, matched with `re.search` against the whole name, so it can
+  anchor with `^` and `$`. Patterns are compiled when the signature loads, and one that doesn't compile
+  is rejected there rather than silently never matching.
+
+Use `regex` when a substring is too loose to express the shape of a claimable name:
+
+```yaml
+not_cnames:
+# an Elastic Beanstalk name with a dotted prefix carries a hash label, so it can't be
+# recreated in another account
+- type: regex
+  value: ^[^.]+\.[^.]+\..+\.elasticbeanstalk\.com$
+```
+
+A bare string is accepted anywhere an identifier is expected and is treated as `word`, which is how
+`nameservers` and dnsReaper-sourced `ips` are written. `ips` are compared exactly, so `regex` is
+rejected there.
 
 ### Examples
 
@@ -98,14 +120,56 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ultradns.com
-  - ultradns.net
-  - ultradns.org
-  - ultradns.biz
+  - type: word
+    value: ultradns.com
+  - type: word
+    value: ultradns.net
+  - type: word
+    value: ultradns.org
+  - type: word
+    value: ultradns.biz
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
+negative_signature: true
 service_name: UltraDNS
 source: self
-negative_signature: true
 ```
+
+## The SignatureBot
+
+A nightly workflow re-imports every upstream template and opens a PR for anything that differs from
+what we ship. It decides what has changed by comparing the freshly imported signature against the
+shipped file **byte for byte**, which has two consequences worth knowing about.
+
+### Signature files have one canonical serialization
+
+Because the comparison is byte for byte, a shipped signature that says the same thing as the
+imported one still has to *serialize* the same way. If the serialized form ever changes -- a new
+identifier shape, a new field -- every shipped signature stops matching at once and the bot
+re-proposes all of them.
+
+After any change to the serialized form, rewrite the shipped signatures to match:
+
+```bash
+python3 baddns/scripts/normalize_signatures.py
+```
+
+`tests/signature_test.py::test_all_shipped_signatures_canonical` fails if any shipped signature has
+drifted out of canonical form, so this cannot go unnoticed.
+
+### Hand-tuned fields are preserved across re-imports
+
+Fields listed in `PRESERVED_FIELDS` in `baddns/scripts/readsources.py` (currently `confidence`) have
+no upstream equivalent. The importer copies them from the shipped signature of the same name, so a
+bot update never silently reverts them. Add a field there if it is tuned by hand after import.
+
+### Dropping a signature for good
+
+Removing a signature file is not enough on its own: upstream still has the template, so the next run
+imports it and proposes it again. Record the decision by name in
+`baddns/signatures/blocked_signatures.txt` and the bot will skip it permanently.
+
+The bot also tracks content hashes, in `signature_history.txt` and in the content of PRs closed with
+the `signature-blocked` label, but those only suppress one exact version of a signature. Use them to
+reject a particular upstream revision; use `blocked_signatures.txt` to reject the signature itself.

@@ -9,6 +9,6 @@ identifiers:
   not_cnames: []
 matcher_rule: null
 mode: dns_nxdomain
+negative_signature: true
 service_name: Imperva
 source: self
-negative_signature: true

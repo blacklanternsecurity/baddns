@@ -10,8 +10,8 @@ permissions:
 
 jobs:
   update-history:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, '[SignatureBot]')
-    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, '[SignatureBot]')
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:

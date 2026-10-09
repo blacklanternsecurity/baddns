@@ -2,10 +2,11 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ns1.mediatemple.net
-  - ns2.mediatemple.net
+  - type: word
+    value: .dns.gandi.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
-service_name: mediatemple.net
-source: dnsreaper
+negative_signature: true
+service_name: Gandi
+source: self

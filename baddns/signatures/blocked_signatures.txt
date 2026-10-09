@@ -1,0 +1,71 @@
+# Signatures the SignatureBot must never propose again. One filename per line;
+# blank lines and lines starting with # are ignored.
+#
+# Without this list the bot decides what to re-propose by comparing content hashes, against
+# signature_history.txt and against the content of earlier PRs closed as `signature-blocked`.
+# That only holds until upstream edits the template or our own serialized format changes, at
+# which point every signature we had deliberately dropped comes back as a fresh PR. Removing a
+# signature is a decision about the signature, not about one particular version of its bytes,
+# so it is recorded here by name instead.
+#
+# To block a signature: close its PR with the `signature-blocked` label and add its filename here.
+# To un-block one: delete its line, and the next run will propose it again.
+
+# Dropped in the 2026-09 takeover research pass: no longer a takeover risk, or superseded by a
+# better signature from another source.
+dnsreaper_000domains.yml
+dnsreaper_bizland.yml
+dnsreaper_campaign_monitor.yml
+dnsreaper_dnssimple.yml
+dnsreaper_domain.yml
+dnsreaper_dotster.yml
+dnsreaper_frontify.yml
+dnsreaper_hostinger.yml
+dnsreaper_mediatemplate.yml
+dnsreaper_netlify.yml
+dnsreaper_nsone.yml
+dnsreaper_shopify.yml
+dnsreaper_tribe.yml
+dnsreaper_vendhq.yml
+dnsreaper_webflow.yml
+dnsreaper_wix.yml
+
+# Replaced by a hand-written negative signature (negative_aws_route53_ns.yml).
+dnsreaper_aws_ns.yml
+
+# Invalid signature, removed on review.
+dnsreaper_tumblr.yml
+
+# Covered better by the nuclei-templates signature of the same service.
+dnsreaper_bigcartel.yml
+
+# Rejected at review and never shipped.
+dnsreaper_aha.yml
+dnsreaper_airee_ru.yml
+dnsreaper_anima.yml
+dnsreaper_announcekit.yml
+dnsreaper_microsoft_azure.yml
+nucleitemplates_cargocollective-takeover.yml
+nucleitemplates_elasticbeanstalk-takeover.yml
+nucleitemplates_frontify-takeover.yml
+nucleitemplates_getresponse-takeover.yml
+nucleitemplates_github-takeover.yml
+nucleitemplates_hatenablog-takeover.yml
+nucleitemplates_helpscout-takeover.yml
+nucleitemplates_jazzhr-takeover.yml
+nucleitemplates_jetbrains-takeover.yml
+nucleitemplates_kinsta-takeover.yml
+nucleitemplates_launchrock-takeover.yml
+nucleitemplates_mashery-takeover.yml
+nucleitemplates_netlify-takeover.yml
+nucleitemplates_ngrok-takeover.yml
+nucleitemplates_smartjob-takeover.yml
+nucleitemplates_surge-takeover.yml
+nucleitemplates_surveysparrow-takeover.yml
+nucleitemplates_teamwork-takeover.yml
+nucleitemplates_tumblr-takeover.yml
+nucleitemplates_uptimerobot-takeover.yml
+nucleitemplates_webflow-takeover.yml
+nucleitemplates_wix-takeover.yml
+nucleitemplates_wordpress-takeover.yml
+nucleitemplates_worksites-takeover.yml

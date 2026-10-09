@@ -13,7 +13,7 @@ matcher_rule:
     part: body
     type: word
     words:
-    - Publish or update your Lovable project for it to appear here
+    - No Lovable project found at this address.
   matchers-condition: and
 mode: http
 service_name: Lovable Takeover Detection

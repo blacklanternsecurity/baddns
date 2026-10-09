@@ -1,6 +1,7 @@
 import os
 import pytest
 import datetime
+import types
 from unittest.mock import patch
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.loader import load_signatures
@@ -236,8 +237,8 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, mock_http, co
 
     mock_http.add_response(
         url="http://bad.dns/",
-        status=200,
-        body="<h1>Oops! We couldn&#8217;t find that page.</h1>",
+        status=409,
+        body="error code: 1001",
     )
 
     target = "bad.dns"
@@ -253,10 +254,10 @@ async def test_cname_http_bigcartel_match(fs, mock_dispatch_whois, mock_http, co
     expected = {
         "target": "bad.dns",
         "description": "Dangling CNAME, probable subdomain takeover (HTTP String Match)",
-        "confidence": "HIGH",
+        "confidence": "MEDIUM",
         "severity": "MEDIUM",
         "signature": "Bigcartel Takeover Detection",
-        "indicator": "[Words: <h1>Oops! We couldn&#8217;t find that page.</h1> | Condition: and | Part: body] Matchers-Condition: and",
+        "indicator": "[Words: error code: 1001 | Condition: or | Part: body] Matchers-Condition: and",
         "trigger": "baddns.bigcartel.com",
         "module": "CNAME",
     }
@@ -662,7 +663,7 @@ async def test_cname_http_lovable_match(fs, mock_dispatch_whois, mock_http, conf
     mock_http.add_response(
         url="http://bad.dns/",
         status=404,
-        body="Publish or update your Lovable project for it to appear here.",
+        body="<title>Project not found</title>No Lovable project found at this address.",
     )
 
     target = "bad.dns"
@@ -681,7 +682,7 @@ async def test_cname_http_lovable_match(fs, mock_dispatch_whois, mock_http, conf
         "confidence": "HIGH",
         "severity": "MEDIUM",
         "signature": "Lovable Takeover Detection",
-        "indicator": "[Words: Publish or update your Lovable project for it to appear here | Condition: and | Part: body] Matchers-Condition: and",
+        "indicator": "[Words: No Lovable project found at this address. | Condition: and | Part: body] Matchers-Condition: and",
         "trigger": "baddns.lovable.app",
         "module": "CNAME",
     }
@@ -728,3 +729,426 @@ async def test_cname_srv_style_target_skipped(fs, mock_dispatch_whois, configure
 
     result = await baddns_cname.dispatch()
     assert result is False
+
+
+@pytest.mark.asyncio
+async def test_cname_http_aws_bucket_match(fs, mock_dispatch_whois, mock_http, configure_mock_resolver):
+    """CNAME to a deleted S3 bucket must be flagged (regression: amazonaws.com was once excluded via not_cnames)."""
+    mock_data = {
+        "bad.dns": {"CNAME": ["baddns-bucket.s3.amazonaws.com"]},
+        "baddns-bucket.s3.amazonaws.com": {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_http.add_response(
+        url="http://bad.dns/",
+        status=404,
+        body="<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>baddns-bucket</BucketName></Error>",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_aws-bucket-takeover.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert findings
+    assert any(f.to_dict()["signature"] == "AWS Bucket Takeover Detection" for f in findings)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname",
+    [
+        "baddns-bucket-123456789012-us-east-1-an.s3.us-east-1.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3-website-us-east-1.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3-us-east-1.amazonaws.com",
+        "baddns-bucket-123456789012-us-east-1-an.s3-accesspoint.us-east-1.amazonaws.com",
+    ],
+)
+async def test_cname_http_aws_bucket_account_regional_excluded(
+    fs, mock_dispatch_whois, mock_http, configure_mock_resolver, cname
+):
+    """S3 account-regional bucket names can't be claimed by other accounts, so every endpoint form is excluded.
+
+    The website and legacy dash-region endpoints serve the same NoSuchBucket text as the REST endpoint, so
+    the exclusion is the only thing keeping them from matching.
+    """
+    mock_data = {
+        "bad.dns": {"CNAME": [cname]},
+        cname: {"A": ["127.0.0.1"]},
+    }
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_http.add_response(
+        url="http://bad.dns/",
+        status=404,
+        body="<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>baddns-bucket</BucketName></Error>",
+    )
+
+    target = "bad.dns"
+    mock_signature_load(fs, "nucleitemplates_aws-bucket-takeover.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname(target, signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+    findings = None
+
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    assert not any(f.to_dict()["signature"] == "AWS Bucket Takeover Detection" for f in (findings or []))
+
+
+_TLS_SIG_YAML = """
+service_name: TLS Refusal Test
+source: self
+mode: http
+identifiers:
+  cnames:
+  - type: word
+    value: domains.tlsplatform.test
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers-condition: and
+  matchers:
+  - type: tls_error
+    condition: and
+    words:
+    - tlsv1 alert internal error
+"""
+
+# Same platform, but decided on an HTTP response rather than a handshake error.
+_STATUS_SIG_YAML = """
+service_name: Status Zero
+source: self
+mode: http
+identifiers:
+  cnames:
+  - type: word
+    value: domains.tlsplatform.test
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers-condition: and
+  matchers:
+  - type: status
+    status: 0
+"""
+
+
+class _TLSFailingHTTP:
+    """HTTP client stub: plain HTTP 308-redirects, HTTPS fails the TLS handshake with the given error.
+
+    Records each call so tests can assert whether the unpooled TLS probe was fired at all. Real
+    blasthttp behaviour for the probe is covered in tests/tls_probe_test.py.
+    """
+
+    def __init__(self, https_error):
+        self.https_error = https_error
+        self.calls = []
+
+    async def request(self, url, **kwargs):
+        from baddns.mock_blasthttp import MockResponse
+
+        self.calls.append((url, kwargs))
+        if url.startswith("https://"):
+            raise RuntimeError(self.https_error)
+        return MockResponse(url=url, status=308, headers=[("location", url.replace("http://", "https://"))])
+
+    @property
+    def probes(self):
+        return [c for c in self.calls if "resolve_ip" in c[1]]
+
+
+async def _run_tls(fs, configure_mock_resolver, https_error, sig_yamls=(_TLS_SIG_YAML,)):
+    mock_data = {"bad.dns": {"CNAME": ["domains.tlsplatform.test"]}, "domains.tlsplatform.test": {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    for n, yaml_text in enumerate(sig_yamls):
+        fs.create_file(f"/tmp/signatures/test_tls_{n}.yml", contents=yaml_text)
+    signatures = load_signatures("/tmp/signatures")
+    http_client = _TLSFailingHTTP(https_error)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver, http_client=http_client)
+    findings = []
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze() or []
+    return [f.to_dict() for f in findings], http_client
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_signature_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    findings, http_client = await _run_tls(
+        fs,
+        configure_mock_resolver,
+        "TLS handshake failed: error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error",
+    )
+    tls = [f for f in findings if f["signature"] == "TLS Refusal Test"]
+    assert tls
+    assert "TLS handshake error: tlsv1 alert internal error" in tls[0]["indicator"]
+    # the probe must go to the IP we already resolved for the CNAME target
+    assert [kwargs["resolve_ip"] for _, kwargs in http_client.probes] == ["127.0.0.1"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_different_alert_no_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    findings, _ = await _run_tls(
+        fs, configure_mock_resolver, "TLS handshake failed: error:0A000410:ssl/tls alert handshake failure"
+    )
+    assert not [f for f in findings if f["signature"] == "TLS Refusal Test"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_error_connection_failure_no_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    """A generic connect error is not a handshake refusal, even on the unpooled probe."""
+    findings, _ = await _run_tls(fs, configure_mock_resolver, "request failed: client error (Connect)")
+    assert not [f for f in findings if f["signature"] == "TLS Refusal Test"]
+
+
+@pytest.mark.asyncio
+async def test_cname_tls_failure_not_offered_to_other_signatures(fs, mock_dispatch_whois, configure_mock_resolver):
+    """The TLS-failure stand-in has status 0; a signature without a tls_error matcher must never see it.
+
+    Both signatures claim the same CNAME, so the probe does run and tls_error is set — the status-0
+    signature still must not match it.
+    """
+    findings, http_client = await _run_tls(
+        fs,
+        configure_mock_resolver,
+        "TLS handshake failed: tlsv1 alert internal error",
+        sig_yamls=(_TLS_SIG_YAML, _STATUS_SIG_YAML),
+    )
+    assert [f for f in findings if f["signature"] == "TLS Refusal Test"], "probe did not run, gate untested"
+    assert not [f for f in findings if f["signature"] == "Status Zero"]
+
+
+@pytest.mark.asyncio
+async def test_cname_no_tls_probe_without_a_tls_signature(fs, mock_dispatch_whois, configure_mock_resolver):
+    """The extra unpooled request is only worth making for a platform we have a tls_error signature for."""
+    findings, http_client = await _run_tls(
+        fs,
+        configure_mock_resolver,
+        "TLS handshake failed: tlsv1 alert internal error",
+        sig_yamls=(_STATUS_SIG_YAML,),
+    )
+    assert http_client.probes == []
+    assert not [f for f in findings if f["signature"] == "Status Zero"]
+
+
+@pytest.mark.parametrize(
+    "ips, expected",
+    [
+        (["1.2.3.4"], "1.2.3.4"),
+        (["2001:db8::1", "1.2.3.4"], "1.2.3.4"),  # IPv4 wins however the async answers landed
+        (["2001:db8::1"], "2001:db8::1"),  # IPv6-only: nothing else to try
+        (["not-an-ip", "1.2.3.4"], "1.2.3.4"),
+        ([], None),
+    ],
+)
+def test_cname_probe_ip_prefers_ipv4(ips, expected):
+    cname = BadDNS_cname("bad.dns")
+    cname.cname_dnsmanager = types.SimpleNamespace(ips=ips)
+    assert cname._probe_ip() == expected
+
+
+# --- regex identifiers (#934) ---
+
+_REGEX_CNAME_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: regex
+    value: ^[a-z0-9-]+\\.regex-service\\.com$
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "Bucket does not exist"
+  matchers-condition: and
+mode: http
+service_name: Regex Cnames Test Service
+source: self
+"""
+
+_REGEX_NOT_CNAMES_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: word
+    value: regex-service.com
+  ips: []
+  nameservers: []
+  not_cnames:
+  - type: regex
+    value: ^excluded-[0-9]+\\.regex-service\\.com$
+matcher_rule:
+  matchers:
+  - condition: and
+    part: body
+    type: word
+    words:
+    - "Bucket does not exist"
+  matchers-condition: and
+mode: http
+service_name: Regex Not-Cnames Test Service
+source: self
+"""
+
+_REGEX_NXDOMAIN_SIG_YAML = """\
+identifiers:
+  cnames:
+  - type: regex
+    value: ^[a-z0-9-]+\\.regex-service\\.com$
+  ips: []
+  nameservers: []
+  not_cnames: []
+matcher_rule:
+mode: dns_nxdomain
+service_name: Regex NXDOMAIN Test Service
+source: self
+"""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("tenant.regex-service.com", True),
+        ("a.b.regex-service.com", False),  # anchored pattern rejects the dotted prefix
+        ("regex-service.com", False),  # anchored pattern requires a label
+    ],
+)
+async def test_cname_http_regex_cnames(fs, mock_dispatch_whois, mock_http, configure_mock_resolver, cname, expected):
+    """A regex cname identifier matches with re.search against the full name, so it can anchor."""
+    mock_data = {"bad.dns": {"CNAME": [cname]}, cname: {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    mock_http.add_response(url="http://bad.dns/", status=200, body="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _REGEX_CNAME_SIG_YAML, filename="test_regex_cnames.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "Regex Cnames Test Service" for f in (findings or []))
+    assert matched is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("excluded-123.regex-service.com", False),
+        ("other.regex-service.com", True),
+        ("excluded-abc.regex-service.com", True),  # pattern requires digits, so this is not excluded
+    ],
+)
+async def test_cname_http_regex_not_cnames(
+    fs, mock_dispatch_whois, mock_http, configure_mock_resolver, cname, expected
+):
+    mock_data = {"bad.dns": {"CNAME": [cname]}, cname: {"A": ["127.0.0.1"]}}
+    mock_resolver = configure_mock_resolver(mock_data)
+    mock_http.add_response(url="http://bad.dns/", status=200, body="Bucket does not exist")
+
+    sig_dir = _write_sig(fs, _REGEX_NOT_CNAMES_SIG_YAML, filename="test_regex_not_cnames.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver, http_client=mock_http)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "Regex Not-Cnames Test Service" for f in (findings or []))
+    assert matched is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("tenant.regex-service.com", True),
+        ("a.b.regex-service.com", False),
+    ],
+)
+async def test_cname_nxdomain_regex_cnames(fs, mock_dispatch_whois, configure_mock_resolver, cname, expected):
+    mock_data = {"bad.dns": {"CNAME": [f"{cname}."]}, "_NXDOMAIN": [cname]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    sig_dir = _write_sig(fs, _REGEX_NXDOMAIN_SIG_YAML, filename="test_regex_nxdomain.yml")
+    signatures = load_signatures(sig_dir)
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    sig_findings = [f.to_dict() for f in (findings or []) if f.to_dict()["signature"] == "Regex NXDOMAIN Test Service"]
+    assert bool(sig_findings) is expected
+    if expected:
+        # the pattern itself is the indicator, since there is no single matched string
+        assert sig_findings[0]["indicator"] == "^[a-z0-9-]+\\.regex-service\\.com$"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("myenv.us-east-1.elasticbeanstalk.com", True),
+        ("my-env-prod.eu-west-1.elasticbeanstalk.com", True),
+        # a dotted prefix means the name carries a hash label or an extra level, and can't be
+        # recreated in another account
+        ("staging.x.us-east-1.elasticbeanstalk.com", False),
+        ("myenv.eba-pmc3dmbx.us-east-1.elasticbeanstalk.com", False),
+    ],
+)
+async def test_cname_nxdomain_elastic_beanstalk_dotted_prefix(
+    fs, mock_dispatch_whois, configure_mock_resolver, cname, expected
+):
+    mock_data = {"bad.dns": {"CNAME": [f"{cname}."]}, "_NXDOMAIN": [cname]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_signature_load(fs, "dnsreaper_elastic_beanstalk.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "AWS Elastic Beanstalk" for f in (findings or []))
+    assert matched is expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "cname, expected",
+    [
+        ("baddns.azurewebsites.net", True),
+        # secure unique default hostnames are scoped to the owning tenant, so they aren't claimable
+        ("contoso-a6gqaeashthkhkeu.eastus-01.azurewebsites.net", False),
+        ("app.westeurope-01.azurewebsites.net", False),
+    ],
+)
+async def test_cname_nxdomain_azure_unique_hostname(fs, mock_dispatch_whois, configure_mock_resolver, cname, expected):
+    mock_data = {"bad.dns": {"CNAME": [f"{cname}."]}, "_NXDOMAIN": [cname]}
+    mock_resolver = configure_mock_resolver(mock_data)
+
+    mock_signature_load(fs, "nucleitemplates_azure-takeover-detection.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_cname = BadDNS_cname("bad.dns", signatures=signatures, dns_client=mock_resolver)
+
+    findings = None
+    if await baddns_cname.dispatch():
+        findings = baddns_cname.analyze()
+
+    matched = any(f.to_dict()["signature"] == "Microsoft Azure Takeover Detection" for f in (findings or []))
+    assert matched is expected

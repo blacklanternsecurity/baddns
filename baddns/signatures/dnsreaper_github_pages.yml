@@ -1,16 +1,25 @@
+confidence: MEDIUM
 identifiers:
   cnames:
   - type: word
     value: github.io
   ips:
-  - 185.199.108.153
-  - 185.199.109.153
-  - 185.199.110.153
-  - 185.199.111.153
-  - 2606:50c0:8000::153
-  - 2606:50c0:8001::153
-  - 2606:50c0:8002::153
-  - 2606:50c0:8003::153
+  - type: word
+    value: 185.199.108.153
+  - type: word
+    value: 185.199.109.153
+  - type: word
+    value: 185.199.110.153
+  - type: word
+    value: 185.199.111.153
+  - type: word
+    value: 2606:50c0:8000::153
+  - type: word
+    value: 2606:50c0:8001::153
+  - type: word
+    value: 2606:50c0:8002::153
+  - type: word
+    value: 2606:50c0:8003::153
   nameservers: []
   not_cnames: []
 matcher_rule:

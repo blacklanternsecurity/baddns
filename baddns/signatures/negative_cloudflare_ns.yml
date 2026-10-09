@@ -2,10 +2,11 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ns.cloudflare.com
+  - type: word
+    value: ns.cloudflare.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
+negative_signature: true
 service_name: Cloudflare
 source: self
-negative_signature: true
