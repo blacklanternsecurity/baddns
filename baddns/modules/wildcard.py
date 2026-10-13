@@ -7,6 +7,7 @@ from baddns.lib.dnsmanager import DNSManager, probe_wildcard_cname
 from baddns.lib.httpmanager import HttpManager
 from baddns.modules.cname import BadDNS_cname
 from baddns.lib.findings import Finding
+from baddns.lib.signature import any_identifier_matches
 
 log = logging.getLogger(__name__)
 
@@ -32,8 +33,8 @@ class BadDNS_wildcard(BadDNS_base):
             return None
         parent = ".".join(parts[1:])
         # Above the registrable domain the parent is a public suffix (co.uk), never the target's own zone
-        registered_domain = tldextract.extract(self.target).registered_domain
-        if registered_domain and not (parent == registered_domain or parent.endswith(f".{registered_domain}")):
+        top_domain = tldextract.extract(self.target).top_domain_under_public_suffix
+        if top_domain and not (parent == top_domain or parent.endswith(f".{top_domain}")):
             return None
         return parent
 
@@ -44,15 +45,9 @@ class BadDNS_wildcard(BadDNS_base):
         resource, not a domain-wide takeover. The signatures' cname identifiers already list these zones.
         """
         for sig in self.signatures or []:
-            for identifier in sig.signature["identifiers"]["cnames"]:
-                if identifier["type"] != "word":
-                    continue
-                value = identifier["value"].strip(".")
-                if self.parent_domain == value or self.parent_domain.endswith(f".{value}"):
-                    log.debug(
-                        f"Parent {self.parent_domain} is in service zone [{value}] ({sig.signature['service_name']})"
-                    )
-                    return True
+            if any_identifier_matches(sig.signature["identifiers"]["cnames"], self.parent_domain, mode="zone"):
+                log.debug(f"Parent {self.parent_domain} is a service zone of [{sig.signature['service_name']}]")
+                return True
         return False
 
     async def _dispatch(self):
