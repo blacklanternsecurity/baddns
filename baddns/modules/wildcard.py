@@ -1,5 +1,7 @@
 import logging
 
+import tldextract
+
 from baddns.base import BadDNS_base
 from baddns.lib.dnsmanager import DNSManager, probe_wildcard_cname
 from baddns.lib.httpmanager import HttpManager
@@ -28,7 +30,30 @@ class BadDNS_wildcard(BadDNS_base):
         parts = self.target.split(".")
         if len(parts) < 3:
             return None
-        return ".".join(parts[1:])
+        parent = ".".join(parts[1:])
+        # Above the registrable domain the parent is a public suffix (co.uk), never the target's own zone
+        registered_domain = tldextract.extract(self.target).registered_domain
+        if registered_domain and not (parent == registered_domain or parent.endswith(f".{registered_domain}")):
+            return None
+        return parent
+
+    def _parent_is_service_zone(self):
+        """True if the parent is a takeover service's own zone (s3.amazonaws.com, github.io, ...).
+
+        A wildcard there belongs to the provider, so an unregistered name under it is one claimable
+        resource, not a domain-wide takeover. The signatures' cname identifiers already list these zones.
+        """
+        for sig in self.signatures or []:
+            for identifier in sig.signature["identifiers"]["cnames"]:
+                if identifier["type"] != "word":
+                    continue
+                value = identifier["value"].strip(".")
+                if self.parent_domain == value or self.parent_domain.endswith(f".{value}"):
+                    log.debug(
+                        f"Parent {self.parent_domain} is in service zone [{value}] ({sig.signature['service_name']})"
+                    )
+                    return True
+        return False
 
     async def _dispatch(self):
         self.cname_findings_direct = []
@@ -37,6 +62,10 @@ class BadDNS_wildcard(BadDNS_base):
         self.parent_domain = self._get_parent_domain()
         if self.parent_domain is None:
             log.debug(f"Target {self.target} has no suitable parent domain for wildcard check, skipping")
+            return False
+
+        if self._parent_is_service_zone():
+            log.debug(f"Parent {self.parent_domain} is a third-party service zone, skipping wildcard check")
             return False
 
         probe_target, wildcard_cname = await probe_wildcard_cname(
