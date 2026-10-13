@@ -192,13 +192,17 @@ def identifier_matches(identifier, name, mode="substring"):
     ``regex`` identifiers are always ``re.search`` against the whole name, so a pattern can anchor
     itself with ``^``/``$`` and express shapes a substring can't. ``word`` identifiers keep whatever
     comparison the call site has always used: ``suffix`` on the NXDOMAIN paths, ``substring`` on the
-    HTTP and nameserver paths.
+    HTTP and nameserver paths. ``zone`` is a suffix on a label boundary: the name is the identifier's
+    domain or a subdomain of it, so ``notamazonaws.com`` is not in ``amazonaws.com``.
     """
     value = identifier["value"]
     if identifier["type"] == "regex":
         return re.search(value, name) is not None
     if mode == "suffix":
         return name.endswith(value)
+    if mode == "zone":
+        value = value.strip(".")
+        return name == value or name.endswith(f".{value}")
     return value in name
 
 
