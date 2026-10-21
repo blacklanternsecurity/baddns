@@ -45,6 +45,9 @@ Never restate a standard here. If this file and a standard disagree, the standar
 
 - Modules live in `baddns/modules/`, subclass `BadDNS_base` (`baddns/base.py`), and are auto-discovered by `baddns/__init__.py`. Adding a file there registers it. `baddns -l` lists them.
 - Signatures are YAML in `baddns/signatures/`, loaded by `baddns/lib/signature.py` (valid modes in `Signature.validModes`) and matched by `baddns/lib/matcher.py`.
+- Signatures with `source: dnsreaper` or `source: nucleitemplates` are regenerated daily from upstream by `read-sources.yml`. Don't edit them. New or hand-maintained signatures use `source: self`.
+- A signature that fails validation is logged and skipped, not raised, and the test suite only checks that at least one signature loads. Check a new signature with `uv run python baddns/scripts/signaturetest.py <file>`, which validates it and live-tests `http` signatures against random subdomains of their CNAMEs.
+- `negative_signature: true` marks a known-benign target (parking pages, registrar nameservers) and suppresses the generic finding the CNAME and NS modules would otherwise report. These are the `negative_*.yml` files.
 - Finding confidence levels: `CONFIDENCE_LEVELS` in `baddns/lib/findings.py`.
 - Flow: `baddns/cli.py` loads signatures, instantiates modules, awaits each `dispatch()`, prints `Finding` objects as JSON.
 - Tests mock DNS, HTTP, and WHOIS. Shared fixtures are in `tests/conftest.py`, DNS mocks in `tests/helpers.py`.
