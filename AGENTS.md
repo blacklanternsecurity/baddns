@@ -22,17 +22,6 @@ uv sync --group dev
 ```bash
 uv run pytest
 uv run pytest tests/cname_test.py -v
-uv run pytest tests/cname_test.py::test_name -v
-```
-
-## Running the CLI
-
-```bash
-uv run baddns example.com
-uv run baddns -m CNAME,NS example.com    # specific modules
-uv run baddns -d example.com             # debug logging
-uv run baddns -D example.com             # direct mode (CNAME only)
-uv run baddns -h                         # all options
 ```
 
 ## Standards
@@ -84,4 +73,3 @@ Tests mock DNS, HTTP, and WHOIS.
 
 - `tests/conftest.py`: `mock_http` (a `MockBlastHTTP` from `baddns/mock_blasthttp.py`, passed to modules as `http_client=`), `configure_mock_resolver`, `mock_dispatch_whois`, `cached_suffix_list`, `dnswalk_harness`
 - `tests/helpers.py`: `create_mock_client`, `MockDNSWalk`, `DnsWalkHarness`
-- pytest-asyncio for async tests, pyfakefs for the filesystem
