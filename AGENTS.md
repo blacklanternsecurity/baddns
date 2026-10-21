@@ -25,14 +25,6 @@ uv run pytest tests/cname_test.py -v
 uv run pytest tests/cname_test.py::test_name -v
 ```
 
-## Lint and format
-
-```bash
-uv run ruff format --check .
-uv run ruff check .
-uv run ruff format .
-```
-
 ## Running the CLI
 
 ```bash
