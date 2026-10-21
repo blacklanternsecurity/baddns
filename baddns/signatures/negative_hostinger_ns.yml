@@ -2,8 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .hostinger.com
-  - .dns-parking.com
+  - type: word
+    value: .hostinger.com
+  - type: word
+    value: .dns-parking.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

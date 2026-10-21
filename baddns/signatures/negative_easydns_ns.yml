@@ -2,10 +2,14 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .easydns.com
-  - .easydns.net
-  - .easydns.org
-  - .easydns.info
+  - type: word
+    value: .easydns.com
+  - type: word
+    value: .easydns.net
+  - type: word
+    value: .easydns.org
+  - type: word
+    value: .easydns.info
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

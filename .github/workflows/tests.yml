@@ -2,7 +2,7 @@ name: tests
 on:
   push:
     branches:
-      - main
+      - stable
       - dev
   pull_request:
   workflow_call:
@@ -16,7 +16,8 @@ concurrency:
 
 jobs:
   python:
-    if: ${{ !contains(github.event.pull_request.title, 'SignatureBot') }}
+    # SignatureBot PRs are one generated signature file each, covered by signature-test.yml instead.
+    if: ${{ !startsWith(github.event.pull_request.title, '[SignatureBot]') }}
     uses: blacklanternsecurity/CLA/.github/workflows/python-tests.yml@40c6e18c0a6e32116eea4f89fc826f53c70889dc # main
     with:
       pytest-args: --exitfirst --disable-warnings --log-cli-level=DEBUG --cov-report xml:cov.xml --cov=baddns

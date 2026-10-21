@@ -2,8 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ns1.reg.ru
-  - ns2.reg.ru
+  - type: word
+    value: ns1.reg.ru
+  - type: word
+    value: ns2.reg.ru
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

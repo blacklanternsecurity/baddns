@@ -2,8 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - dnsmadeeasy
-  - digicertdns.com
+  - type: word
+    value: dnsmadeeasy
+  - type: word
+    value: digicertdns.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

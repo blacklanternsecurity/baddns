@@ -344,3 +344,65 @@ matcher_rule: null
         findings = baddns_ns.analyze()
     sig_findings = [f.to_dict() for f in findings if f.to_dict()["signature"] == "Confidence Test"]
     assert sig_findings and sig_findings[0]["confidence"] == "MEDIUM"
+
+
+# --- regex identifiers (#934) ---
+
+_REGEX_NS_SIG_YAML = """
+service_name: Regex NS Test Service
+source: self
+mode: dns_nosoa
+identifiers:
+  cnames: []
+  ips: []
+  nameservers:
+  - type: regex
+    value: ^ns[0-9]+\\.regex-ns\\.com$
+  not_cnames: []
+matcher_rule: null
+"""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "nameserver, expected",
+    [
+        ("ns1.regex-ns.com", True),
+        ("ns42.regex-ns.com", True),
+        ("ns1.sub.regex-ns.com", False),  # anchored pattern rejects the extra label
+        ("nsx.regex-ns.com", False),
+    ],
+)
+async def test_ns_nosoa_regex_nameservers(fs, mock_dispatch_whois, configure_mock_resolver, nameserver, expected):
+    """A regex nameserver identifier is matched with re.search, so it can anchor to the full name."""
+    mock_data = {"bad.dns": {"NS": [f"{nameserver}."]}}
+    mock_resolver = configure_mock_resolver(mock_data, mock_dnswalk_data=[nameserver])
+    fs.create_file("/tmp/signatures/test_regex_ns.yml", contents=_REGEX_NS_SIG_YAML)
+
+    signatures = load_signatures("/tmp/signatures")
+    baddns_ns = BadDNS_ns("bad.dns", signatures=signatures, dns_client=mock_resolver)
+    findings = None
+    if await baddns_ns.dispatch():
+        findings = baddns_ns.analyze()
+
+    sig_findings = [f.to_dict() for f in (findings or []) if f.to_dict()["signature"] == "Regex NS Test Service"]
+    assert bool(sig_findings) is expected
+    if expected:
+        # the indicator carries the matched pattern itself (repr'd in a list, so backslashes double)
+        assert "ns[0-9]+" in sig_findings[0]["indicator"]
+
+
+@pytest.mark.asyncio
+async def test_ns_nosoa_bare_string_nameservers_still_match(fs, mock_dispatch_whois, configure_mock_resolver):
+    """Shipped dns_nosoa signatures write nameservers as bare strings; they keep matching as substrings."""
+    mock_data = {"bad.dns": {"NS": ["ns1-09.azure-dns.com."]}}
+    mock_resolver = configure_mock_resolver(mock_data, mock_dnswalk_data=["ns1-09.azure-dns.com"])
+
+    mock_signature_load(fs, "baddns_azure_dns_ns.yml")
+    signatures = load_signatures("/tmp/signatures")
+    baddns_ns = BadDNS_ns("bad.dns", signatures=signatures, dns_client=mock_resolver)
+    findings = None
+    if await baddns_ns.dispatch():
+        findings = baddns_ns.analyze()
+
+    assert any(f.to_dict()["signature"] == "Azure DNS" for f in (findings or []))

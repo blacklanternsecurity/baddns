@@ -3,6 +3,7 @@ from baddns.base import BadDNS_base
 from baddns.lib.dnsmanager import DNSManager
 from baddns.lib.dnswalk import DnsWalk
 from baddns.lib.findings import Finding
+from baddns.lib.signature import identifier_matches
 from baddns.lib.whoismanager import WhoisManager
 
 import dns.flags
@@ -47,7 +48,10 @@ class BadDNS_ns(BadDNS_base):
     def _positive_nosoa_signature(self, nameserver):
         for sig in self.signatures:
             if sig.signature["mode"] == "dns_nosoa" and not sig.signature.get("negative_signature", False):
-                if any(pattern in nameserver for pattern in sig.signature["identifiers"]["nameservers"]):
+                if any(
+                    identifier_matches(identifier, nameserver)
+                    for identifier in sig.signature["identifiers"]["nameservers"]
+                ):
                     return sig
         return None
 
@@ -116,15 +120,15 @@ class BadDNS_ns(BadDNS_base):
         return True
 
     @staticmethod
-    def get_substring_matches(nameservers, strings):
+    def get_identifier_matches(nameservers, identifiers):
         matched_nameservers = set()
         matched_signatures = set()
 
         for ns in nameservers:
-            for s in strings:
-                if s in ns:
+            for identifier in identifiers:
+                if identifier_matches(identifier, ns):
                     matched_nameservers.add(ns)
-                    matched_signatures.add(s)
+                    matched_signatures.add(identifier["value"])
 
         if not matched_nameservers and not matched_signatures:
             return None
@@ -184,8 +188,7 @@ class BadDNS_ns(BadDNS_base):
             # Check positive signatures first
             for sig in self.signatures:
                 if sig.signature["mode"] == "dns_nosoa" and not sig.signature.get("negative_signature", False):
-                    sig_nameservers = [ns for ns in sig.signature["identifiers"]["nameservers"]]
-                    r = self.get_substring_matches(target_nameservers, sig_nameservers)
+                    r = self.get_identifier_matches(target_nameservers, sig.signature["identifiers"]["nameservers"])
                     if r:
                         findings.append(
                             Finding(
@@ -209,8 +212,9 @@ class BadDNS_ns(BadDNS_base):
             if not self.disable_negative_signatures:
                 for sig in self.signatures:
                     if sig.signature["mode"] == "dns_nosoa" and sig.signature.get("negative_signature", False):
-                        sig_nameservers = [ns for ns in sig.signature["identifiers"]["nameservers"]]
-                        r = self.get_substring_matches(target_nameservers, sig_nameservers)
+                        r = self.get_identifier_matches(
+                            target_nameservers, sig.signature["identifiers"]["nameservers"]
+                        )
                         if r:
                             log.debug(
                                 f"Negative signature match [{sig.signature['service_name']}] for nameservers {', '.join(target_nameservers)}, suppressing generic finding"

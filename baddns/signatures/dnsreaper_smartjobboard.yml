@@ -1,7 +1,8 @@
 identifiers:
   cnames: []
   ips:
-  - 52.16.160.97
+  - type: word
+    value: 52.16.160.97
   nameservers: []
   not_cnames: []
 matcher_rule:

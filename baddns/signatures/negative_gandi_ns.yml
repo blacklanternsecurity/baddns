@@ -2,7 +2,8 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .dns.gandi.net
+  - type: word
+    value: .dns.gandi.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

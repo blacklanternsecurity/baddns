@@ -2,7 +2,8 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .hover.com
+  - type: word
+    value: .hover.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

@@ -2,11 +2,13 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - impervadns.net
-  - incapdns.net
+  - type: word
+    value: impervadns.net
+  - type: word
+    value: incapdns.net
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
+negative_signature: true
 service_name: Imperva
 source: self
-negative_signature: true

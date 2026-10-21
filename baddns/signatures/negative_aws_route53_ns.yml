@@ -2,10 +2,11 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - awsdns
+  - type: word
+    value: awsdns
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
+negative_signature: true
 service_name: AWS Route53
 source: self
-negative_signature: true

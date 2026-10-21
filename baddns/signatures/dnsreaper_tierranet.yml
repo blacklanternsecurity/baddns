@@ -2,8 +2,10 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - ns1.domaindiscover.com
-  - ns2.domaindiscover.com
+  - type: word
+    value: ns1.domaindiscover.com
+  - type: word
+    value: ns2.domaindiscover.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa

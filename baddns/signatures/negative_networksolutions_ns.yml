@@ -2,7 +2,8 @@ identifiers:
   cnames: []
   ips: []
   nameservers:
-  - .worldnic.com
+  - type: word
+    value: .worldnic.com
   not_cnames: []
 matcher_rule: null
 mode: dns_nosoa
