@@ -64,18 +64,9 @@ Never restate a standard here. If this file and a standard disagree, the standar
 
 ### Modules
 
-Modules live in `baddns/modules/`, subclass `BadDNS_base` (`baddns/base.py`), and are auto-discovered by `baddns/__init__.py`. Adding a file there registers it. `baddns -l` is the source of truth; at the time of writing:
+Modules live in `baddns/modules/`, subclass `BadDNS_base` (`baddns/base.py`), and are auto-discovered by `baddns/__init__.py`. Adding a file there registers it. `baddns -l` lists them.
 
-- **CNAME**: dangling CNAMEs, interrogated for takeover
-- **NS**: dangling nameservers
-- **MX**: dangling mail exchangers, base domains checked for availability
-- **NSEC**: subdomain enumeration by NSEC walking
-- **TXT**: hijackable domains in TXT records
-- **references**: hijackable domains in HTML and headers
-- **zonetransfer**: AXFR
-- **DELEGATION**: dangling `_acme-challenge`, `_dmarc`, and common DKIM selector CNAMEs
-- **DMARC**, **SPF**, **MTA-STS**: email misconfigurations. These subclass `BadDNS_email_base` (`baddns/lib/email_base.py`) and are skipped when the domain has no MX, unless `--disable-mx-gate` is set.
-- **WILDCARD**: wildcard records that enable domain-wide takeover
+DMARC, SPF and MTA-STS subclass `BadDNS_email_base` (`baddns/lib/email_base.py`) and are skipped when the domain has no MX, unless `--disable-mx-gate` is set.
 
 ### Signatures
 
@@ -85,7 +76,7 @@ Most signatures are imported from nuclei-templates and dnsReaper by the Signatur
 
 ### Core libraries (`baddns/lib/`)
 
-- `DNSManager` (`dnsmanager.py`): async resolution on blastdns, CNAME chain following
+- `DNSManager` (`dnsmanager.py`): async resolution on blastdns, CNAME chain following. `NXDOMAIN` and `NoAnswer` mean the record is absent; `ERROR` means no answer was received, and must not be reported as absence.
 - `HttpManager` (`httpmanager.py`): four requests per target (http/https, with and without redirects) on blasthttp, plus TLS handshake failure detection
 - `WhoisManager` (`whoismanager.py`): WHOIS lookups, registration and expiry checks
 - `DnsWalk` (`dnswalk.py`): nameserver tracing from the roots, used by NS
@@ -93,7 +84,7 @@ Most signatures are imported from nuclei-templates and dnsReaper by the Signatur
 
 ### Flow
 
-`baddns/cli.py` validates args, loads signatures, instantiates the selected modules, awaits each `dispatch()`, and prints `Finding` objects as JSON.
+`baddns/cli.py` validates args, loads signatures, instantiates the selected modules, awaits each `dispatch()`, calls `analyze()` on the ones that returned true, and prints `Finding` objects as JSON. `dispatch()` returning `False` means the module had nothing to work with (no CNAME, wrong record shape), which is the common case and not an error.
 
 ### Tests
 
@@ -102,10 +93,3 @@ Tests mock DNS, HTTP, and WHOIS.
 - `tests/conftest.py`: `mock_http` (a `MockBlastHTTP` from `baddns/mock_blasthttp.py`, passed to modules as `http_client=`), `configure_mock_resolver`, `mock_dispatch_whois`, `cached_suffix_list`, `dnswalk_harness`
 - `tests/helpers.py`: `create_mock_client`, `MockDNSWalk`, `DnsWalkHarness`
 - pytest-asyncio for async tests, pyfakefs for the filesystem
-
-### Branches and releases
-
-- `dev`: active development; PRs target it.
-- `stable`: the default branch and release line.
-- The version lives only in `baddns/__version__.py` (hatchling reads it). A push to `stable` whose version differs from the latest tag publishes to PyPI and tags the release.
-- Do not add `Co-Authored-By` lines to commit messages.
