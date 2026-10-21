@@ -2,7 +2,7 @@ name: publish
 
 on:
   push:
-    tags: ["v*"]
+    branches: [stable]
 
 permissions:
   contents: read
@@ -13,16 +13,17 @@ concurrency:
 
 jobs:
   check:
-    uses: blacklanternsecurity/CLA/.github/workflows/release-check.yml@40c6e18c0a6e32116eea4f89fc826f53c70889dc # main
+    uses: blacklanternsecurity/CLA/.github/workflows/release-check.yml@4894c4adb0c98b978c7c621903e1f3205fc446b7 # CLA#11
 
   tests:
     needs: check
+    if: needs.check.outputs.release == 'true'
     uses: ./.github/workflows/tests.yml
     secrets: inherit
 
   pypi:
     needs: tests
-    environment: pypi
+    environment: release
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -34,12 +35,18 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       - run: uv build
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          skip-existing: true
 
   release:
     needs: [check, pypi]
+    if: needs.check.outputs.release == 'true'
     permissions:
-      contents: write
-    uses: blacklanternsecurity/CLA/.github/workflows/publish.yml@40c6e18c0a6e32116eea4f89fc826f53c70889dc # main
+      contents: read
+    uses: blacklanternsecurity/CLA/.github/workflows/publish.yml@4894c4adb0c98b978c7c621903e1f3205fc446b7 # CLA#11
     with:
+      release-app-id: ${{ vars.RELEASE_APP_ID }}
+      tag: ${{ needs.check.outputs.tag }}
       version: ${{ needs.check.outputs.version }}
-      prerelease: ${{ needs.check.outputs.prerelease }}
+    secrets:
+      release-app-key: ${{ secrets.RELEASE_APP_KEY }}
