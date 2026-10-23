@@ -35,7 +35,7 @@ dev = [
     "pytest-mock>=3.11.1",
     "pyfakefs>=5.10,<7.0",
     "mock>=5.1.0",
-    "ruff==0.16.9",
+    "ruff>=0.15.4",
 ]
 docs = [
     "mkdocs>=1.5.3",
