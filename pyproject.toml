@@ -1,6 +1,6 @@
 [project]
 name = "baddns"
-version = "2.5.0"
+version = "2.5.1"
 description = "Check subdomains for subdomain takeovers and other DNS tomfoolery"
 authors = [{name = "liquidsec", email = "paul.mueller08@gmail.com"}]
 license = "GPL-3.0"
