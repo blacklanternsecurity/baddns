@@ -1,0 +1,44 @@
+name: tests
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow_ref }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  python:
+    # SignatureBot PRs into dev are one generated signature file each, covered by signature-test.yml instead.
+    # Never skipped into stable: the title and branch are free text.
+    if: ${{ github.base_ref == 'stable' || !(startsWith(github.event.pull_request.title, '[SignatureBot]') && startsWith(github.head_ref, 'new-signature-')) }}
+    uses: blacklanternsecurity/release-workflows/.github/workflows/python-tests.yml@c53c202eedeb26a86088936363e6cb06ce99ac15 # v1.0.0
+    with:
+      pytest-args: --exitfirst --disable-warnings --log-cli-level=DEBUG --cov-report xml:cov.xml --cov=baddns
+      coverage: true
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Reports the contexts stable's ruleset requires today. Remove once it requires python / passed.
+  required:
+    name: ${{ matrix.context }}
+    if: always()
+    needs: python
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        context: ["test (3.10)", "test (3.11)", "test (3.12)", "test (3.13)", "test (3.14)", lint]
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          allowed-skips: python
+          jobs: ${{ toJSON(needs) }}

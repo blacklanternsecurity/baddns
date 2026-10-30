@@ -6,11 +6,13 @@ from baddns.lib.errors import BadDNSCLIException, BadDNSSignatureException
 
 
 class TestVersionModule:
-    def test_version_importable(self):
-        from baddns.__version__ import __version__
+    def test_installed_version_matches_manifest(self):
+        tomllib = pytest.importorskip("tomllib")
+        from importlib.metadata import version
+        from pathlib import Path
 
-        assert isinstance(__version__, str)
-        assert len(__version__) > 0
+        manifest = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text())
+        assert version("baddns") == manifest["project"]["version"]
 
 
 class TestPrintVersion:
