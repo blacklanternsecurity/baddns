@@ -2,7 +2,7 @@
 Check subdomains for subdomain takeovers and other DNS tomfoolery
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-![License](https://img.shields.io/badge/license-GPLv3-f126ea.svg)
+![License](https://img.shields.io/badge/license-AGPLv3-f126ea.svg)
 [![tests](https://github.com/blacklanternsecurity/baddns/actions/workflows/tests.yml/badge.svg)](https://github.com/blacklanternsecurity/baddns/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/blacklanternsecurity/baddns/branch/stable/graph/badge.svg)](https://codecov.io/gh/blacklanternsecurity/baddns)
 [![PyPI](https://img.shields.io/pypi/v/baddns)](https://pypi.org/project/baddns)
