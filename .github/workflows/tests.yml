@@ -31,7 +31,8 @@ jobs:
   # Reports the contexts stable's ruleset requires today. Remove once it requires python / passed.
   required:
     name: ${{ matrix.context }}
-    if: always()
+    # A superseded run must not post failing contexts over the live run's results.
+    if: ${{ !cancelled() }}
     needs: python
     runs-on: ubuntu-24.04
     strategy:
