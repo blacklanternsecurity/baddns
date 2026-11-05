@@ -27,19 +27,3 @@ jobs:
       coverage: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  # Reports the contexts stable's ruleset requires today. Remove once it requires python / passed.
-  required:
-    name: ${{ matrix.context }}
-    # A superseded run must not post failing contexts over the live run's results.
-    if: ${{ !cancelled() }}
-    needs: python
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        context: ["test (3.10)", "test (3.11)", "test (3.12)", "test (3.13)", "test (3.14)", lint]
-    steps:
-      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
-        with:
-          allowed-skips: python
-          jobs: ${{ toJSON(needs) }}
