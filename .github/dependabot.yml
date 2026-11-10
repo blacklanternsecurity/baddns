@@ -17,6 +17,8 @@ updates:
           - "*"
         update-types:
           - "major"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "dev"
@@ -34,3 +36,5 @@ updates:
           - "*"
         update-types:
           - "major"
+    cooldown:
+      default-days: 7
