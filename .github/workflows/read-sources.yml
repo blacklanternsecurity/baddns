@@ -26,11 +26,10 @@ jobs:
         permission-pull-requests: write
         permission-issues: write
 
-    # Pushes the signature branches with the App token. Full history: see seen_on_dev below.
+    # Pushes the signature branches with the App token.
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 # zizmor: ignore[artipacked]
       with:
         ref: dev
-        fetch-depth: 0
         token: ${{ steps.app.outputs.token }}
 
     - name: Install uv
@@ -80,14 +79,14 @@ jobs:
           prev_hashes=""
         fi
 
-        # Seen before: this exact content was once a version of the file on dev. A merged signature
-        # PR puts its content into dev's history, so nothing has to be written after a merge.
-        # signature_history.txt is the frozen record from before 2026-11 (it also holds hashes of
-        # regenerated content that was never committed as such).
-        seen_on_dev() {
-          git log origin/dev --raw --no-abbrev --format= -- "baddns/signatures/$1" \
-            | awk '{print $3; print $4}' \
-            | grep -qxF "$(git hash-object "signatures_to_test/$1")"
+        # Point-in-time record, one file per signature: the hash of every version the bot has proposed,
+        # written by the bot into the PR that proposes it, so it lands on dev with the merge. A person
+        # editing the signature (in the PR or later) changes the .yml, never this record, so the
+        # original is not proposed again. One file per signature, so concurrent bot PRs never conflict.
+        # signature_history.txt is the older single-file record and is still read.
+        HISTORY_DIR=baddns/signatures/history
+        seen_in_history() {
+          grep -qF -- "$2" "$HISTORY_DIR/$1.sha256" 2>/dev/null
         }
 
         # Signatures we have deliberately dropped. Blocked by name, so the block survives both an
@@ -119,8 +118,8 @@ jobs:
               echo "File $file has been seen before, skipping" >> readsources_action.log
               continue
             fi
-            if seen_on_dev "$file"; then
-              echo "File $file matches an earlier version on dev, skipping" >> readsources_action.log
+            if seen_in_history "$file" "$new_hash"; then
+              echo "File $file was proposed before ($HISTORY_DIR/$file.sha256), skipping" >> readsources_action.log
               continue
             fi
 
@@ -204,7 +203,10 @@ jobs:
 
             echo "checking out new branch $BRANCH_NAME" >> readsources_action.log
             git checkout -b "$BRANCH_NAME"
-            git add "baddns/signatures/$file"
+            # Record what is proposed now, in this PR: see seen_in_history above.
+            mkdir -p "$HISTORY_DIR"
+            echo "$new_hash #$file" >> "$HISTORY_DIR/$file.sha256"
+            git add "baddns/signatures/$file" "$HISTORY_DIR/$file.sha256"
             # shellcheck disable=SC2129  # style only: one-line appends to the same log
             echo "about to commit with the following files changed:" >> readsources_action.log
             git status -s >> readsources_action.log
@@ -231,6 +233,10 @@ jobs:
                 echo "" >> pr_message
                 echo "An earlier version of this signature was blocked in:$PREVIOUS_BLOCKS. Upstream has changed since." >> pr_message
               fi
+              # shellcheck disable=SC2129  # style only: one-line appends to the same file
+              echo "" >> pr_message
+              echo "\`$HISTORY_DIR/$file.sha256\` records the hash of the content proposed here, so the bot" >> pr_message
+              echo "never proposes it again once merged. Edit the signature freely; leave that line as it is." >> pr_message
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
               sleep 5
               gh pr create --base dev --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head "new-signature-$file" --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log

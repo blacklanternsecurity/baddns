@@ -1,8 +1,8 @@
 # Signatures the SignatureBot must never propose again. One filename per line;
 # blank lines and lines starting with # are ignored.
 #
-# Without this list the bot decides what to re-propose by comparing content, against earlier
-# versions on dev, the frozen signature_history.txt and earlier PRs closed as `signature-blocked`.
+# Without this list the bot decides what to re-propose by comparing content hashes, against
+# history/<signature>.sha256, signature_history.txt and earlier PRs closed as `signature-blocked`.
 # That only holds until upstream edits the template or our own serialized format changes, at
 # which point every signature we had deliberately dropped comes back as a fresh PR. Removing a
 # signature is a decision about the signature, not about one particular version of its bytes,

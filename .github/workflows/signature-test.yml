@@ -41,7 +41,8 @@ jobs:
         if: env.IS_NEW_SIGNATURE_PR == 'true'
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          FILE=$(gh pr diff "$PR_NUMBER" --name-only | grep -v "signature_history.txt" || true)
+          # Only the signature itself: not signature_history.txt, the history/ record, or other edits.
+          FILE=$(gh pr diff "$PR_NUMBER" --name-only | grep -E '^baddns/signatures/[^/]+\.yml$' || true)
 
           if [[ -z "$FILE" ]]; then
             echo "No valid files to process." >> signaturetest.log
