@@ -170,6 +170,7 @@ Removing a signature file is not enough on its own: upstream still has the templ
 imports it and proposes it again. Record the decision by name in
 `baddns/signatures/blocked_signatures.txt` and the bot will skip it permanently.
 
-The bot also tracks content hashes, in `signature_history.txt` and in the content of PRs closed with
+The bot also tracks content: every earlier version of the signature on `dev` (from git history),
+the frozen `signature_history.txt` (hashes recorded before 2026-11), and the content of PRs closed with
 the `signature-blocked` label, but those only suppress one exact version of a signature. Use them to
 reject a particular upstream revision; use `blocked_signatures.txt` to reject the signature itself.

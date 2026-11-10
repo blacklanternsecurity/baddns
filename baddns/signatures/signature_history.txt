@@ -1,3 +1,4 @@
+# Frozen 2026-11. Signatures merged since are recognised from dev's git history (read-sources.yml, seen_on_dev).
 1189a857e0588f10558bd5d10f7b955a10e90afa7292a34c183a114a3f440807 #dnsreaper_000domains.yml
 a700e245495a114b31d020cc28359bc29f3f6ca8ce7198e656660ac757f40911 #dnsreaper_agilecrm.yml
 e1fae543baaf5f20d17b01a62cff61faeb00bb81a76425f5e6813c2e9c8f6e61 #dnsreaper_aha.yml
