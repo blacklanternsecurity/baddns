@@ -25,7 +25,7 @@ jobs:
     if: needs.check.outputs.release == 'true'
     permissions:
       contents: read
-    uses: ./.github/workflows/tests.yml
+    uses: ./.github/workflows/tests.yml # zizmor: ignore[self-repository]
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

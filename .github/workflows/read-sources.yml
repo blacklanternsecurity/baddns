@@ -13,7 +13,8 @@ jobs:
   readsources:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    # Pushes the signature branches with these credentials.
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 # zizmor: ignore[artipacked]
       with:
         ref: dev
 
@@ -27,13 +28,15 @@ jobs:
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: punk-security/dnsReaper
-        path: dnsReaper 
+        path: dnsReaper
+        persist-credentials: false
 
     - name: Checkout remote repository (nuclei-templates)
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: projectdiscovery/nuclei-templates
         path: nuclei-templates
+        persist-credentials: false
 
     - name: Read Sources
       run: |
