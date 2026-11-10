@@ -5,18 +5,33 @@ on:
   schedule:
     - cron: '0 17 * * *'
 
+# The workflow token only reads. Branches, pull requests and issues are written with the SignatureBot App's token:
+# pull requests it opens start CI, which dev requires, and pushes by the workflow token would not.
 permissions:
-  contents: write  # Allows committing & pushing changes to repo
-  pull-requests: write  # Allows creating PRs via `gh pr create`
+  contents: read
 
 jobs:
   readsources:
     runs-on: ubuntu-24.04
+    # Holds the App key. Its deployment branch policy allows only stable, where the schedule runs,
+    # so no pull request workflow can read it.
+    environment: signature-bot
     steps:
-    # Pushes the signature branches with these credentials.
+    - id: app
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        app-id: ${{ vars.SIGNATUREBOT_APP_ID }}
+        private-key: ${{ secrets.SIGNATUREBOT_PRIVATE_KEY }}
+        permission-contents: write
+        permission-pull-requests: write
+        permission-issues: write
+
+    # Pushes the signature branches with the App token. Full history: see seen_on_dev below.
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 # zizmor: ignore[artipacked]
       with:
         ref: dev
+        fetch-depth: 0
+        token: ${{ steps.app.outputs.token }}
 
     - name: Install uv
       uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -44,7 +59,7 @@ jobs:
 
     - name: Stage, commit, and create PR for changed files
       env:
-        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+        GH_TOKEN: ${{ steps.app.outputs.token }}
       run: |
         echo "starting Read Sources run" >> readsources_action.log
         git config --local user.email "action@github.com"
@@ -216,7 +231,7 @@ jobs:
 
     - name: Report signatures removed upstream
       env:
-        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+        GH_TOKEN: ${{ steps.app.outputs.token }}
       run: |
         # Shipped upstream-derived signatures whose template no longer exists upstream.
         # Reported for review, never deleted automatically (upstream is sometimes wrong).
