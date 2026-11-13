@@ -41,7 +41,8 @@ jobs:
         if: env.IS_NEW_SIGNATURE_PR == 'true'
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          FILE=$(gh pr diff "$PR_NUMBER" --name-only | grep -v "signature_history.txt" || true)
+          # Only the signature itself: not signature_history.txt, the history/ record, or other edits.
+          FILE=$(gh pr diff "$PR_NUMBER" --name-only | grep -E '^baddns/signatures/[^/]+\.yml$' || true)
 
           if [[ -z "$FILE" ]]; then
             echo "No valid files to process." >> signaturetest.log
@@ -110,7 +111,7 @@ jobs:
           echo "Attempting to add comment to PR..." >> signaturetest.log
           gh pr comment "${{ github.event.pull_request.number }}" --body "$comment"
         env:
-          GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
       - name: Upload Signature Test Log
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
