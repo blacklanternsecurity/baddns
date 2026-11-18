@@ -315,6 +315,7 @@ class BadDNS_references(BadDNS_base):
                             "severity": finding_dict["severity"],
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
+                            "data_source": finding_dict.get("data_source"),
                             "trigger": f"{finding_set['trigger']}, Original Trigger: [{finding_dict['trigger']}] Direct Mode: [{str(finding_set['direct_mode'])}]",
                             "module": type(self),
                         }

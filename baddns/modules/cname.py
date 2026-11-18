@@ -75,7 +75,7 @@ class BadDNS_cname(BadDNS_base):
         # even if it is registered, we still use whois to check for expired domains
         log.debug("performing WHOIS lookup")
 
-        self.cname_whoismanager = WhoisManager(self.subject)
+        self.cname_whoismanager = WhoisManager(self.subject, http_client=self.http_client)
         await self.cname_whoismanager.dispatchWHOIS()
         log.debug("WHOIS dispatch complete")
         return True
@@ -278,6 +278,7 @@ class BadDNS_cname(BadDNS_base):
                             "severity": "MEDIUM",
                             "signature": "CNAME Takeover",
                             "indicator": "Whois Data",
+                            "data_source": self.cname_whoismanager.source,
                             "trigger": self.subject,
                             "module": type(self),
                         }
