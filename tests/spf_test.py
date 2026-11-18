@@ -298,6 +298,7 @@ async def test_spf_include_unregistered(fs, mock_dispatch_whois, configure_mock_
             "severity": "MEDIUM",
             "signature": "SPF",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "worse.dns",
             "module": "SPF",
         }
@@ -325,6 +326,7 @@ async def test_spf_include_expired(fs, mock_dispatch_whois, configure_mock_resol
             "severity": "MEDIUM",
             "signature": "SPF",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "worse.dns",
             "module": "SPF",
         }
@@ -352,6 +354,7 @@ async def test_spf_redirect_unregistered(fs, mock_dispatch_whois, configure_mock
             "severity": "MEDIUM",
             "signature": "SPF",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "worse.dns",
             "module": "SPF",
         }
@@ -488,6 +491,7 @@ async def test_spf_subdomain_inherits_takeover(fs, mock_dispatch_whois, configur
             "severity": "MEDIUM",
             "signature": "SPF",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "worse.dns",
             "module": "SPF",
         }

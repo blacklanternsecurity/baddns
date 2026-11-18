@@ -24,6 +24,13 @@ with open(local_test_file, "r") as real_file:
     CACHED_SUFFIX_LIST_CONTENTS = real_file.read()
 
 
+@pytest.fixture(autouse=True)
+def no_rdap_bootstrap(monkeypatch):
+    """Start every test with an empty RDAP server list, so WhoisManager goes straight to WHOIS and no test
+    fetches IANA's bootstrap file or queries a real RDAP server. RDAP tests set ``_rdap_servers`` themselves."""
+    monkeypatch.setattr(WhoisManager, "_rdap_servers", {})
+
+
 @pytest.fixture()
 def mock_dispatch_whois(request, monkeypatch):
     value = getattr(request, "param", None)

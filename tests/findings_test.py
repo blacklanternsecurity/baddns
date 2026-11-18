@@ -154,3 +154,17 @@ class TestMeetsMinimum:
     def test_confidence_fails_severity_passes(self):
         f = Finding(_valid_finding(confidence="UNKNOWN", severity="CRITICAL"))
         assert f.meets_minimum(min_confidence="HIGH", min_severity="MEDIUM") is False
+
+
+class TestDataSource:
+    def test_included_when_set(self):
+        f = Finding(_valid_finding(data_source="RDAP"))
+        assert f.to_dict()["data_source"] == "RDAP"
+
+    def test_omitted_when_missing_or_empty(self):
+        assert "data_source" not in Finding(_valid_finding()).to_dict()
+        assert "data_source" not in Finding(_valid_finding(data_source=None)).to_dict()
+
+    def test_non_str_rejected(self):
+        with pytest.raises(BadDNSFindingException, match="data_source must be a str"):
+            Finding(_valid_finding(data_source=["RDAP"]))

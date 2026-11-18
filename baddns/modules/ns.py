@@ -61,7 +61,7 @@ class BadDNS_ns(BadDNS_base):
             if registered in self.ns_whois:
                 self.ns_whois[registered][1].append(nameserver)
                 continue
-            manager = WhoisManager(nameserver)
+            manager = WhoisManager(nameserver, http_client=self.http_client)
             await manager.dispatchWHOIS()
             self.ns_whois[registered] = (manager, [nameserver])
 
@@ -148,6 +148,7 @@ class BadDNS_ns(BadDNS_base):
                             "severity": "HIGH",
                             "signature": "NS",
                             "indicator": "Whois Data",
+                            "data_source": manager.source,
                             "trigger": nameservers,
                             "module": type(self),
                         }

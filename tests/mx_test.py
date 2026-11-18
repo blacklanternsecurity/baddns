@@ -62,6 +62,7 @@ async def test_mx_unregistered(fs, mock_dispatch_whois, configure_mock_resolver,
             "severity": "MEDIUM",
             "signature": "MX",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "mail2.worse.dns",
             "module": "MX",
         }
@@ -89,6 +90,7 @@ async def test_mx_expired(fs, mock_dispatch_whois, configure_mock_resolver, cach
             "severity": "MEDIUM",
             "signature": "MX",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "mail2.worse.dns",
             "module": "MX",
         }

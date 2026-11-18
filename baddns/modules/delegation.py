@@ -113,6 +113,7 @@ class BadDNS_delegation(BadDNS_base):
                             "severity": "HIGH",
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
+                            "data_source": finding_dict.get("data_source"),
                             "trigger": host,
                             "module": type(self),
                         }
