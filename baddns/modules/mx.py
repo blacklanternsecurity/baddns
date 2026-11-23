@@ -28,7 +28,7 @@ class BadDNS_mx(BadDNS_base):
 
         for mx_record in self.target_dnsmanager.answers["MX"]:
             log.debug(f"performing WHOIS lookup for [{mx_record}]")
-            self.mx_whoismanager[mx_record] = WhoisManager(mx_record)
+            self.mx_whoismanager[mx_record] = WhoisManager(mx_record, http_client=self.http_client)
             await self.mx_whoismanager[mx_record].dispatchWHOIS()
             log.debug(f"WHOIS dispatch [{mx_record}] complete")
         return True
@@ -49,6 +49,7 @@ class BadDNS_mx(BadDNS_base):
                             "severity": "MEDIUM",
                             "signature": "MX",
                             "indicator": "Whois Data",
+                            "data_source": whois_data.source,
                             "trigger": whois_domain,
                             "module": type(self),
                         }

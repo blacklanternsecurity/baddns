@@ -111,6 +111,7 @@ async def test_references_cname_css(fs, mock_dispatch_whois, mock_http, configur
             "severity": "MEDIUM",
             "signature": "CNAME Takeover",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "CSS Source: [http://css.baddnscdn.com/style.css], Original Trigger: [css.baddnscdn.com] Direct Mode: [True]",
             "module": "references",
         }
@@ -147,6 +148,7 @@ async def test_references_cname_js(fs, mock_dispatch_whois, mock_http, configure
             "severity": "MEDIUM",
             "signature": "CNAME Takeover",
             "indicator": "Whois Data",
+            "data_source": "WHOIS",
             "trigger": "Javascript Source: [http://js.baddnscdn.com/script.js], Original Trigger: [js.baddnscdn.com] Direct Mode: [True]",
             "module": "references",
         }

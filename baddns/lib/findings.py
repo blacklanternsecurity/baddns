@@ -68,6 +68,14 @@ class Finding:
         if found_domains:
             self.finding_dict["found_domains"] = found_domains
 
+        # Where the evidence came from (e.g. RDAP or WHOIS). Kept out of the description and indicator so the
+        # same finding reads the same no matter which lookup answered, which keeps BBOT's deduplication stable.
+        data_source = finding_dict.get("data_source", None)
+        if data_source:
+            if not isinstance(data_source, str):
+                raise BadDNSFindingException("data_source must be a str")
+            self.finding_dict["data_source"] = data_source
+
     @property
     def name(self):
         """Display name: 'BadDNS {module} {signature}' (omit signature if N/A)."""

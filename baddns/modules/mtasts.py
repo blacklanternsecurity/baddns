@@ -132,7 +132,7 @@ class BadDNS_mtasts(BadDNS_email_base):
             for mx_entry in self.policy["mx"]:
                 if mx_entry.startswith("*."):
                     continue
-                whois_mgr = WhoisManager(mx_entry)
+                whois_mgr = WhoisManager(mx_entry, http_client=self.http_client)
                 await whois_mgr.dispatchWHOIS()
                 self.mx_whois_results[mx_entry] = whois_mgr
 
@@ -180,6 +180,7 @@ class BadDNS_mtasts(BadDNS_email_base):
                             "severity": "HIGH",
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
+                            "data_source": finding_dict.get("data_source"),
                             "trigger": finding_set["trigger"],
                             "module": type(self),
                         }
@@ -256,6 +257,7 @@ class BadDNS_mtasts(BadDNS_email_base):
                                     "severity": "MEDIUM",
                                     "signature": "MTA-STS",
                                     "indicator": "Whois Data",
+                                    "data_source": whois_mgr.source,
                                     "trigger": mx_entry,
                                     "module": type(self),
                                 }

@@ -59,9 +59,9 @@ Most signatures are imported from nuclei-templates and dnsReaper by the Signatur
 
 - `DNSManager` (`dnsmanager.py`): async resolution on blastdns, CNAME chain following. `NXDOMAIN` and `NoAnswer` mean the record is absent; `ERROR` means no answer was received, and must not be reported as absence.
 - `HttpManager` (`httpmanager.py`): four requests per target (http/https, with and without redirects) on blasthttp, plus TLS handshake failure detection
-- `WhoisManager` (`whoismanager.py`): WHOIS lookups, registration and expiry checks
+- `WhoisManager` (`whoismanager.py`): registration and expiry checks over RDAP, falling back to WHOIS for TLDs without RDAP or when RDAP gives no answer
 - `DnsWalk` (`dnswalk.py`): nameserver tracing from the roots, used by NS
-- `Finding` (`findings.py`): output; levels in `CONFIDENCE_LEVELS` and `SEVERITY_LEVELS`, filtered by `--min-confidence` and `--min-severity`
+- `Finding` (`findings.py`): output; levels in `CONFIDENCE_LEVELS` and `SEVERITY_LEVELS`, filtered by `--min-confidence` and `--min-severity`. Optional `data_source` records where evidence came from (RDAP or WHOIS); keep that kind of detail out of `description` and `indicator`, which BBOT builds its finding text from and dedupes on
 
 ### Flow
 
@@ -71,5 +71,5 @@ Most signatures are imported from nuclei-templates and dnsReaper by the Signatur
 
 Tests mock DNS, HTTP, and WHOIS.
 
-- `tests/conftest.py`: `mock_http` (a `MockBlastHTTP` from `baddns/mock_blasthttp.py`, passed to modules as `http_client=`), `configure_mock_resolver`, `mock_dispatch_whois`, `cached_suffix_list`, `dnswalk_harness`
+- `tests/conftest.py`: `mock_http` (a `MockBlastHTTP` from `baddns/mock_blasthttp.py`, passed to modules as `http_client=`), `configure_mock_resolver`, `mock_dispatch_whois`, `no_rdap_bootstrap` (autouse: an empty RDAP server list, so tests never reach IANA or a real RDAP server), `cached_suffix_list`, `dnswalk_harness`
 - `tests/helpers.py`: `create_mock_client`, `MockDNSWalk`, `DnsWalkHarness`

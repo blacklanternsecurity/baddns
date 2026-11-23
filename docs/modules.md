@@ -8,7 +8,7 @@ All of the specific knowledge for each of these services is contained within [si
 
 Since many takeover detections depend on strings within HTTP content, BadDNS performs HTTP requests to its targets, in addition to DNS queries.
 
-WHOIS requests are also made, which are used to determine the expiration date of the CNAME's base domain target. The focus of BadDNS isn't solely on subdomains; taking over a base domain inherently grants control over all its subdomains.
+Registration lookups (RDAP, falling back to WHOIS for TLDs without RDAP) are also made, to find out whether the CNAME's base domain target is unregistered or expired. The focus of BadDNS isn't solely on subdomains; taking over a base domain inherently grants control over all its subdomains.
 
 ## ns
 
@@ -76,7 +76,7 @@ The `mta-sts` module checks for several issues related to MTA-STS configuration:
 - **Dangling mta-sts subdomain** — If `mta-sts.<domain>` has a dangling CNAME, an attacker could take over the subdomain and serve a malicious MTA-STS policy, potentially redirecting email to attacker-controlled mail servers. The module delegates to the `cname` module to check the `mta-sts` subdomain for takeover opportunities.
 - **Orphaned TXT record** — The `_mta-sts` TXT record exists but the policy file is unreachable, indicating a stale or misconfigured deployment.
 - **Policy MX mismatch** — In `enforce` mode, if actual MX records don't match the policy's `mx` lines, legitimate email delivery may be disrupted.
-- **Dangling MX domains in policy** — WHOIS checks on domains listed in the policy's `mx` lines can reveal expired or available domains that could be registered by an attacker.
+- **Dangling MX domains in policy** — RDAP/WHOIS checks on domains listed in the policy's `mx` lines can reveal expired or available domains that could be registered by an attacker.
 
 ## wildcard
 
@@ -97,6 +97,6 @@ The `spf` module queries for SPF records and checks for several issues:
 - **Permissive `+all`** — Explicitly authorizes any server to send email for the domain, rendering SPF useless.
 - **Neutral `?all`** — Provides no protection against unauthorized senders.
 - **DNS lookup limit exceeded** — SPF records that exceed the 10 DNS lookup limit per RFC 7208 cause a permanent error.
-- **Hijackable include/redirect domains** — WHOIS checks on domains referenced in `include` and `redirect` mechanisms can reveal expired or available domains that could be registered by an attacker to authorize their own mail servers.
+- **Hijackable include/redirect domains** — RDAP/WHOIS checks on domains referenced in `include` and `redirect` mechanisms can reveal expired or available domains that could be registered by an attacker to authorize their own mail servers.
 
 For subdomains, the module falls back to the organizational domain's SPF record if no direct SPF record is found, since SPF policy at the parent domain covers subdomains.

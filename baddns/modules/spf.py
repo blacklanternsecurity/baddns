@@ -156,7 +156,7 @@ class BadDNS_spf(BadDNS_email_base):
                     )
                     continue
                 log.debug(f"performing WHOIS lookup for SPF domain [{domain}]")
-                self.spf_whoismanagers[domain] = WhoisManager(domain)
+                self.spf_whoismanagers[domain] = WhoisManager(domain, http_client=self.http_client)
                 await self.spf_whoismanagers[domain].dispatchWHOIS()
                 log.debug(f"WHOIS dispatch [{domain}] complete")
 
@@ -286,6 +286,7 @@ class BadDNS_spf(BadDNS_email_base):
                             "severity": "MEDIUM",
                             "signature": "SPF",
                             "indicator": "Whois Data",
+                            "data_source": whois_data.source,
                             "trigger": whois_domain,
                             "module": type(self),
                         }

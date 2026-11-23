@@ -128,6 +128,7 @@ class BadDNS_wildcard(BadDNS_base):
                             "severity": "HIGH",
                             "signature": finding_dict["signature"],
                             "indicator": finding_dict["indicator"],
+                            "data_source": finding_dict.get("data_source"),
                             "trigger": finding_set["trigger"],
                             "module": type(self),
                         }

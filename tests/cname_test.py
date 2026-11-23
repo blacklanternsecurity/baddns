@@ -380,6 +380,7 @@ async def test_cname_whois_expired(fs, mock_dispatch_whois, mock_http, configure
         "severity": "MEDIUM",
         "signature": "CNAME Takeover",
         "indicator": "Whois Data",
+        "data_source": "WHOIS",
         "trigger": "worse.dns",
         "module": "CNAME",
     }
@@ -414,6 +415,7 @@ async def test_cname_whois_unregistered_match(fs, mock_dispatch_whois, mock_http
         "severity": "MEDIUM",
         "signature": "CNAME Takeover",
         "indicator": "Whois Data",
+        "data_source": "WHOIS",
         "trigger": "worse.dns",
         "module": "CNAME",
     }
