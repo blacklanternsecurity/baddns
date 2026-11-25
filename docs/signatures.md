@@ -170,6 +170,18 @@ Removing a signature file is not enough on its own: upstream still has the templ
 imports it and proposes it again. Record the decision by name in
 `baddns/signatures/blocked_signatures.txt` and the bot will skip it permanently.
 
-The bot also tracks content hashes, in `signature_history.txt` and in the content of PRs closed with
-the `signature-blocked` label, but those only suppress one exact version of a signature. Use them to
-reject a particular upstream revision; use `blocked_signatures.txt` to reject the signature itself.
+The bot also tracks content hashes: `baddns/signatures/history/<signature>.sha256`, the older
+`signature_history.txt`, and the content of PRs closed with the `signature-blocked` label, but those
+only suppress one exact version of a signature. Use them to reject a particular upstream revision;
+use `blocked_signatures.txt` to reject the signature itself.
+
+### Signature history
+
+Every SignatureBot PR adds one line to `baddns/signatures/history/<signature>.sha256`: the hash of
+the content the bot proposed, at the time it proposed it. The line merges with the PR, and the bot
+never proposes content whose hash is recorded there. Because the record is the proposed content and
+not the file as it is now, you can edit a signature, in its PR or later, without the original being
+proposed again. Leave the history line as the bot wrote it.
+
+If a change to the importer regenerates signatures that are already reviewed, add the hashes of the
+regenerated content to the matching `history/` files in the same PR, so they are not proposed again.

@@ -5,18 +5,32 @@ on:
   schedule:
     - cron: '0 17 * * *'
 
+# The workflow token only reads. Branches, pull requests and issues are written with the SignatureBot App's token:
+# pull requests it opens start CI, which dev requires, and pushes by the workflow token would not.
 permissions:
-  contents: write  # Allows committing & pushing changes to repo
-  pull-requests: write  # Allows creating PRs via `gh pr create`
+  contents: read
 
 jobs:
   readsources:
     runs-on: ubuntu-24.04
+    # Holds the App key. Its deployment branch policy allows only stable, where the schedule runs,
+    # so no pull request workflow can read it.
+    environment: signature-bot
     steps:
-    # Pushes the signature branches with these credentials.
+    - id: app
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        app-id: ${{ vars.SIGNATUREBOT_APP_ID }}
+        private-key: ${{ secrets.SIGNATUREBOT_PRIVATE_KEY }}
+        permission-contents: write
+        permission-pull-requests: write
+        permission-issues: write
+
+    # Pushes the signature branches with the App token.
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 # zizmor: ignore[artipacked]
       with:
         ref: dev
+        token: ${{ steps.app.outputs.token }}
 
     - name: Install uv
       uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -44,7 +58,7 @@ jobs:
 
     - name: Stage, commit, and create PR for changed files
       env:
-        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+        GH_TOKEN: ${{ steps.app.outputs.token }}
       run: |
         echo "starting Read Sources run" >> readsources_action.log
         git config --local user.email "action@github.com"
@@ -64,6 +78,16 @@ jobs:
           echo "signature_history.txt was NOT present" >> readsources_action.log
           prev_hashes=""
         fi
+
+        # Point-in-time record, one file per signature: the hash of every version the bot has proposed,
+        # written by the bot into the PR that proposes it, so it lands on dev with the merge. A person
+        # editing the signature (in the PR or later) changes the .yml, never this record, so the
+        # original is not proposed again. One file per signature, so concurrent bot PRs never conflict.
+        # signature_history.txt is the older single-file record and is still read.
+        HISTORY_DIR=baddns/signatures/history
+        seen_in_history() {
+          grep -qF -- "$2" "$HISTORY_DIR/$1.sha256" 2>/dev/null
+        }
 
         # Signatures we have deliberately dropped. Blocked by name, so the block survives both an
         # upstream edit and a change to our own serialized format -- a content hash survives neither.
@@ -92,6 +116,10 @@ jobs:
             new_hash=$(sha256sum "signatures_to_test/$file" | cut -d ' ' -f 1)
             if echo "$prev_hashes" | grep -q "$new_hash"; then
               echo "File $file has been seen before, skipping" >> readsources_action.log
+              continue
+            fi
+            if seen_in_history "$file" "$new_hash"; then
+              echo "File $file was proposed before ($HISTORY_DIR/$file.sha256), skipping" >> readsources_action.log
               continue
             fi
 
@@ -175,7 +203,10 @@ jobs:
 
             echo "checking out new branch $BRANCH_NAME" >> readsources_action.log
             git checkout -b "$BRANCH_NAME"
-            git add "baddns/signatures/$file"
+            # Record what is proposed now, in this PR: see seen_in_history above.
+            mkdir -p "$HISTORY_DIR"
+            echo "$new_hash #$file" >> "$HISTORY_DIR/$file.sha256"
+            git add "baddns/signatures/$file" "$HISTORY_DIR/$file.sha256"
             # shellcheck disable=SC2129  # style only: one-line appends to the same log
             echo "about to commit with the following files changed:" >> readsources_action.log
             git status -s >> readsources_action.log
@@ -202,6 +233,10 @@ jobs:
                 echo "" >> pr_message
                 echo "An earlier version of this signature was blocked in:$PREVIOUS_BLOCKS. Upstream has changed since." >> pr_message
               fi
+              # shellcheck disable=SC2129  # style only: one-line appends to the same file
+              echo "" >> pr_message
+              echo "\`$HISTORY_DIR/$file.sha256\` records the hash of the content proposed here, so the bot" >> pr_message
+              echo "never proposes it again once merged. Edit the signature freely; leave that line as it is." >> pr_message
               echo "creating PR: '[SignatureBot] Add or update signature $file'" >> readsources_action.log
               sleep 5
               gh pr create --base dev --title "[SignatureBot] Add or update signature $file" --body-file pr_message --head "new-signature-$file" --repo ${{ github.repository }} 2>&1 | tee -a readsources_action.log
@@ -216,7 +251,7 @@ jobs:
 
     - name: Report signatures removed upstream
       env:
-        GH_TOKEN: ${{ secrets.DNSBOT_TOKEN }}
+        GH_TOKEN: ${{ steps.app.outputs.token }}
       run: |
         # Shipped upstream-derived signatures whose template no longer exists upstream.
         # Reported for review, never deleted automatically (upstream is sometimes wrong).
